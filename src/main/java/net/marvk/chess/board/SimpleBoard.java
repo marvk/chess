@@ -43,12 +43,12 @@ public class SimpleBoard implements Board {
     }
 
     @Override
-    public List<Move> getValidMoves(final Color color) {
+    public List<MoveResult> getValidMoves(final Color color) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Move makeMove(final ColoredPiece coloredPiece, final Square square) {
+    public MoveResult makeMove(final ColoredPiece coloredPiece, final Square square) {
         return null;
     }
 

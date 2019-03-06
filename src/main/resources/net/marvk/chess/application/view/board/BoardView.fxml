@@ -3,5 +3,5 @@
 
 <?import javafx.scene.layout.StackPane?>
 <StackPane fx:id="rootPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity"
-           prefHeight="400.0" prefWidth="400.0" xmlns="http://javafx.com/javafx"
+           prefHeight="400.0" prefWidth="400.0" stylesheets="@boardview.css" xmlns="http://javafx.com/javafx/10.0.1"
            xmlns:fx="http://javafx.com/fxml/1" fx:controller="net.marvk.chess.application.view.board.BoardView"/>

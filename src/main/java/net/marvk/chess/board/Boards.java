@@ -5,7 +5,7 @@ public final class Boards {
         throw new AssertionError("No instances of utility class " + Boards.class);
     }
 
-    private static final Fen STARTING_POSITION = Fen.parse("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    public static final Fen STARTING_POSITION = Fen.parse("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
     public static Board startingPosition() {
         return new SimpleBoard(STARTING_POSITION);

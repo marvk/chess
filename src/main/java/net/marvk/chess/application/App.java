@@ -1,5 +1,6 @@
 package net.marvk.chess.application;
 
+import de.codecentric.centerdevice.javafxsvg.SvgImageLoaderFactory;
 import de.saxsys.mvvmfx.FluentViewLoader;
 import de.saxsys.mvvmfx.ViewTuple;
 import de.saxsys.mvvmfx.guice.MvvmfxGuiceApplication;
