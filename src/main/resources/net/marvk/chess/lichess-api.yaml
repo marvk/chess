@@ -901,7 +901,7 @@ paths:
   /api/bot/game/{gameId}/move/{move}:
     post:
       operationId: botGameMove
-      summary: Make a move
+      summary: Make a makeMove
       description: |
         Make a move in a game being played by a bot.
       tags:
@@ -916,9 +916,9 @@ paths:
             example: "5IrD6Gzz"
           required: true
         - in: path
-          name: move
+          name: makeMove
           required: true
-          description: The move to play, in UCI format
+          description: The makeMove to play, in UCI format
           schema:
             type: string
             example: "e2e4"

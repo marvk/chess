@@ -1,6 +1,7 @@
 package net.marvk.chess.board;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -25,7 +26,12 @@ public enum ColoredPiece {
 
     private static final Map<Character, ColoredPiece> SAN_PIECE_MAP =
             Arrays.stream(ColoredPiece.values())
-                  .collect(Collectors.toUnmodifiableMap(ColoredPiece::getSan, Function.identity()));
+                  .collect(
+                          Collectors.collectingAndThen(
+                                  Collectors.toMap(ColoredPiece::getSan, Function.identity()),
+                                  Collections::unmodifiableMap
+                          )
+                  );
 
     ColoredPiece(final Piece piece, final Color color, final char san) {
         this.piece = piece;
