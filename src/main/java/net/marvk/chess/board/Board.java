@@ -13,5 +13,5 @@ public interface Board {
 
     List<MoveResult> getValidMoves(final Color color);
 
-    MoveResult makeMove(final ColoredPiece coloredPiece, final Square square);
+    MoveResult makeMove(final Move move);
 }

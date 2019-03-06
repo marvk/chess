@@ -1,5 +1,7 @@
 package net.marvk.chess.board;
 
+import java.util.Arrays;
+
 public final class Boards {
     private Boards() {
         throw new AssertionError("No instances of utility class " + Boards.class);
@@ -15,7 +17,7 @@ public final class Boards {
         final String[] ranks = piecePlacement.split("/");
 
         for (int rank = 0; rank < target.length; rank++) {
-            final String rankRecord = ranks[rank];
+            final String rankRecord = ranks[ranks.length - rank - 1];
 
             int file = 0;
 

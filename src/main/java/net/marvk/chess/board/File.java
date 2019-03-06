@@ -1,6 +1,7 @@
 package net.marvk.chess.board;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -18,6 +19,10 @@ public enum File {
     private static final Map<Character, File> FEN_FILE_MAP = Arrays.stream(File.values())
                                                                    .collect(Collectors.toMap(File::getFen, Function.identity()));
 
+    private static final Map<Integer, File> INDEX_FILE_MAP = Arrays.stream(values())
+                                                                   .collect(Collectors.collectingAndThen(Collectors.toMap(File::getIndex, Function
+                                                                           .identity()), Collections::unmodifiableMap));
+
     private final char fen;
     private final int index;
 
@@ -32,6 +37,10 @@ public enum File {
 
     public int getIndex() {
         return index;
+    }
+
+    public File translate(final Direction direction) {
+        return INDEX_FILE_MAP.get(index + direction.getFileDifference());
     }
 
     public static File getFileFromFen(final Character fen) {

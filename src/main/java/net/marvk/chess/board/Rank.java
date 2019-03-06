@@ -1,6 +1,7 @@
 package net.marvk.chess.board;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -17,6 +18,11 @@ public enum Rank {
 
     private static final Map<Character, Rank> FEN_RANK_MAP = Arrays.stream(Rank.values())
                                                                    .collect(Collectors.toMap(Rank::getFen, Function.identity()));
+
+    private static final Map<Integer, Rank> INDEX_RANK_MAP = Arrays.stream(values())
+                                                                   .collect(Collectors.collectingAndThen(Collectors.toMap(Rank::getIndex, Function
+                                                                           .identity()), Collections::unmodifiableMap));
+
     private final char fen;
     private final int index;
 
@@ -33,7 +39,11 @@ public enum Rank {
         return index;
     }
 
-    public static Rank getRankFromfen(final Character fen) {
+    public Rank translate(final Direction direction) {
+        return INDEX_RANK_MAP.get(index + direction.getRankDifference());
+    }
+
+    public static Rank getRankFromFen(final Character fen) {
         return FEN_RANK_MAP.get(fen);
     }
 }

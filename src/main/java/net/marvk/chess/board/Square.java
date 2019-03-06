@@ -23,6 +23,14 @@ public enum Square {
                           )
                   );
 
+    private static final Map<Integer, Map<Integer, Square>> INDEX_RANK_FILE_SQUARE_MAP =
+            Arrays.stream(Square.values())
+                  .collect(Collectors.groupingBy(
+                          square -> square.getRank().getIndex(),
+                          Collectors.toMap(square -> square.getFile().getIndex(), Function.identity())
+                          )
+                  );
+
     private final Rank rank;
     private final File file;
 
@@ -39,7 +47,32 @@ public enum Square {
         final char rank = fen.charAt(0);
         final char file = fen.charAt(1);
 
-        return RANK_FILE_SQUARE_MAP.get(Rank.getRankFromfen(rank)).get(File.getFileFromFen(file));
+        return get(Rank.getRankFromFen(rank), File.getFileFromFen(file));
+    }
+
+    public static Square get(final Rank rank, final File file) {
+        return get(rank.getIndex(), file.getIndex());
+    }
+
+    public static Square get(final int rank, final int file) {
+        final Map<Integer, Square> fileSquareMap = INDEX_RANK_FILE_SQUARE_MAP.get(rank);
+
+        if (fileSquareMap == null) {
+            return null;
+        }
+
+        return fileSquareMap.get(file);
+    }
+
+    public Square translate(final Direction direction) {
+        final Rank translatedRank = rank.translate(direction);
+        final File translatedFile = file.translate(direction);
+
+        if (translatedRank == null || translatedFile == null) {
+            return null;
+        }
+
+        return get(translatedRank, translatedFile);
     }
 
     public Rank getRank() {
