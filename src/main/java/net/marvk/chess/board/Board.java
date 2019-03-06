@@ -6,47 +6,30 @@ public class Board {
     private BoardState boardState;
 
     public Board() {
-        board = new ColoredPiece[LENGTH][LENGTH];
+        this.board = new ColoredPiece[LENGTH][LENGTH];
     }
 
-    public Board(final String san) {
-        board = new ColoredPiece[LENGTH][LENGTH];
+    public Board(final Fen fen) {
+        this.board = new ColoredPiece[LENGTH][LENGTH];
+        this.boardState = new BoardState(fen);
 
-        final String[] split = san.split(" ");
-
-        boardState = new BoardState(split);
-
-        final String[] ranks = split[0].split("/");
-
-        for (int rank = 0; rank < LENGTH; rank++) {
-            final String rankRecord = ranks[rank];
-
-            int file = 0;
-
-            for (final char c : rankRecord.toCharArray()) {
-                if (c >= '0' && c <= '9') {
-                    file += c - '0';
-                } else {
-                    final ColoredPiece piece = ColoredPiece.getPieceFromSan(c);
-
-                    board[rank][file] = piece;
-
-                    file += 1;
-                }
-            }
-        }
+        Boards.parsePiecePlacement(fen.getPiecePlacement(), this.board);
     }
 
     public ColoredPiece getPiece(final Square square) {
-        return getPiece(square.getFile().getIndex(), square.getRank().getIndex());
+        return getPiece(square.getRank(), square.getFile());
+    }
+
+    public ColoredPiece getPiece(final Rank rank, final File file) {
+        return getPiece(rank.getIndex(), file.getIndex());
     }
 
     public ColoredPiece getPiece(final int rank, final int file) {
         return board[rank][file];
     }
 
-    public static void main(String[] args) {
-        final Board board = new Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    public static void main(final String[] args) {
+        final Board board = new Board(Fen.parse("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"));
 
         for (int i = 0; i < LENGTH; i++) {
             for (int j = 0; j < LENGTH; j++) {
