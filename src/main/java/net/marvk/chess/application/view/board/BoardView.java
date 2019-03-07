@@ -39,12 +39,5 @@ public class BoardView implements FxmlView<BoardViewModel> {
         }
 
         final boolean move = viewModel.move(source, target);
-
-        if (!move) {
-            return;
-        }
-//
-//        target.changeState(source.getState());
-//        source.changeState(null);
     }
 }

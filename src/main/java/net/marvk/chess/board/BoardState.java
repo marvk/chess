@@ -122,7 +122,14 @@ public class BoardState {
             return this;
         }
 
-        public BoardStateBuilder lostQueensideCastle(final Color color) {
+        public BoardStateBuilder lostCastle(final Color color) {
+            lostKingSideCastle(color);
+            lostQueenSideCastle(color);
+
+            return this;
+        }
+
+        public BoardStateBuilder lostQueenSideCastle(final Color color) {
             if (color == Color.BLACK) {
                 blackCastleQueen = false;
             } else if (color == Color.WHITE) {
@@ -132,7 +139,7 @@ public class BoardState {
             return this;
         }
 
-        public BoardStateBuilder lostKingsideCastle(final Color color) {
+        public BoardStateBuilder lostKingSideCastle(final Color color) {
             if (color == Color.BLACK) {
                 blackCastleKing = false;
             } else if (color == Color.WHITE) {

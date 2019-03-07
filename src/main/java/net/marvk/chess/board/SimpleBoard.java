@@ -95,6 +95,26 @@ public class SimpleBoard implements Board {
             nextState.possibleEnPassant(enPassantSquare);
         }
 
+        if (move.getColoredPiece() == ColoredPiece.WHITE_KING) {
+            nextState.lostCastle(Color.WHITE);
+        } else if (move.getColoredPiece() == ColoredPiece.BLACK_KING) {
+            nextState.lostCastle(Color.BLACK);
+        }
+
+        if (move.getColoredPiece() == ColoredPiece.WHITE_ROOK) {
+            if (move.getSource() == Square.A1) {
+                nextState.lostQueenSideCastle(Color.WHITE);
+            } else if (move.getSource() == Square.H1) {
+                nextState.lostKingSideCastle(Color.WHITE);
+            }
+        } else if (move.getColoredPiece() == ColoredPiece.BLACK_ROOK) {
+            if (move.getSource() == Square.A8) {
+                nextState.lostQueenSideCastle(Color.BLACK);
+            } else if (move.getSource() == Square.H8) {
+                nextState.lostKingSideCastle(Color.BLACK);
+            }
+        }
+
         final SimpleBoard result = new SimpleBoard(this, nextState.build());
 
         for (final SquareColoredPiecePair swap : swaps) {
@@ -122,20 +142,25 @@ public class SimpleBoard implements Board {
 
         final Square kingSquare = maybeKingSquare.get();
 
+        return isInCheck(color, kingSquare);
+    }
+
+    @Override
+    public boolean isInCheck(final Color color, final Square square) {
         for (final Direction direction : Direction.KNIGHT_DIRECTIONS) {
-            if (discoverPieceSingleStep(kingSquare, direction) == ColoredPiece.getPiece(color.opposite(), Piece.KNIGHT)) {
+            if (discoverPieceSingleStep(square, direction) == ColoredPiece.getPiece(color.opposite(), Piece.KNIGHT)) {
                 return true;
             }
         }
 
         for (final Direction direction : Direction.CARDINAL_DIRECTIONS) {
-            if (discoverPieceSingleStep(kingSquare, direction) == ColoredPiece.getPiece(color.opposite(), Piece.KING)) {
+            if (discoverPieceSingleStep(square, direction) == ColoredPiece.getPiece(color.opposite(), Piece.KING)) {
                 return true;
             }
         }
 
         for (final Direction direction : Direction.ORTHOGONAL_DIRECTIONS) {
-            final ColoredPiece coloredPiece = discoverPieceMultiStep(kingSquare, direction);
+            final ColoredPiece coloredPiece = discoverPieceMultiStep(square, direction);
             if (coloredPiece == ColoredPiece.getPiece(color.opposite(), Piece.QUEEN)
                     || coloredPiece == ColoredPiece.getPiece(color.opposite(), Piece.ROOK)) {
                 return true;
@@ -143,7 +168,7 @@ public class SimpleBoard implements Board {
         }
 
         for (final Direction direction : Direction.DIAGONAL_DIRECTIONS) {
-            final ColoredPiece coloredPiece = discoverPieceMultiStep(kingSquare, direction);
+            final ColoredPiece coloredPiece = discoverPieceMultiStep(square, direction);
 
             if (coloredPiece == ColoredPiece.getPiece(color.opposite(), Piece.QUEEN)
                     || coloredPiece == ColoredPiece.getPiece(color.opposite(), Piece.BISHOP)) {
@@ -156,11 +181,11 @@ public class SimpleBoard implements Board {
 
         final ColoredPiece oppositePawn = ColoredPiece.getPiece(color.opposite(), Piece.PAWN);
 
-        if (getPiece(kingSquare.translate(westAttackDirection)) == oppositePawn) {
+        if (getPiece(square.translate(westAttackDirection)) == oppositePawn) {
             return true;
         }
 
-        if (getPiece(kingSquare.translate(eastAttackDirection)) == oppositePawn) {
+        if (getPiece(square.translate(eastAttackDirection)) == oppositePawn) {
             return true;
         }
 

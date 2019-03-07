@@ -20,4 +20,6 @@ public interface Board {
     BoardState getState();
 
     boolean isInCheck(Color color);
+
+    boolean isInCheck(Color color, Square square);
 }

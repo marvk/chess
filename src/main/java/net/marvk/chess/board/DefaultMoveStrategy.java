@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class DefaultMoveStrategy implements MoveStrategy {
+    private static final List<Piece> PROMOTION_PIECES = Arrays.asList(Piece.QUEEN, Piece.ROOK, Piece.KNIGHT, Piece.BISHOP);
+
     private static boolean isValidTarget(final Square target, final Board board, final Color sourceColor) {
         if (target == null) {
             return false;
@@ -83,6 +85,18 @@ public class DefaultMoveStrategy implements MoveStrategy {
 
     private static List<MoveResult> generalKingStrategy(final Square square, final Board board, final ColoredPiece coloredPiece) {
         final List<MoveResult> results = generalSingleStepStrategy(square, board, Direction.CARDINAL_DIRECTIONS, coloredPiece);
+
+        final MoveResult queenSideCastleMove = generateCastleMove(square, board, coloredPiece, Direction.WEST);
+
+        if (queenSideCastleMove != null) {
+            results.add(queenSideCastleMove);
+        }
+
+        final MoveResult kingSideCastleMove = generateCastleMove(square, board, coloredPiece, Direction.EAST);
+
+        if (kingSideCastleMove != null) {
+            results.add(kingSideCastleMove);
+        }
 
         results.removeIf(r -> r.getBoard().isInCheck(coloredPiece.getColor()));
 
@@ -172,8 +186,6 @@ public class DefaultMoveStrategy implements MoveStrategy {
         return Collections.emptyList();
     }
 
-    private static final List<Piece> PROMOTION_PIECES = Arrays.asList(Piece.QUEEN, Piece.ROOK, Piece.KNIGHT, Piece.BISHOP);
-
     private static List<MoveResult> generatePawnMoves(final Square source, final Square target, final Board board, final ColoredPiece coloredPiece) {
         final boolean blackPromotion = target.getRank() == Rank.RANK_1 && coloredPiece.getColor() == Color.BLACK;
         final boolean whitePromotion = target.getRank() == Rank.RANK_8 && coloredPiece.getColor() == Color.WHITE;
@@ -199,6 +211,76 @@ public class DefaultMoveStrategy implements MoveStrategy {
     private static boolean isValidAndOccupiedByAttackableOpponent(final Square square, final Board board, final Color color) {
         final ColoredPiece piece = board.getPiece(square);
         return square != null && piece != null && piece.getPiece() != Piece.KING && piece.getColor() != color;
+    }
+
+    private static MoveResult generateCastleMove(final Square source, final Board board, final ColoredPiece coloredPiece, final Direction direction) {
+        final Color color = coloredPiece.getColor();
+
+        if (color == Color.WHITE) {
+            if (
+                    direction == Direction.WEST
+                            && board.getState().canWhiteCastleQueen()
+                            && validCastle(source, Square.A1, Direction.WEST, board, color)
+            ) {
+                return board.makeComplexMove(Move.castling(source, Square.C1, coloredPiece),
+                        new SquareColoredPiecePair(source, null),
+                        new SquareColoredPiecePair(Square.C1, coloredPiece),
+                        new SquareColoredPiecePair(Square.D1, ColoredPiece.getPiece(color, Piece.ROOK)),
+                        new SquareColoredPiecePair(Square.A1, null)
+                );
+            } else if (
+                    direction == Direction.EAST
+                            && board.getState().canWhiteCastleKing()
+                            && validCastle(source, Square.H1, Direction.EAST, board, color)
+            ) {
+                return board.makeComplexMove(Move.castling(source, Square.G1, coloredPiece),
+                        new SquareColoredPiecePair(source, null),
+                        new SquareColoredPiecePair(Square.G1, coloredPiece),
+                        new SquareColoredPiecePair(Square.F1, ColoredPiece.getPiece(color, Piece.ROOK)),
+                        new SquareColoredPiecePair(Square.H1, null)
+                );
+            }
+        } else {
+            if (
+                    direction == Direction.WEST
+                            && board.getState().canBlackCastleQueen()
+                            && validCastle(source, Square.A8, Direction.WEST, board, color)
+            ) {
+                return board.makeComplexMove(Move.castling(source, Square.C8, coloredPiece),
+                        new SquareColoredPiecePair(source, null),
+                        new SquareColoredPiecePair(Square.C8, coloredPiece),
+                        new SquareColoredPiecePair(Square.D8, ColoredPiece.getPiece(color, Piece.ROOK)),
+                        new SquareColoredPiecePair(Square.A8, null)
+                );
+            } else if (
+                    direction == Direction.EAST
+                            && board.getState().canBlackCastleKing()
+                            && validCastle(source, Square.H8, Direction.EAST, board, color)
+            ) {
+                return board.makeComplexMove(Move.castling(source, Square.G8, coloredPiece),
+                        new SquareColoredPiecePair(source, null),
+                        new SquareColoredPiecePair(Square.G8, coloredPiece),
+                        new SquareColoredPiecePair(Square.F8, ColoredPiece.getPiece(color, Piece.ROOK)),
+                        new SquareColoredPiecePair(Square.H8, null)
+                );
+            }
+        }
+
+        return null;
+    }
+
+    private static boolean validCastle(final Square from, final Square to, final Direction direction, final Board board, final Color color) {
+        Square current = from.translate(direction);
+
+        while (current != to) {
+            if (board.getPiece(current) != null || board.isInCheck(color, current)) {
+                return false;
+            }
+
+            current = current.translate(direction);
+        }
+
+        return true;
     }
 
     private static List<MoveResult> generalMultiStepStrategy(final Square square, final Board board, final List<Direction> directions, final ColoredPiece coloredPiece) {
