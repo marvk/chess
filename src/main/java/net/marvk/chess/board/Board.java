@@ -1,5 +1,6 @@
 package net.marvk.chess.board;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface Board {
@@ -13,5 +14,9 @@ public interface Board {
 
     List<MoveResult> getValidMoves(final Color color);
 
-    MoveResult makeMove(final Move move);
+    MoveResult makeSimpleMove(final Move move);
+
+    MoveResult makeComplexMove(final Move move, final Collection<SquareColoredPiecePair> pairs);
+
+    BoardState getState();
 }

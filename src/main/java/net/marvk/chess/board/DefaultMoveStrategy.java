@@ -1,6 +1,7 @@
 package net.marvk.chess.board;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -88,33 +89,51 @@ public class DefaultMoveStrategy implements MoveStrategy {
         final Direction westAttackDirection = isWhite ? Direction.NORTH_WEST : Direction.SOUTH_WEST;
         final Direction eastAttackDirection = isWhite ? Direction.NORTH_EAST : Direction.SOUTH_EAST;
 
+        final Square enPassantTargetSquare = board.getState().getEnPassantTargetSquare();
+
         final Square next = square.translate(forward);
 
         if (isValidAndNotOccupied(next, board)) {
-            results.add(board.makeMove(new Move(square, next, coloredPiece)));
+            results.add(board.makeSimpleMove(new Move(square, next, coloredPiece)));
 
             if (startingRank == square.getRank()) {
                 final Square afterNext = next.translate(forward);
 
                 if (isValidAndNotOccupied(afterNext, board)) {
-                    results.add(board.makeMove(new Move(square, afterNext, coloredPiece)));
+                    results.add(board.makeSimpleMove(new Move(square, afterNext, coloredPiece)));
                 }
             }
         }
 
-        final Square eastAttack = square.translate(eastAttackDirection);
+        final MoveResult eastAttack = generatePawnAttack(square, square.translate(eastAttackDirection), Direction.EAST, board, enPassantTargetSquare, coloredPiece);
 
-        if (isValidAndOccupiedByAttackableOpponent(eastAttack, board, coloredPiece.getColor())) {
-            results.add(board.makeMove(new Move(square, eastAttack, coloredPiece)));
+        if (eastAttack != null) {
+            results.add(eastAttack);
         }
 
-        final Square westAttack = square.translate(westAttackDirection);
+        final MoveResult westAttack = generatePawnAttack(square, square.translate(westAttackDirection), Direction.WEST, board, enPassantTargetSquare, coloredPiece);
 
-        if (isValidAndOccupiedByAttackableOpponent(westAttack, board, coloredPiece.getColor())) {
-            results.add(board.makeMove(new Move(square, westAttack, coloredPiece)));
+        if (westAttack != null) {
+            results.add(westAttack);
         }
 
         return results;
+    }
+
+    private static MoveResult generatePawnAttack(final Square square, final Square attackSquare, final Direction west, final Board board, final Square enPassantTargetSquare, final ColoredPiece coloredPiece) {
+        if (isValidAndOccupiedByAttackableOpponent(attackSquare, board, coloredPiece.getColor())) {
+            return board.makeSimpleMove(new Move(square, attackSquare, coloredPiece));
+        }
+
+        if (enPassantTargetSquare == attackSquare && isValidAndNotOccupied(enPassantTargetSquare, board)) {
+            return board.makeComplexMove(new Move(square, attackSquare, coloredPiece), Arrays.asList(
+                    new SquareColoredPiecePair(square, null),
+                    new SquareColoredPiecePair(attackSquare, coloredPiece),
+                    new SquareColoredPiecePair(square.translate(west), null)
+            ));
+        }
+
+        return null;
     }
 
     private static boolean isValidAndNotOccupied(final Square square, final Board board) {
@@ -148,7 +167,7 @@ public class DefaultMoveStrategy implements MoveStrategy {
                 current = current.translate(direction);
 
                 if (isValidTarget(current, board, coloredPiece.getColor())) {
-                    result.add(board.makeMove(new Move(square, current, coloredPiece)));
+                    result.add(board.makeSimpleMove(new Move(square, current, coloredPiece)));
 
                     if (board.getPiece(current) != null) {
                         break;
@@ -169,7 +188,7 @@ public class DefaultMoveStrategy implements MoveStrategy {
                          .map(square::translate)
                          .filter(sq -> isValidTarget(sq, board, coloredPiece.getColor()))
                          .map(target -> new Move(square, target, coloredPiece))
-                         .map(board::makeMove)
+                         .map(board::makeSimpleMove)
                          .collect(Collectors.toList());
     }
 

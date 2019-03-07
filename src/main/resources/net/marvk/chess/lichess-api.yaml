@@ -13,33 +13,39 @@ info:
   \ - [Download all lichess rated games](https://database.lichess.org/)\n\
   \n## Endpoint\n\
   \ All requests go to `https://lichess.org`. Language subdomains are deprecated and will be discontinued.\n\
-  \ ## Rate limiting\n\
+  \n## Clients\n\
+  \ - [Python general API](https://github.com/rhgrant10/berserk).\n\
+  \ - [Python Lichess Bot](https://github.com/careless25/lichess-bot)\n\
+  \n## Rate limiting\n\
   \ All requests are rate limited using various strategies,\
   \ to ensure the API remains responsive for everyone.\n\
   \ Only make one request at a time.\n\
   \ If you receive an HTTP response with a [429 status](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes#429),\
   \ please wait a full minute before resuming API usage."
-  contact:
-    url: https://lichess.org
 servers:
   - url: https://lichess.org
 tags:
-- name: Account
-  description: Read and write account informations and preferences.
-- name: Users
-  description: Access registered users on Lichess.
-- name: Games
-  description: Access games played on Lichess.
-- name: Teams
-  description: Access Lichess teams and their members.
-- name: Chess Bot
-  description: "Play on Lichess as a chess engine.\n
+  - name: Account
+    description: Read and write account informations and preferences.
+  - name: Users
+    description: Access registered users on Lichess.
+  - name: Relations
+    description: Access relations between users.
+  - name: Games
+    description: Access games played on Lichess.
+  - name: Teams
+    description: Access Lichess teams and their members.
+  - name: Challenges
+    description: Send and receive challenges to play.
+  - name: Chess Bot
+    description: "Play on Lichess as a chess engine.\n
+  \ Read the [blog post announcement of lichess bots](https://lichess.org/blog/WvDNticAAMu_mHKP/welcome-lichess-bots).\n\n
   \ Only works with [Bot accounts](#operation/botAccountUpgrade).\n\n\
   \n## Features\n\
   \ - [Stream incoming chess moves](#operation/botGameStream)\n\
   \ - [Play chess moves](#operation/botGameMove)\n\
   \ - [Read](#operation/botGameStream) and [write](#operation/botGameChat) in the player and spectator chats\n\
-  \ - [Receive](#operation/apiStreamEvent) and [accept](#operation/challengeAccept) (or [decline](#operation/challengeDecline)) challenges\n\
+  \ - [Receive](#operation/apiStreamEvent), [create](#operation/challengeCreate) and [accept](#operation/challengeAccept) (or [decline](#operation/challengeDecline)) challenges\n\
   \ - [Abort](#operation/botGameAbort) and [resign](#operation/botGameResign) games\n\
   \n## Integrations\n\
   \ - [Python3 lichess-bot](https://github.com/careless25/lichess-bot) (official)\n\
@@ -49,11 +55,13 @@ tags:
   \ - Join the [Lichess Bots team](https://lichess.org/team/lichess-bots) with your bot account\n\
   \ - [Get help in the discord channel](https://discord.gg/quwueFd)\n\
   \ - Watch [Lichess Bot TV](https://lichess.org/tv/bot)"
-- name: Tournaments
-  description: Access tournaments played on Lichess.
-- name: OAuth
-  description: |
-    Requests taking advantage of OAuth authentication.
+  - name: Tournaments
+    description: Access tournaments played on Lichess.
+  - name: OAuth
+    description: |
+      Requests taking advantage of OAuth authentication.
+  - name: Deprecated
+    description: Endpoints you should not be using anymore
 paths:
   /api/users/status:
     get:
@@ -107,19 +115,19 @@ paths:
                       type: boolean
                       nullable: true
                 example: [
-                  {
-                    "id": "aliquantus",
-                    "name": "Aliquantus"
-                  },
-                  {
-                    "id": "chess-network",
-                    "name": "Chess-Network",
-                    "title": "NM",
-                    "online": true,
-                    "playing": true,
-                    "streaming": true,
-                    "patron": true
-                  }
+                {
+                  "id": "aliquantus",
+                  "name": "Aliquantus"
+                },
+                {
+                  "id": "chess-network",
+                  "name": "Chess-Network",
+                  "title": "NM",
+                  "online": true,
+                  "playing": true,
+                  "streaming": true,
+                  "patron": true
+                }
                 ]
 
   /player:
@@ -217,6 +225,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserExtended'
+
+  /api/user/{username}/rating-history:
+    get:
+      operationId: apiUserRatingHistory
+      summary: Get rating history of a user
+      description: |
+        Read rating history of a user, for all perf types.
+        There is at most one entry per day.
+        Format of an entry is `[year, month, day, rating]`.
+        `month` starts at zero (January).
+      tags:
+        - Users
+      security:
+        - None: []
+      parameters:
+        - in: path
+          name: username
+          schema:
+            type: string
+          required: true
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RatingHistory'
 
   /api/user/{username}/activity:
     get:
@@ -317,7 +351,7 @@ paths:
       description: |
         Read the preferences of the logged in user.
 
-        - https://lichess.org/account/preferences
+        - https://lichess.org/account/preferences/game-display
         - https://github.com/ornicar/lila/blob/master/modules/pref/src/main/Pref.scala
       tags:
         - Account
@@ -383,7 +417,7 @@ paths:
 
   /game/export/{gameId}:
     get:
-      operationId: gamePng
+      operationId: gamePgn
       summary: Export one game
       description: |
         Download one game in PGN or JSON format. Only finished games can be downloaded.
@@ -394,7 +428,7 @@ paths:
       parameters:
         - in: path
           name: gameId
-          description: The game ID.
+          description: The game ID (8 characters).
           required: true
           schema:
             type: string
@@ -437,19 +471,28 @@ paths:
           schema:
             type: boolean
             default: true
+        - in: query
+          name: literate
+          description: |
+            Insert textual annotations in the PGN about the opening, analysis variations, mistakes, and game termination.
+
+            Example: `5... g4? { (-0.98 → 0.60) Mistake. Best move was h6. } (5... h6 6. d4 Ne7 7. g3 d5 8. exd5 fxg3 9. hxg3 c6 10. dxc6)`
+          schema:
+            type: boolean
+            default: false
       responses:
         200:
           content:
             application/x-chess-pgn:
               schema:
                 $ref: '#/components/schemas/GamePgn'
-            application/x-ndjson:
+            application/json:
               schema:
                 $ref: '#/components/schemas/GameJson'
 
-  /games/export/{username}:
+  /api/games/user/{username}:
     get:
-      operationId: gamesExportUsername
+      operationId: apiGamesUser
       summary: Export games of a user
       description: |
         Download all games of any user in PGN or [ndjson](http://ndjson.org/) format.
@@ -546,6 +589,12 @@ paths:
             type: boolean
             default: null
         - in: query
+          name: ongoing
+          description: "[Filter] Also include ongoing games"
+          schema:
+            type: boolean
+            default: false
+        - in: query
           name: moves
           description: Include the PGN moves.
           schema:
@@ -593,6 +642,16 @@ paths:
             application/x-ndjson:
               schema:
                 $ref: '#/components/schemas/GameJson'
+
+  /games/export/{username}:
+    get:
+      operationId: gamesExportUsername
+      deprecated: true
+      summary: Export games of a user
+      description: |
+        See [/api/games/user/{username}](https://lichess.org/api#operation/apiGamesUser)
+      tags:
+        - Deprecated
 
   /games/export/_ids:
     post:
@@ -696,6 +755,35 @@ paths:
               schema:
                 example: {"id":"A5fcMO3k","rated":true,"variant":"standard","speed":"bullet","perf":"bullet","createdAt":1525789431889,"status":20,"clock":{"initial":60,"increment":0,"totalTime":60},"players":{"white":{"userId":"kastorcito","rating":2617},"black":{"userId":"er_or","rating":2288}}}
 
+  /api/account/playing:
+    get:
+      operationId: apiAccountPlaying
+      summary: Get ongoing games
+      description: |
+        Get the ongoing games of the current user.
+        Real-time and correspondence games are included.
+        The most urgent games are listed first.
+      tags:
+        - Games
+        - OAuth
+      security:
+        - OAuth2: []
+      parameters:
+        - in: query
+          name: nb
+          description: Max number of games to fetch
+          schema:
+            type: integer
+            default: 9
+            minimum: 1
+            maximum: 50
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                example: {"nowPlaying":[{"fullId":"knbD9FPUqhra","gameId":"knbD9FPU","fen":"rnbqkbnr/pp3pp1/8/3p3p/1PpPp3/P1P1P3/5PPP/RNBQKBNR","color":"white","lastMove":"c5c4","variant":{"key":"standard","name":"Standard"},"speed":"correspondence","perf":"correspondence","rated":true,"opponent":{"id":"thibot","username":"BOT thibot","rating":1500},"isMyTurn":true}]}
+
   /tv/channels:
     get:
       operationId: tvChannels
@@ -736,6 +824,222 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Tournament'
+    post:
+      operationId: apiTournamentPost
+      summary: Create a new tournament
+      description: |
+        Create a public or private tournament to your taste.
+
+        This endpoint mirrors the form on https://lichess.org/tournament/new.
+
+        You can create up to 2 tournaments per day.
+      tags:
+        - Tournaments
+      security:
+        - OAuth2: ["tournament:write"]
+      requestBody:
+        description: Parameters of the tournament
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: The tournament name. Leave empty to get a random Grandmaster name
+                clockTime:
+                  type: number
+                  description: Clock initial time in minutes
+                  example: 2
+                  minimum: 0
+                  maximum: 60
+                  enum:
+                    - 0
+                    - 0.25
+                    - 0.5
+                    - 0.75
+                    - 1
+                    - 1.5
+                    - 2
+                    - 3
+                    - 4
+                    - 5
+                    - 6
+                    - 7
+                clockIncrement:
+                  type: integer
+                  description: Clock increment in seconds
+                  example: 1
+                  minimum: 0
+                  maximum: 60
+                minutes:
+                  type: integer
+                  description: How long the tournament lasts, in minutes
+                  example: 60
+                  minimum: 0
+                  maximum: 360
+                waitMinutes:
+                  type: integer
+                  description: How long to wait before starting the tournament, from now, in minutes
+                  minimum: 0
+                  maximum: 360
+                  default: 5
+                startDate:
+                  type: integer
+                  description: Timestamp to start the tournament at a given date and time. Overrides the `waitMinutes` setting
+                variant:
+                  type: string
+                  description: The variant to use in tournament games
+                  enum:
+                    - standard
+                    - chess960
+                    - crazyhouse
+                    - antichess
+                    - atomic
+                    - horde
+                    - kingOfTheHill
+                    - racingKings
+                    - threeCheck
+                  default: standard
+                rated:
+                  type: boolean
+                  description: Games are rated and impact players ratings
+                  default: true
+                position:
+                  type: string
+                  description: Custom initial position (in FEN) for all games of the tournament. Must be one of [these positions](https://github.com/ornicar/scalachess/blob/ab61b7e6d8d4ab602f6366b29b0e5715717e8944/src/main/scala/StartingPosition.scala#L25)
+                  default: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+                berserkable:
+                  type: boolean
+                  description: Whether the players can use berserk
+                  default: true
+                # "conditions.titled":
+                #   type: boolean
+                #   description: Whether to require a title to enter the tournament
+                #   default: false
+                password:
+                  type: string
+                  description: Make the tournament private, and restrict access with a password
+              required:
+                - clockTime
+                - clockIncrement
+                - minutes
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tournament'
+        400:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/tournament/{id}/games:
+    get:
+      operationId: gamesByTournament
+      summary: Export games of a tournament
+      description: |
+        Download games of a tournament PGN or [ndjson](http://ndjson.org/) format.
+
+        Games are sorted by reverse chronological order (most recent first)
+      tags:
+        - Tournaments
+      security:
+        - None: []
+      parameters:
+        - in: path
+          name: id
+          description: The tournament ID.
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: moves
+          description: Include the PGN moves.
+          schema:
+            type: boolean
+            default: true
+        - in: query
+          name: tags
+          description: Include the PGN tags.
+          schema:
+            type: boolean
+            default: true
+        - in: query
+          name: clocks
+          description: |
+            Include clock comments in the PGN moves, when available.
+
+            Example: `2. exd5 { [%clk 1:01:27] } e5 { [%clk 1:01:28] }`
+          schema:
+            type: boolean
+            default: false
+        - in: query
+          name: evals
+          description: |
+            Include analysis evaluation comments in the PGN, when available.
+
+            Example: `12. Bxf6 { [%eval 0.23] } a3 { [%eval -1.09] }`
+          schema:
+            type: boolean
+            default: false
+        - in: query
+          name: opening
+          description: |
+            Include the opening name.
+
+            Example: `[Opening "King's Gambit Accepted, King's Knight Gambit"]`
+          schema:
+            type: boolean
+            default: false
+      responses:
+        200:
+          content:
+            application/x-chess-pgn:
+              schema:
+                $ref: '#/components/schemas/GamePgn'
+            application/x-ndjson:
+              schema:
+                $ref: '#/components/schemas/GameJson'
+
+  /api/tournament/{id}/results:
+    get:
+      operationId: resultsByTournament
+      summary: Get results of a tournament
+      description: |
+        Players of a tournament, with their score and performance, sorted by rank (best first).
+
+        **Players are streamed as [ndjson](http://ndjson.org/)**, i.e. one JSON object per line.
+
+        If called on an ongoing tournament, results can be inconsistent
+        due to ranking changes while the players are being streamed.
+        Use on finished tournaments for guaranteed consistency.
+      tags:
+        - Tournaments
+      security:
+        - None: []
+      parameters:
+        - in: path
+          name: id
+          description: The tournament ID.
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: nb
+          description: Max number of players to fetch
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        200:
+          content:
+            application/x-ndjson:
+              schema:
+                example: {"rank":4,"score":389,"rating":2618,"username":"opperwezen","title":"IM","performance":2423}
 
   /team/{teamId}/users:
     get:
@@ -800,18 +1104,112 @@ paths:
                       type: boolean
                       nullable: true
                 example: [
-                  {
-                    "id": "aliquantus",
-                    "name": "Aliquantus"
-                  },
-                  {
-                    "id": "chess-network",
-                    "name": "Chess-Network",
-                    "title": "NM",
-                    "playing": true,
-                    "patron": true
-                  }
+                {
+                  "id": "aliquantus",
+                  "name": "Aliquantus"
+                },
+                {
+                  "id": "chess-network",
+                  "name": "Chess-Network",
+                  "title": "NM",
+                  "playing": true,
+                  "patron": true
+                }
                 ]
+
+  /api/users/titled:
+    get:
+      operationId: usersTitled
+      summary: Get titled users
+      description: |
+        Get users by title. Several titles can be specified.
+
+        **Users are streamed as [ndjson](http://ndjson.org/)**, i.e. one JSON object per line.
+      tags:
+        - Users
+      security:
+        - None: []
+      parameters:
+        - in: query
+          name: titles
+          required: true
+          description: Titles separated by commas.
+          schema:
+            type: string
+            enum:
+              - GM
+              - WGM
+              - IM
+              - WIM
+              - FM
+              - WFM
+              - NM
+              - CM
+              - WCM
+              - WNM
+              - LM
+              - BOT
+          example: GM,WGM
+        - in: query
+          name: online
+          description: "[Filter] Only online players"
+          schema:
+            type: boolean
+            default: false
+      responses:
+        200:
+          content:
+            application/x-ndjson:
+              schema:
+                $ref: '#/components/schemas/UserLight'
+
+  /api/user/{username}/following:
+    get:
+      operationId: apiUserFollowing
+      summary: Get users followed by a user
+      description: |
+        **Users are streamed as [ndjson](http://ndjson.org/)**, i.e. one JSON object per line.
+      tags:
+        - Relations
+      security:
+        - None: []
+      parameters:
+        - in: path
+          name: username
+          schema:
+            type: string
+            example: "thibault"
+          required: true
+      responses:
+        200:
+          content:
+            application/x-ndjson:
+              schema:
+                $ref: '#/components/schemas/UserExtended'
+
+  /api/user/{username}/followers:
+    get:
+      operationId: apiUserFollowers
+      summary: Get users who follow a user
+      description: |
+        **Users are streamed as [ndjson](http://ndjson.org/)**, i.e. one JSON object per line.
+      tags:
+        - Relations
+      security:
+        - None: []
+      parameters:
+        - in: path
+          name: username
+          schema:
+            type: string
+            example: "thibault"
+          required: true
+      responses:
+        200:
+          content:
+            application/x-ndjson:
+              schema:
+                $ref: '#/components/schemas/UserExtended'
 
   /api/bot/account/upgrade:
     post:
@@ -832,7 +1230,6 @@ paths:
         - Chess Bot
       security:
         - OAuth2: ["bot:play"]
-      parameters:
       responses:
         200:
           content:
@@ -858,8 +1255,9 @@ paths:
       \ When the stream opens, all current challenges and games are sent."
       tags:
         - Chess Bot
+        - Challenges
       security:
-        - OAuth2: []
+        - OAuth2: ["challenge:read", "bot:play"]
       responses:
         200:
           content:
@@ -901,7 +1299,7 @@ paths:
   /api/bot/game/{gameId}/move/{move}:
     post:
       operationId: botGameMove
-      summary: Make a makeMove
+      summary: Make a move
       description: |
         Make a move in a game being played by a bot.
       tags:
@@ -916,9 +1314,9 @@ paths:
             example: "5IrD6Gzz"
           required: true
         - in: path
-          name: makeMove
+          name: move
           required: true
-          description: The makeMove to play, in UCI format
+          description: The move to play, in UCI format
           schema:
             type: string
             example: "e2e4"
@@ -962,8 +1360,8 @@ paths:
                 room:
                   type: string
                   enum:
-                  - player
-                  - spectator
+                    - player
+                    - spectator
                 text:
                   type: string
                   example: "Thank you for the game!"
@@ -1040,6 +1438,95 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /api/challenge/{username}:
+    post:
+      operationId: challengeCreate
+      summary: Create a challenge
+      description: |
+        Challenge someone to play. The targeted player can choose to accept or decline.
+
+        If the challenge is accepted, you will be notified on the [event stream](#operation/apiStreamEvent)
+        that a new game has started. The game ID will be the same as the challenge ID.
+      tags:
+        - Challenges
+      security:
+        - OAuth2: ["challenge:write", "bot:play"]
+      parameters:
+        - in: path
+          name: username
+          schema:
+            type: string
+            example: "LeelaChess"
+          required: true
+      requestBody:
+        description: Parameters of the challenge
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                rated:
+                  type: boolean
+                  description: Game is rated and impacts players ratings
+                'clock.limit':
+                  type: number
+                  description: Clock initial time in seconds. If empty, a correspondence game is created.
+                  example: 300
+                  minimum: 0
+                  maximum: 10800
+                'clock.increment':
+                  type: integer
+                  description: Clock increment in seconds. If empty, a correspondence game is created.
+                  example: 1
+                  minimum: 0
+                  maximum: 60
+                days:
+                  type: integer
+                  description: Days per move, for correspondence games. Clock settings must be omitted.
+                  example: 5
+                  minimum: 1
+                  maximum: 15
+                color:
+                  type: string
+                  description: Which color you get to play
+                  enum:
+                    - random
+                    - white
+                    - black
+                  default: 'random'
+                variant:
+                  type: string
+                  description: The variant of the game
+                  enum:
+                    - standard
+                    - chess960
+                    - crazyhouse
+                    - antichess
+                    - atomic
+                    - horde
+                    - kingOfTheHill
+                    - racingKings
+                    - threeCheck
+                  default: standard
+                position:
+                  type: string
+                  description: Custom initial position (in FEN). Variant must be standard, and the game cannot be rated.
+                  default: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+              required:
+                - rated
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChallengeJson'
+        400:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /api/challenge/{challengeId}/accept:
     post:
       operationId: challengeAccept
@@ -1049,9 +1536,9 @@ paths:
 
         You should receive a `gameStart` event on the [incoming events stream](#operation/apiStreamEvent).
       tags:
-        - Chess Bot
+        - Challenges
       security:
-        - OAuth2: []
+        - OAuth2: ["challenge:write", "bot:play"]
       parameters:
         - in: path
           name: challengeId
@@ -1078,9 +1565,9 @@ paths:
       description: |
         Decline an incoming challenge.
       tags:
-        - Chess Bot
+        - Challenges
       security:
-        - OAuth2: []
+        - OAuth2: ["challenge:write", "bot:play"]
       parameters:
         - in: path
           name: challengeId
@@ -1110,6 +1597,46 @@ components:
         default: application/vnd.lichess.v3+json
       required: true
   schemas:
+    ChallengeJson:
+      example: {
+        "id": "VU0nyvsW",
+        "color": "random",
+        "direction": "out",
+        "timeControl": {
+          "increment": 2,
+          "limit": 300,
+          "show": "5+2",
+          "type": "clock"
+        },
+        "variant": {
+          "key": "standard",
+          "name": "Standard",
+          "short": "Std"
+        },
+        "challenger": {
+          "id": "thibot",
+          "name": "thibot",
+          "online": true,
+          "provisional": false,
+          "rating": 1940,
+          "title": "BOT"
+        },
+        "destUser": {
+          "id": "leelachess",
+          "name": "LeelaChess",
+          "online": true,
+          "provisional": true,
+          "rating": 2670,
+          "title": "BOT"
+        },
+        "perf": {
+          "icon": ";",
+          "name": "Correspondence"
+        },
+        "rated": true,
+        "speed": "blitz",
+        "status": "created"
+      }
     GameJson:
       example: {
         "id": "q7ZvsdUF",
@@ -1127,7 +1654,7 @@ components:
               "name": "Lance5500",
               "title": "LM",
               "patron": true
-              },
+            },
             "rating": 2389,
             "ratingDiff": 4
           },
@@ -1184,50 +1711,57 @@ components:
         "createdAt": 1290415680000,
         "seenAt": 1522636452014,
         "profile": {
-            "bio": "Free bugs!",
-            "country": "EC",
-            "firstName": "Thibault",
-            "lastName": "Duplessis",
-            "links": "github.com/ornicar\r\ntwitter.com/ornicar",
-            "location": "On the road"
+          "bio": "Free bugs!",
+          "country": "EC",
+          "firstName": "Thibault",
+          "lastName": "Duplessis",
+          "links": "github.com/ornicar\r\ntwitter.com/ornicar",
+          "location": "On the road"
         },
         "language": "en-GB",
         "perfs": {
-            "blitz": {
-                "games": 2945,
-                "prog": -22,
-                "rating": 1609,
-                "rd": 60
-            },
-            "bullet": {
-                "games": 2324,
-                "prog": -9,
-                "rating": 1602,
-                "rd": 61
-            },
-            "chess960": {
-                "games": 347,
-                "prog": 84,
-                "rating": 1554,
-                "rd": 66
-            },
-            "puzzle": {
-                "games": 2248,
-                "prog": -67,
-                "rating": 1737,
-                "rd": 63
-            },
+          "blitz": {
+            "games": 2945,
+            "prog": -22,
+            "rating": 1609,
+            "rd": 60
+          },
+          "bullet": {
+            "games": 2324,
+            "prog": -9,
+            "rating": 1602,
+            "rd": 61
+          },
+          "chess960": {
+            "games": 347,
+            "prog": 84,
+            "rating": 1554,
+            "rd": 66
+          },
+          "puzzle": {
+            "games": 2248,
+            "prog": -67,
+            "rating": 1737,
+            "rd": 63
+          },
         },
         "patron": true,
-        "disabled" : false,
-        "engine" : false,
-        "booster" : false,
+        "disabled": false,
+        "engine": false,
+        "booster": false,
         "playTime": {
-            "total": 3296897,
-            "tv": 12134
+          "total": 3296897,
+          "tv": 12134
         }
       }
-
+    UserLight:
+      example: {
+        "id": "chess-network",
+        "name": "Chess-Network",
+        "title": "NM",
+        "playing": true,
+        "patron": true
+      }
     UserExtended:
       example: {
         "id": "georges",
@@ -1239,107 +1773,110 @@ components:
         "createdAt": 1290415680000,
         "seenAt": 1522636452014,
         "profile": {
-            "bio": "Free bugs!",
-            "country": "EC",
-            "firstName": "Thibault",
-            "lastName": "Duplessis",
-            "links": "github.com/ornicar\r\ntwitter.com/ornicar",
-            "location": "On the road"
+          "bio": "Free bugs!",
+          "country": "EC",
+          "firstName": "Thibault",
+          "lastName": "Duplessis",
+          "links": "github.com/ornicar\r\ntwitter.com/ornicar",
+          "location": "On the road"
         },
         "nbFollowers": 2735,
         "nbFollowing": 299,
         "completionRate": 97,
         "language": "en-GB",
         "count": {
-            "ai": 531,
-            "all": 9265,
-            "bookmark": 71,
-            "draw": 340,
-            "drawH": 331,
-            "import": 66,
-            "loss": 4480,
-            "lossH": 4207,
-            "me": 0,
-            "playing": 6,
-            "rated": 7157,
-            "win": 4440,
-            "winH": 4378
+          "ai": 531,
+          "all": 9265,
+          "bookmark": 71,
+          "draw": 340,
+          "drawH": 331,
+          "import": 66,
+          "loss": 4480,
+          "lossH": 4207,
+          "me": 0,
+          "playing": 6,
+          "rated": 7157,
+          "win": 4440,
+          "winH": 4378
         },
         "perfs": {
-            "blitz": {
-                "games": 2945,
-                "prog": -22,
-                "rating": 1609,
-                "rd": 60
-            },
-            "bullet": {
-                "games": 2324,
-                "prog": -9,
-                "rating": 1602,
-                "rd": 61
-            },
-            "chess960": {
-                "games": 347,
-                "prog": 84,
-                "rating": 1554,
-                "rd": 66
-            },
-            "puzzle": {
-                "games": 2248,
-                "prog": -67,
-                "rating": 1737,
-                "rd": 63
-            },
+          "blitz": {
+            "games": 2945,
+            "prog": -22,
+            "rating": 1609,
+            "rd": 60
+          },
+          "bullet": {
+            "games": 2324,
+            "prog": -9,
+            "rating": 1602,
+            "rd": 61
+          },
+          "chess960": {
+            "games": 347,
+            "prog": 84,
+            "rating": 1554,
+            "rd": 66
+          },
+          "puzzle": {
+            "games": 2248,
+            "prog": -67,
+            "rating": 1737,
+            "rd": 63
+          },
         },
         "patron": true,
-        "disabled" : false,
-        "engine" : false,
-        "booster" : false,
+        "disabled": false,
+        "engine": false,
+        "booster": false,
         "playTime": {
-            "total": 3296897,
-            "tv": 12134
+          "total": 3296897,
+          "tv": 12134
         }
       }
+
+    RatingHistory:
+      example: [{"name":"Bullet","points":[[2011,0,8,1472],[2011,0,9,1332],[2011,8,12,1314]]},{"name":"Blitz","points":[[2011,7,29,1332]]}]
 
     Top10s:
       example: {
         "bullet": [
-          {
-            "id": "bahadirozen",
-            "username": "BahadirOzen",
-            "perfs": {
-              "bullet": {
-                "rating": 3018,
-                "progress": 18
-              }
-            },
-            "online": true,
-            "title": "FM"
+        {
+          "id": "bahadirozen",
+          "username": "BahadirOzen",
+          "perfs": {
+            "bullet": {
+              "rating": 3018,
+              "progress": 18
+            }
           },
-          {
-            "id": "penguingim1",
-            "username": "penguingim1",
-            "perfs": {
-              "bullet": {
-                "rating": 2983,
-                "progress": -36
-              }
-            },
-            "title": "GM",
-            "online": true,
-            "patron": true
+          "online": true,
+          "title": "FM"
+        },
+        {
+          "id": "penguingim1",
+          "username": "penguingim1",
+          "perfs": {
+            "bullet": {
+              "rating": 2983,
+              "progress": -36
+            }
           },
-          {
-            "id": "night-king96",
-            "username": "Night-King96",
-            "perfs": {
-              "bullet": {
-                "rating": 2958,
-                "progress": 35
-              }
-            },
-            "title": "GM"
+          "title": "GM",
+          "online": true,
+          "patron": true
+        },
+        {
+          "id": "night-king96",
+          "username": "Night-King96",
+          "perfs": {
+            "bullet": {
+              "rating": 2958,
+              "progress": 35
+            }
           },
+          "title": "GM"
+        },
         ],
         "blitz": [],
         "rapid": [],
@@ -1358,42 +1895,42 @@ components:
     Leaderboard:
       example: {
         "users": [
-          {
-            "id": "bahadirozen",
-            "username": "BahadirOzen",
-            "perfs": {
-              "bullet": {
-                "rating": 3018,
-                "progress": 18
-              }
-            },
-            "online": true,
-            "title": "FM"
+        {
+          "id": "bahadirozen",
+          "username": "BahadirOzen",
+          "perfs": {
+            "bullet": {
+              "rating": 3018,
+              "progress": 18
+            }
           },
-          {
-            "id": "penguingim1",
-            "username": "penguingim1",
-            "perfs": {
-              "bullet": {
-                "rating": 2983,
-                "progress": -36
-              }
-            },
-            "title": "GM",
-            "online": true,
-            "patron": true
+          "online": true,
+          "title": "FM"
+        },
+        {
+          "id": "penguingim1",
+          "username": "penguingim1",
+          "perfs": {
+            "bullet": {
+              "rating": 2983,
+              "progress": -36
+            }
           },
-          {
-            "id": "night-king96",
-            "username": "Night-King96",
-            "perfs": {
-              "bullet": {
-                "rating": 2958,
-                "progress": 35
-              }
-            },
-            "title": "GM"
+          "title": "GM",
+          "online": true,
+          "patron": true
+        },
+        {
+          "id": "night-king96",
+          "username": "Night-King96",
+          "perfs": {
+            "bullet": {
+              "rating": 2958,
+              "progress": 35
+            }
           },
+          "title": "GM"
+        },
         ]
       }
 
@@ -1434,15 +1971,15 @@ components:
           "zen":0,
           "moveEvent":2
         }
-    }
+      }
 
     Tournament:
       example: {
         "id": "QITRjufu",
         "fullName": "U1700 SuperBlitz Arena",
         "clock": {
-            "increment": 0,
-            "limit": 180
+          "increment": 0,
+          "limit": 180
         },
         "minutes": 57,
         "rated": true,
@@ -1455,24 +1992,24 @@ components:
         "nbPlayers": 154,
         "status": 30,
         "perf": {
-            "icon": ")",
-            "key": "blitz",
-            "name": "Blitz",
-            "position": 1
+          "icon": ")",
+          "key": "blitz",
+          "name": "Blitz",
+          "position": 1
         },
         "schedule": {
-            "freq": "hourly",
-            "speed": "superblitz"
+          "freq": "hourly",
+          "speed": "superblitz"
         },
         "variant": {
-            "key": "standard",
-            "name": "Standard",
-            "short": "Std"
+          "key": "standard",
+          "name": "Standard",
+          "short": "Std"
         },
         "winner": {
-            "id": "camerun10",
-            "name": "camerun10",
-            "title": null
+          "id": "camerun10",
+          "name": "camerun10",
+          "title": null
         }
       }
 
@@ -1498,67 +2035,67 @@ components:
               type: integer
               description: Integer of Black Fisher increment.
       example: [
-        {
-          "type": "gameFull",
-          "id": "5IrD6Gzz",
-          "rated": true,
-          "variant": {
-            "key": "standard",
-            "name": "Standard",
-            "short": "Std"
-          },
-          "clock": {
-            "initial": 1200000,
-            "increment": 10000
-          },
-          "speed": "classical",
-          "perf": {
-            "name": "Classical"
-          },
-          "createdAt": 1523825103562,
-          "white": {
-            "id": "lovlas",
-            "name": "lovlas",
-            "provisional": false,
-            "rating": 2500,
-            "title": "IM"
-          },
-          "black": {
-            "id": "leela",
-            "name": "leela",
-            "rating": 2390,
-            "title": null
-          },
-          "initialFen": "startpos",
-          "state": {
-            "type": "gameState",
-            "moves": "e2e4 c7c5 f2f4 d7d6 g1f3 b8c6 f1c4 g8f6 d2d3 g7g6 e1g1 f8g7",
-            "wtime": 7598040,
-            "btime": 8395220,
-            "winc": 10000,
-            "binc": 10000
-          }
+      {
+        "type": "gameFull",
+        "id": "5IrD6Gzz",
+        "rated": true,
+        "variant": {
+          "key": "standard",
+          "name": "Standard",
+          "short": "Std"
         },
-        {
+        "clock": {
+          "initial": 1200000,
+          "increment": 10000
+        },
+        "speed": "classical",
+        "perf": {
+          "name": "Classical"
+        },
+        "createdAt": 1523825103562,
+        "white": {
+          "id": "lovlas",
+          "name": "lovlas",
+          "provisional": false,
+          "rating": 2500,
+          "title": "IM"
+        },
+        "black": {
+          "id": "leela",
+          "name": "leela",
+          "rating": 2390,
+          "title": null
+        },
+        "initialFen": "startpos",
+        "state": {
           "type": "gameState",
-          "moves": "e2e4 c7c5 f2f4 d7d6 g1f3 b8c6 f1c4 g8f6 d2d3 g7g6 e1g1 f8g7 b1c3",
+          "moves": "e2e4 c7c5 f2f4 d7d6 g1f3 b8c6 f1c4 g8f6 d2d3 g7g6 e1g1 f8g7",
           "wtime": 7598040,
           "btime": 8395220,
           "winc": 10000,
           "binc": 10000
-        },
-        {
-          "type": "chatLine",
-          "username": "thibault",
-          "text": "Good luck, have fun",
-          "room": "player"
-        },
-        {
-          "type": "chatLine",
-          "username": "lovlas",
-          "text": "!eval",
-          "room": "spectator"
         }
+      },
+      {
+        "type": "gameState",
+        "moves": "e2e4 c7c5 f2f4 d7d6 g1f3 b8c6 f1c4 g8f6 d2d3 g7g6 e1g1 f8g7 b1c3",
+        "wtime": 7598040,
+        "btime": 8395220,
+        "winc": 10000,
+        "binc": 10000
+      },
+      {
+        "type": "chatLine",
+        "username": "thibault",
+        "text": "Good luck, have fun",
+        "room": "player"
+      },
+      {
+        "type": "chatLine",
+        "username": "lovlas",
+        "text": "!eval",
+        "room": "spectator"
+      }
       ]
 
     StreamEvents:
@@ -1596,7 +2133,7 @@ components:
         \ - [NodeJS example](https://github.com/lichess-org/api/tree/master/example/oauth-authorization-code)\n\
         \ - [NodeJS Passport strategy to login with Lichess OAuth2](https://www.npmjs.com/package/passport-lichess)\n\
         \ - [Create a Lichess OAuth app](https://lichess.org/account/oauth/app)\n\
-        \ - [About authorization code flow]( [More info](https://www.digitalocean.com/community/tutorials/an-introduction-to-oauth-2)\n\
+        \ - [About authorization code flow](https://www.digitalocean.com/community/tutorials/an-introduction-to-oauth-2#grant-type-authorization-code)\n\
         \n### Personal API Token\n\
         \ Personal API tokens allow you to quickly interact with Lichess OAuth API.\n\
         \ - `curl https://lichess.org/api/account -H \"Authorization: Bearer <token>\"`\n\
@@ -1607,11 +2144,13 @@ components:
           authorizationUrl: https://oauth.lichess.org/oauth/authorize
           tokenUrl: https://oauth.lichess.org/oauth
           scopes:
-            "game:read": Download all your games
             "preference:read": Read your preferences
             "preference:write": Write your preferences
             "email:read": Read your email address
-            "bot:play": Play chess bot moves. Only for [Bot accounts](#operation/botAccountUpgrade)
+            "challenge:read": Read incoming challenges
+            "challenge:write": Create, accept, decline challenges
+            "tournament:write": Create tournaments
+            "bot:play": Play as a bot. Only for [Bot accounts](#operation/botAccountUpgrade)
     None:
       description: "No authorization required.\n\
         \ For requests that don't need an authenticated user."

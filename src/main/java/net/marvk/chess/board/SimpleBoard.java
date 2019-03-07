@@ -67,13 +67,29 @@ public class SimpleBoard implements Board {
     }
 
     @Override
-    public MoveResult makeMove(final Move move) {
+    public MoveResult makeSimpleMove(final Move move) {
         final SimpleBoard result = new SimpleBoard(this);
 
         result.setPiece(move.getSource(), null);
         result.setPiece(move.getTarget(), move.getColoredPiece());
 
         return new MoveResult(result, move);
+    }
+
+    @Override
+    public MoveResult makeComplexMove(final Move move, final Collection<SquareColoredPiecePair> swaps) {
+        final SimpleBoard result = new SimpleBoard(this);
+
+        for (final SquareColoredPiecePair swap : swaps) {
+            result.setPiece(swap.getSquare(), swap.getColoredPiece());
+        }
+
+        return new MoveResult(result, null);
+    }
+
+    @Override
+    public BoardState getState() {
+        return boardState;
     }
 
     private void setPiece(final Square source, final ColoredPiece piece) {
