@@ -7,14 +7,14 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public enum File {
-    FILE_1('1', 0),
-    FILE_2('2', 1),
-    FILE_3('3', 2),
-    FILE_4('4', 3),
-    FILE_5('5', 4),
-    FILE_6('6', 5),
-    FILE_7('7', 6),
-    FILE_8('8', 7);
+    FILE_A('a', 0),
+    FILE_B('b', 1),
+    FILE_C('c', 2),
+    FILE_D('d', 3),
+    FILE_E('e', 4),
+    FILE_F('f', 5),
+    FILE_G('g', 6),
+    FILE_H('h', 7);
 
     private static final Map<Character, File> FEN_FILE_MAP = Arrays.stream(File.values())
                                                                    .collect(Collectors.toMap(File::getFen, Function.identity()));

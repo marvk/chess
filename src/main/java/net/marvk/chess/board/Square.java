@@ -6,37 +6,37 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public enum Square {
-    A1(Rank.RANK_A, File.FILE_1), A2(Rank.RANK_A, File.FILE_2), A3(Rank.RANK_A, File.FILE_3), A4(Rank.RANK_A, File.FILE_4), A5(Rank.RANK_A, File.FILE_5), A6(Rank.RANK_A, File.FILE_6), A7(Rank.RANK_A, File.FILE_7), A8(Rank.RANK_A, File.FILE_8),
-    B1(Rank.RANK_B, File.FILE_1), B2(Rank.RANK_B, File.FILE_2), B3(Rank.RANK_B, File.FILE_3), B4(Rank.RANK_B, File.FILE_4), B5(Rank.RANK_B, File.FILE_5), B6(Rank.RANK_B, File.FILE_6), B7(Rank.RANK_B, File.FILE_7), B8(Rank.RANK_B, File.FILE_8),
-    C1(Rank.RANK_C, File.FILE_1), C2(Rank.RANK_C, File.FILE_2), C3(Rank.RANK_C, File.FILE_3), C4(Rank.RANK_C, File.FILE_4), C5(Rank.RANK_C, File.FILE_5), C6(Rank.RANK_C, File.FILE_6), C7(Rank.RANK_C, File.FILE_7), C8(Rank.RANK_C, File.FILE_8),
-    D1(Rank.RANK_D, File.FILE_1), D2(Rank.RANK_D, File.FILE_2), D3(Rank.RANK_D, File.FILE_3), D4(Rank.RANK_D, File.FILE_4), D5(Rank.RANK_D, File.FILE_5), D6(Rank.RANK_D, File.FILE_6), D7(Rank.RANK_D, File.FILE_7), D8(Rank.RANK_D, File.FILE_8),
-    E1(Rank.RANK_E, File.FILE_1), E2(Rank.RANK_E, File.FILE_2), E3(Rank.RANK_E, File.FILE_3), E4(Rank.RANK_E, File.FILE_4), E5(Rank.RANK_E, File.FILE_5), E6(Rank.RANK_E, File.FILE_6), E7(Rank.RANK_E, File.FILE_7), E8(Rank.RANK_E, File.FILE_8),
-    F1(Rank.RANK_F, File.FILE_1), F2(Rank.RANK_F, File.FILE_2), F3(Rank.RANK_F, File.FILE_3), F4(Rank.RANK_F, File.FILE_4), F5(Rank.RANK_F, File.FILE_5), F6(Rank.RANK_F, File.FILE_6), F7(Rank.RANK_F, File.FILE_7), F8(Rank.RANK_F, File.FILE_8),
-    G1(Rank.RANK_G, File.FILE_1), G2(Rank.RANK_G, File.FILE_2), G3(Rank.RANK_G, File.FILE_3), G4(Rank.RANK_G, File.FILE_4), G5(Rank.RANK_G, File.FILE_5), G6(Rank.RANK_G, File.FILE_6), G7(Rank.RANK_G, File.FILE_7), G8(Rank.RANK_G, File.FILE_8),
-    H1(Rank.RANK_H, File.FILE_1), H2(Rank.RANK_H, File.FILE_2), H3(Rank.RANK_H, File.FILE_3), H4(Rank.RANK_H, File.FILE_4), H5(Rank.RANK_H, File.FILE_5), H6(Rank.RANK_H, File.FILE_6), H7(Rank.RANK_H, File.FILE_7), H8(Rank.RANK_H, File.FILE_8);
+    A1(File.FILE_A, Rank.RANK_1), A2(File.FILE_A, Rank.RANK_2), A3(File.FILE_A, Rank.RANK_3), A4(File.FILE_A, Rank.RANK_4), A5(File.FILE_A, Rank.RANK_5), A6(File.FILE_A, Rank.RANK_6), A7(File.FILE_A, Rank.RANK_7), A8(File.FILE_A, Rank.RANK_8),
+    B1(File.FILE_B, Rank.RANK_1), B2(File.FILE_B, Rank.RANK_2), B3(File.FILE_B, Rank.RANK_3), B4(File.FILE_B, Rank.RANK_4), B5(File.FILE_B, Rank.RANK_5), B6(File.FILE_B, Rank.RANK_6), B7(File.FILE_B, Rank.RANK_7), B8(File.FILE_B, Rank.RANK_8),
+    C1(File.FILE_C, Rank.RANK_1), C2(File.FILE_C, Rank.RANK_2), C3(File.FILE_C, Rank.RANK_3), C4(File.FILE_C, Rank.RANK_4), C5(File.FILE_C, Rank.RANK_5), C6(File.FILE_C, Rank.RANK_6), C7(File.FILE_C, Rank.RANK_7), C8(File.FILE_C, Rank.RANK_8),
+    D1(File.FILE_D, Rank.RANK_1), D2(File.FILE_D, Rank.RANK_2), D3(File.FILE_D, Rank.RANK_3), D4(File.FILE_D, Rank.RANK_4), D5(File.FILE_D, Rank.RANK_5), D6(File.FILE_D, Rank.RANK_6), D7(File.FILE_D, Rank.RANK_7), D8(File.FILE_D, Rank.RANK_8),
+    E1(File.FILE_E, Rank.RANK_1), E2(File.FILE_E, Rank.RANK_2), E3(File.FILE_E, Rank.RANK_3), E4(File.FILE_E, Rank.RANK_4), E5(File.FILE_E, Rank.RANK_5), E6(File.FILE_E, Rank.RANK_6), E7(File.FILE_E, Rank.RANK_7), E8(File.FILE_E, Rank.RANK_8),
+    F1(File.FILE_F, Rank.RANK_1), F2(File.FILE_F, Rank.RANK_2), F3(File.FILE_F, Rank.RANK_3), F4(File.FILE_F, Rank.RANK_4), F5(File.FILE_F, Rank.RANK_5), F6(File.FILE_F, Rank.RANK_6), F7(File.FILE_F, Rank.RANK_7), F8(File.FILE_F, Rank.RANK_8),
+    G1(File.FILE_G, Rank.RANK_1), G2(File.FILE_G, Rank.RANK_2), G3(File.FILE_G, Rank.RANK_3), G4(File.FILE_G, Rank.RANK_4), G5(File.FILE_G, Rank.RANK_5), G6(File.FILE_G, Rank.RANK_6), G7(File.FILE_G, Rank.RANK_7), G8(File.FILE_G, Rank.RANK_8),
+    H1(File.FILE_H, Rank.RANK_1), H2(File.FILE_H, Rank.RANK_2), H3(File.FILE_H, Rank.RANK_3), H4(File.FILE_H, Rank.RANK_4), H5(File.FILE_H, Rank.RANK_5), H6(File.FILE_H, Rank.RANK_6), H7(File.FILE_H, Rank.RANK_7), H8(File.FILE_H, Rank.RANK_8);
 
-    private static final Map<Rank, Map<File, Square>> RANK_FILE_SQUARE_MAP =
+    private static final Map<File, Map<Rank, Square>> FILE_RANK_SQUARE_MAP =
             Arrays.stream(Square.values())
                   .collect(Collectors.groupingBy(
-                          Square::getRank,
-                          Collectors.toMap(Square::getFile, Function.identity())
+                          Square::getFile,
+                          Collectors.toMap(Square::getRank, Function.identity())
                           )
                   );
 
-    private static final Map<Integer, Map<Integer, Square>> INDEX_RANK_FILE_SQUARE_MAP =
+    private static final Map<Integer, Map<Integer, Square>> INDEX_FILE_RANK_SQUARE_MAP =
             Arrays.stream(Square.values())
                   .collect(Collectors.groupingBy(
-                          square -> square.getRank().getIndex(),
-                          Collectors.toMap(square -> square.getFile().getIndex(), Function.identity())
+                          square -> square.getFile().getIndex(),
+                          Collectors.toMap(square -> square.getRank().getIndex(), Function.identity())
                           )
                   );
 
-    private final Rank rank;
     private final File file;
+    private final Rank rank;
 
-    Square(final Rank rank, final File file) {
-        this.rank = rank;
+    Square(final File file, final Rank rank) {
         this.file = file;
+        this.rank = rank;
     }
 
     public static Square getSquareFromFen(final String fen) {
@@ -44,18 +44,18 @@ public enum Square {
             return null;
         }
 
-        final char rank = fen.charAt(0);
-        final char file = fen.charAt(1);
+        final char file = fen.charAt(0);
+        final char rank = fen.charAt(1);
 
-        return get(Rank.getRankFromFen(rank), File.getFileFromFen(file));
+        return get(File.getFileFromFen(file), Rank.getRankFromFen(rank));
     }
 
-    public static Square get(final Rank rank, final File file) {
+    public static Square get(final File file, final Rank rank) {
         return get(rank.getIndex(), file.getIndex());
     }
 
-    public static Square get(final int rank, final int file) {
-        final Map<Integer, Square> fileSquareMap = INDEX_RANK_FILE_SQUARE_MAP.get(rank);
+    public static Square get(final int file, final int rank) {
+        final Map<Integer, Square> fileSquareMap = INDEX_FILE_RANK_SQUARE_MAP.get(rank);
 
         if (fileSquareMap == null) {
             return null;
@@ -65,14 +65,14 @@ public enum Square {
     }
 
     public Square translate(final Direction direction) {
-        final Rank translatedRank = rank.translate(direction);
         final File translatedFile = file.translate(direction);
+        final Rank translatedRank = rank.translate(direction);
 
         if (translatedRank == null || translatedFile == null) {
             return null;
         }
 
-        return get(translatedRank, translatedFile);
+        return get(translatedFile, translatedRank);
     }
 
     public Rank getRank() {

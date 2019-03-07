@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public enum Direction {
     NORTH(1, 0),
@@ -31,6 +32,9 @@ public enum Direction {
     public static final List<Direction> ORTHOGONAL_DIRECTIONS = groupByType(Type.ORTHOGONAL);
     public static final List<Direction> DIAGONAL_DIRECTIONS = groupByType(Type.DIAGONAL);
     public static final List<Direction> KNIGHT_DIRECTIONS = groupByType(Type.KNIGHT);
+    public static final List<Direction> CARDINAL_DIRECTIONS =
+            Stream.concat(ORTHOGONAL_DIRECTIONS.stream(), DIAGONAL_DIRECTIONS.stream())
+                  .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
 
     Direction(final int rankDifference, final int fileDifference) {
         this.rankDifference = rankDifference;

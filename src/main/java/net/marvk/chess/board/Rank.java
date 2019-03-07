@@ -7,14 +7,14 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public enum Rank {
-    RANK_A('a', 0),
-    RANK_B('b', 1),
-    RANK_C('c', 2),
-    RANK_D('d', 3),
-    RANK_E('e', 4),
-    RANK_F('f', 5),
-    RANK_G('g', 6),
-    RANK_H('h', 7);
+    RANK_1('1', 0),
+    RANK_2('2', 1),
+    RANK_3('3', 2),
+    RANK_4('4', 3),
+    RANK_5('5', 4),
+    RANK_6('6', 5),
+    RANK_7('7', 6),
+    RANK_8('8', 7);
 
     private static final Map<Character, Rank> FEN_RANK_MAP = Arrays.stream(Rank.values())
                                                                    .collect(Collectors.toMap(Rank::getFen, Function.identity()));

@@ -84,8 +84,6 @@ public class Piece extends Pane {
     }
 
     private void release(final MouseEvent event) {
-        System.out.println(event);
-
         final Node intersectedNode = event.getPickResult().getIntersectedNode();
 
         final Node maybePieceNode =

@@ -33,21 +33,16 @@ public class SimpleBoard implements Board {
 
     @Override
     public ColoredPiece getPiece(final Square square) {
-        System.out.println("square = " + square);
-        return getPiece(square.getRank(), square.getFile());
+        return getPiece(square.getFile(), square.getRank());
     }
 
     @Override
-    public ColoredPiece getPiece(final Rank rank, final File file) {
-        System.out.println("rank = " + rank);
-        System.out.println("file = " + file);
-        return getPiece(rank.getIndex(), file.getIndex());
+    public ColoredPiece getPiece(final File file, final Rank rank) {
+        return getPiece(file.getIndex(), rank.getIndex());
     }
 
     @Override
-    public ColoredPiece getPiece(final int rank, final int file) {
-        System.out.println("rank = " + rank);
-        System.out.println("file = " + file);
+    public ColoredPiece getPiece(final int file, final int rank) {
         return board[rank][file];
     }
 
@@ -79,25 +74,5 @@ public class SimpleBoard implements Board {
 
     private void setPiece(final Square source, final ColoredPiece piece) {
         board[source.getRank().getIndex()][source.getFile().getIndex()] = piece;
-    }
-
-    public static void main(final String[] args) {
-        final Board board = new SimpleBoard(Fen.parse("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"));
-
-//        final List<MoveResult> validMoves = board.getValidMoves(Color.BLACK);
-
-        System.out.println(board.getPiece(Square.D1));
-        System.out.println();
-        System.out.println(board.getPiece(0, 3));
-
-//        System.out.println(validMoves);
-
-//        for (int i = 0; i < LENGTH; i++) {
-//            for (int j = 0; j < LENGTH; j++) {
-//                final ColoredPiece piece = board.getPiece(i, j);
-//                System.out.print(piece == null ? '.' : piece.getSan());
-//            }
-//            System.out.println();
-//        }
     }
 }

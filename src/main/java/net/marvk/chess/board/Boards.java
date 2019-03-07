@@ -1,6 +1,6 @@
 package net.marvk.chess.board;
 
-import java.util.Arrays;
+import java.util.StringJoiner;
 
 public final class Boards {
     private Boards() {
@@ -33,5 +33,22 @@ public final class Boards {
                 }
             }
         }
+    }
+
+    static String toString(final Board board) {
+        final StringJoiner stringJoiner = new StringJoiner("\n");
+
+        for (final Rank rank : Rank.values()) {
+            final StringBuilder stringBuilder = new StringBuilder();
+
+            for (final File file : File.values()) {
+                final ColoredPiece piece = board.getPiece(file.getIndex(), 8 - rank.getIndex() - 1);
+                stringBuilder.append(piece == null ? '.' : piece.getSan());
+            }
+
+            stringJoiner.add(stringBuilder.toString());
+        }
+
+        return stringJoiner.toString();
     }
 }

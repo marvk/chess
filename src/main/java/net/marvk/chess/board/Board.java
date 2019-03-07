@@ -5,9 +5,9 @@ import java.util.List;
 public interface Board {
     ColoredPiece getPiece(Square square);
 
-    ColoredPiece getPiece(Rank rank, File file);
+    ColoredPiece getPiece(File file, Rank rank);
 
-    ColoredPiece getPiece(int rank, int file);
+    ColoredPiece getPiece(int file, int rank);
 
     ColoredPiece[][] getBoard();
 
