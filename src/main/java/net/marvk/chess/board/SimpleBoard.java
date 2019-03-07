@@ -129,8 +129,6 @@ public class SimpleBoard implements Board {
         for (final Direction direction : Direction.DIAGONAL_DIRECTIONS) {
             final ColoredPiece coloredPiece = discoverPieceMultiStep(kingSquare, direction);
 
-            System.out.println(coloredPiece);
-
             if (coloredPiece == ColoredPiece.getPiece(color.opposite(), Piece.QUEEN)
                     || coloredPiece == ColoredPiece.getPiece(color.opposite(), Piece.BISHOP)) {
                 return true;
