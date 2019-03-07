@@ -28,11 +28,15 @@ public class SimpleBoard implements Board {
         }
 
         //TODO
-        this.boardState = null;
+        this.boardState = simpleBoard.boardState;
     }
 
     @Override
     public ColoredPiece getPiece(final Square square) {
+        if (square == null) {
+            return null;
+        }
+
         return getPiece(square.getFile(), square.getRank());
     }
 

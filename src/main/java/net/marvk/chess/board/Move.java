@@ -4,11 +4,17 @@ public class Move {
     private final Square source;
     private final Square target;
     private final ColoredPiece coloredPiece;
+    private final ColoredPiece promoteTo;
 
-    public Move(final Square source, final Square target, final ColoredPiece coloredPiece) {
+    public Move(final Square source, final Square target, final ColoredPiece coloredPiece, final ColoredPiece promoteTo) {
         this.source = source;
         this.target = target;
         this.coloredPiece = coloredPiece;
+        this.promoteTo = promoteTo;
+    }
+
+    public Move(final Square source, final Square target, final ColoredPiece coloredPiece) {
+        this(source, target, coloredPiece, null);
     }
 
     public Square getSource() {
@@ -23,6 +29,10 @@ public class Move {
         return coloredPiece;
     }
 
+    public ColoredPiece getPromoteTo() {
+        return promoteTo;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
@@ -32,7 +42,8 @@ public class Move {
 
         if (source != move.source) return false;
         if (target != move.target) return false;
-        return coloredPiece == move.coloredPiece;
+        if (coloredPiece != move.coloredPiece) return false;
+        return promoteTo == move.promoteTo;
 
     }
 
@@ -41,6 +52,7 @@ public class Move {
         int result = source != null ? source.hashCode() : 0;
         result = 31 * result + (target != null ? target.hashCode() : 0);
         result = 31 * result + (coloredPiece != null ? coloredPiece.hashCode() : 0);
+        result = 31 * result + (promoteTo != null ? promoteTo.hashCode() : 0);
         return result;
     }
 
@@ -50,6 +62,7 @@ public class Move {
                 "source=" + source +
                 ", target=" + target +
                 ", coloredPiece=" + coloredPiece +
+                ", promoteTo=" + promoteTo +
                 '}';
     }
 }
