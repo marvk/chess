@@ -3,6 +3,7 @@ package net.marvk.chess.board;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -90,6 +91,51 @@ public class SimpleBoard implements Board {
     @Override
     public BoardState getState() {
         return boardState;
+    }
+
+    @Override
+    public boolean isInCheck(final Color color) {
+        final Optional<Square> maybeKingSquare =
+                Arrays.stream(Square.values())
+                      .filter(square -> getPiece(square) == ColoredPiece.getPiece(color, Piece.KING))
+                      .findFirst();
+
+        if (!maybeKingSquare.isPresent()) {
+            return false;
+        }
+
+        final Square kingSquare = maybeKingSquare.get();
+
+        for (final Direction direction : Direction.KNIGHT_DIRECTIONS) {
+            if (discoverPieceSingleStep(kingSquare, direction) == ColoredPiece.getPiece(color.opposite(), Piece.KNIGHT)) {
+                return true;
+            }
+        }
+
+        //TODO
+
+        return false;
+    }
+
+    private ColoredPiece discoverPieceMultiStep(final Square source, final Direction direction) {
+        Square current = source;
+
+        while (current != null) {
+
+            final ColoredPiece piece = getPiece(current);
+
+            if (piece != null) {
+                return piece;
+            }
+
+            current = current.translate(direction);
+        }
+
+        return null;
+    }
+
+    private ColoredPiece discoverPieceSingleStep(final Square source, final Direction direction) {
+        return getPiece(source.translate(direction));
     }
 
     private void setPiece(final Square source, final ColoredPiece piece) {

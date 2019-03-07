@@ -19,4 +19,6 @@ public interface Board {
     MoveResult makeComplexMove(final Move move, final Collection<SquareColoredPiecePair> pairs);
 
     BoardState getState();
+
+    boolean isInCheck(Color color);
 }

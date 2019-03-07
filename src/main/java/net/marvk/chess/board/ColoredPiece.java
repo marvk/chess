@@ -34,6 +34,14 @@ public enum ColoredPiece {
                           )
                   );
 
+    private static final Map<Color, Map<Piece, ColoredPiece>> COLOR_PIECE_MAP =
+            Arrays.stream(ColoredPiece.values())
+                  .collect(Collectors.groupingBy(
+                          ColoredPiece::getColor,
+                          Collectors.toMap(ColoredPiece::getPiece, Function.identity())
+                          )
+                  );
+
     ColoredPiece(final Piece piece, final Color color, final char san) {
         this.piece = piece;
         this.color = color;
@@ -93,5 +101,15 @@ public enum ColoredPiece {
         }
 
         return SAN_PIECE_MAP.get(san.charAt(0));
+    }
+
+    public static ColoredPiece getPiece(final Color color, final Piece piece) {
+        final Map<Piece, ColoredPiece> pieceColoredPieceMap = COLOR_PIECE_MAP.get(color);
+
+        if (pieceColoredPieceMap == null) {
+            return null;
+        }
+
+        return pieceColoredPieceMap.get(piece);
     }
 }

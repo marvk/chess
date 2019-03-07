@@ -1,8 +1,18 @@
 package net.marvk.chess.board;
 
 public enum Color {
-    BLACK("b"),
-    WHITE("w");
+    BLACK("b") {
+        @Override
+        public Color opposite() {
+            return WHITE;
+        }
+    },
+    WHITE("w") {
+        @Override
+        public Color opposite() {
+            return BLACK;
+        }
+    };
 
     private final String fen;
 
@@ -25,4 +35,6 @@ public enum Color {
 
         return null;
     }
+
+    public abstract Color opposite();
 }

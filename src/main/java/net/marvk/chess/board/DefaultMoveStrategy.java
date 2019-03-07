@@ -80,6 +80,46 @@ public class DefaultMoveStrategy implements MoveStrategy {
         return generalPawnStrategy(square, board, ColoredPiece.WHITE_PAWN);
     }
 
+    private static List<MoveResult> generalKingStrategy(final Square square, final Board board, final ColoredPiece coloredPiece) {
+        final List<MoveResult> results = generalSingleStepStrategy(square, board, Direction.CARDINAL_DIRECTIONS, coloredPiece);
+
+        results.removeIf(r -> r.getBoard().isInCheck(coloredPiece.getColor()));
+
+        return results;
+    }
+
+    private static List<MoveResult> generalQueenStrategy(final Square square, final Board board, final ColoredPiece coloredPiece) {
+        final List<MoveResult> results = generalMultiStepStrategy(square, board, Direction.CARDINAL_DIRECTIONS, coloredPiece);
+
+        results.removeIf(r -> r.getBoard().isInCheck(coloredPiece.getColor()));
+
+        return results;
+    }
+
+    private static List<MoveResult> generalRookStrategy(final Square square, final Board board, final ColoredPiece coloredPiece) {
+        final List<MoveResult> results = generalMultiStepStrategy(square, board, Direction.ORTHOGONAL_DIRECTIONS, coloredPiece);
+
+        results.removeIf(r -> r.getBoard().isInCheck(coloredPiece.getColor()));
+
+        return results;
+    }
+
+    private static List<MoveResult> generalBishopStrategy(final Square square, final Board board, final ColoredPiece coloredPiece) {
+        final List<MoveResult> results = generalMultiStepStrategy(square, board, Direction.DIAGONAL_DIRECTIONS, coloredPiece);
+
+        results.removeIf(r -> r.getBoard().isInCheck(coloredPiece.getColor()));
+
+        return results;
+    }
+
+    private static List<MoveResult> generalKnightStrategy(final Square square, final Board board, final ColoredPiece coloredPiece) {
+        final List<MoveResult> results = generalSingleStepStrategy(square, board, Direction.KNIGHT_DIRECTIONS, coloredPiece);
+
+        results.removeIf(r -> r.getBoard().isInCheck(coloredPiece.getColor()));
+
+        return results;
+    }
+
     private static List<MoveResult> generalPawnStrategy(final Square square, final Board board, final ColoredPiece coloredPiece) {
         final List<MoveResult> results = new ArrayList<>();
 
@@ -117,6 +157,8 @@ public class DefaultMoveStrategy implements MoveStrategy {
             results.add(westAttack);
         }
 
+        results.removeIf(r -> r.getBoard().isInCheck(coloredPiece.getColor()));
+
         return results;
     }
 
@@ -143,18 +185,6 @@ public class DefaultMoveStrategy implements MoveStrategy {
     private static boolean isValidAndOccupiedByAttackableOpponent(final Square square, final Board board, final Color color) {
         final ColoredPiece piece = board.getPiece(square);
         return square != null && piece != null && piece.getPiece() != Piece.KING && piece.getColor() != color;
-    }
-
-    private static List<MoveResult> generalQueenStrategy(final Square square, final Board board, final ColoredPiece coloredPiece) {
-        return generalMultiStepStrategy(square, board, Direction.CARDINAL_DIRECTIONS, coloredPiece);
-    }
-
-    private static List<MoveResult> generalRookStrategy(final Square square, final Board board, final ColoredPiece coloredPiece) {
-        return generalMultiStepStrategy(square, board, Direction.ORTHOGONAL_DIRECTIONS, coloredPiece);
-    }
-
-    private static List<MoveResult> generalBishopStrategy(final Square square, final Board board, final ColoredPiece coloredPiece) {
-        return generalMultiStepStrategy(square, board, Direction.DIAGONAL_DIRECTIONS, coloredPiece);
     }
 
     private static List<MoveResult> generalMultiStepStrategy(final Square square, final Board board, final List<Direction> directions, final ColoredPiece coloredPiece) {
@@ -190,13 +220,5 @@ public class DefaultMoveStrategy implements MoveStrategy {
                          .map(target -> new Move(square, target, coloredPiece))
                          .map(board::makeSimpleMove)
                          .collect(Collectors.toList());
-    }
-
-    private static List<MoveResult> generalKnightStrategy(final Square square, final Board board, final ColoredPiece coloredPiece) {
-        return generalSingleStepStrategy(square, board, Direction.KNIGHT_DIRECTIONS, coloredPiece);
-    }
-
-    private static List<MoveResult> generalKingStrategy(final Square square, final Board board, final ColoredPiece coloredPiece) {
-        return generalSingleStepStrategy(square, board, Direction.CARDINAL_DIRECTIONS, coloredPiece);
     }
 }
