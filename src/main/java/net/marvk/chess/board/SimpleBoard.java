@@ -21,15 +21,14 @@ public class SimpleBoard implements Board {
         Boards.parsePiecePlacement(fen.getPiecePlacement(), this.board);
     }
 
-    public SimpleBoard(final SimpleBoard simpleBoard) {
+    private SimpleBoard(final SimpleBoard simpleBoard, final BoardState boardState) {
         this.board = new ColoredPiece[LENGTH][LENGTH];
 
         for (int i = 0; i < this.board.length; i++) {
             System.arraycopy(simpleBoard.board[i], 0, this.board[i], 0, LENGTH);
         }
 
-        //TODO
-        this.boardState = simpleBoard.boardState;
+        this.boardState = boardState;
     }
 
     @Override
@@ -69,23 +68,41 @@ public class SimpleBoard implements Board {
 
     @Override
     public MoveResult makeSimpleMove(final Move move) {
-        final SimpleBoard result = new SimpleBoard(this);
-
-        result.setPiece(move.getSource(), null);
-        result.setPiece(move.getTarget(), move.getColoredPiece());
-
-        return new MoveResult(result, move);
+        return makeComplexMove(
+                move,
+                new SquareColoredPiecePair(move.getSource(), null),
+                new SquareColoredPiecePair(move.getTarget(), move.getColoredPiece())
+        );
     }
 
     @Override
-    public MoveResult makeComplexMove(final Move move, final Collection<SquareColoredPiecePair> swaps) {
-        final SimpleBoard result = new SimpleBoard(this);
+    public MoveResult makeComplexMove(final Move move, final SquareColoredPiecePair... swaps) {
+        final BoardState.BoardStateBuilder nextState = boardState.nextBuilder();
+
+        final boolean pawnMoved = move.getColoredPiece().getPiece() == Piece.PAWN;
+        final boolean pieceAttacked = getPiece(move.getTarget()) != null;
+
+        if (pawnMoved || pieceAttacked) {
+            nextState.halfmoveReset();
+        }
+
+        if (move.isPawnDoubleMove()) {
+            final Direction direction = move.getColoredPiece()
+                                            .getColor() == Color.WHITE ? Direction.SOUTH : Direction.NORTH;
+
+            final Square enPassantSquare = move.getTarget().translate(direction);
+
+            nextState.possibleEnPassant(enPassantSquare);
+        }
+
+        final SimpleBoard result = new SimpleBoard(this, nextState.build());
 
         for (final SquareColoredPiecePair swap : swaps) {
             result.setPiece(swap.getSquare(), swap.getColoredPiece());
         }
 
-        return new MoveResult(result, null);
+        System.out.println("Arrays.toString(swaps) = " + Arrays.toString(swaps));
+        return new MoveResult(result, move);
     }
 
     @Override

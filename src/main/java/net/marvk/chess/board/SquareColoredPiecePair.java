@@ -16,4 +16,12 @@ public class SquareColoredPiecePair {
     public ColoredPiece getColoredPiece() {
         return coloredPiece;
     }
+
+    @Override
+    public String toString() {
+        return "SquareColoredPiecePair{" +
+                "square=" + square +
+                ", coloredPiece=" + coloredPiece +
+                '}';
+    }
 }

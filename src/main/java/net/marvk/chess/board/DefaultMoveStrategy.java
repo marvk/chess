@@ -2,6 +2,7 @@ package net.marvk.chess.board;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -134,48 +135,61 @@ public class DefaultMoveStrategy implements MoveStrategy {
         final Square next = square.translate(forward);
 
         if (isValidAndNotOccupied(next, board)) {
-            results.add(board.makeSimpleMove(new Move(square, next, coloredPiece)));
+            results.addAll(generatePawnMoves(square, next, board, coloredPiece));
 
             if (startingRank == square.getRank()) {
                 final Square afterNext = next.translate(forward);
 
                 if (isValidAndNotOccupied(afterNext, board)) {
-                    results.add(board.makeSimpleMove(new Move(square, afterNext, coloredPiece)));
+                    results.add(board.makeSimpleMove(Move.pawnDoubleMove(square, afterNext, coloredPiece)));
                 }
             }
         }
 
-        final MoveResult eastAttack = generatePawnAttack(square, square.translate(eastAttackDirection), Direction.EAST, board, enPassantTargetSquare, coloredPiece);
-
-        if (eastAttack != null) {
-            results.add(eastAttack);
-        }
-
-        final MoveResult westAttack = generatePawnAttack(square, square.translate(westAttackDirection), Direction.WEST, board, enPassantTargetSquare, coloredPiece);
-
-        if (westAttack != null) {
-            results.add(westAttack);
-        }
+        results.addAll(generatePawnAttack(square, square.translate(eastAttackDirection), Direction.EAST, board, enPassantTargetSquare, coloredPiece));
+        results.addAll(generatePawnAttack(square, square.translate(westAttackDirection), Direction.WEST, board, enPassantTargetSquare, coloredPiece));
 
         results.removeIf(r -> r.getBoard().isInCheck(coloredPiece.getColor()));
 
         return results;
     }
 
-    private static MoveResult generatePawnAttack(final Square square, final Square attackSquare, final Direction west, final Board board, final Square enPassantTargetSquare, final ColoredPiece coloredPiece) {
+    private static List<MoveResult> generatePawnAttack(final Square square, final Square attackSquare, final Direction west, final Board board, final Square enPassantTargetSquare, final ColoredPiece coloredPiece) {
         if (isValidAndOccupiedByAttackableOpponent(attackSquare, board, coloredPiece.getColor())) {
-            return board.makeSimpleMove(new Move(square, attackSquare, coloredPiece));
+            return generatePawnMoves(square, attackSquare, board, coloredPiece);
         }
 
         if (enPassantTargetSquare == attackSquare && isValidAndNotOccupied(enPassantTargetSquare, board)) {
-            return board.makeComplexMove(new Move(square, attackSquare, coloredPiece), Arrays.asList(
-                    new SquareColoredPiecePair(square, null),
-                    new SquareColoredPiecePair(attackSquare, coloredPiece),
-                    new SquareColoredPiecePair(square.translate(west), null)
-            ));
+            return Collections.singletonList(
+                    board.makeComplexMove(Move.enPassant(square, attackSquare, coloredPiece),
+                            new SquareColoredPiecePair(square, null),
+                            new SquareColoredPiecePair(attackSquare, coloredPiece),
+                            new SquareColoredPiecePair(square.translate(west), null)
+                    )
+            );
         }
 
-        return null;
+        return Collections.emptyList();
+    }
+
+    private static final List<Piece> PROMOTION_PIECES = Arrays.asList(Piece.QUEEN, Piece.ROOK, Piece.KNIGHT, Piece.BISHOP);
+
+    private static List<MoveResult> generatePawnMoves(final Square source, final Square target, final Board board, final ColoredPiece coloredPiece) {
+        final boolean blackPromotion = target.getRank() == Rank.RANK_1 && coloredPiece.getColor() == Color.BLACK;
+        final boolean whitePromotion = target.getRank() == Rank.RANK_8 && coloredPiece.getColor() == Color.WHITE;
+
+        if (blackPromotion || whitePromotion) {
+            return PROMOTION_PIECES.stream()
+                                   .map(p -> ColoredPiece.getPiece(coloredPiece.getColor(), p))
+                                   .map(promoteTo -> Move.promotion(source, target, coloredPiece, promoteTo))
+                                   .map(move -> board.makeComplexMove(move,
+                                           new SquareColoredPiecePair(source, null),
+                                           new SquareColoredPiecePair(target, move.getPromoteTo())
+                                   ))
+                                   .collect(Collectors.toList());
+        }
+
+        return Collections.singletonList(board.makeSimpleMove(Move.simple(source, target, coloredPiece)));
     }
 
     private static boolean isValidAndNotOccupied(final Square square, final Board board) {
@@ -197,7 +211,7 @@ public class DefaultMoveStrategy implements MoveStrategy {
                 current = current.translate(direction);
 
                 if (isValidTarget(current, board, coloredPiece.getColor())) {
-                    result.add(board.makeSimpleMove(new Move(square, current, coloredPiece)));
+                    result.add(board.makeSimpleMove(Move.simple(square, current, coloredPiece)));
 
                     if (board.getPiece(current) != null) {
                         break;
@@ -208,8 +222,6 @@ public class DefaultMoveStrategy implements MoveStrategy {
             }
         }
 
-        result.stream().map(MoveResult::getMove).forEach(System.out::println);
-
         return result;
     }
 
@@ -217,7 +229,7 @@ public class DefaultMoveStrategy implements MoveStrategy {
         return directions.stream()
                          .map(square::translate)
                          .filter(sq -> isValidTarget(sq, board, coloredPiece.getColor()))
-                         .map(target -> new Move(square, target, coloredPiece))
+                         .map(target -> Move.simple(square, target, coloredPiece))
                          .map(board::makeSimpleMove)
                          .collect(Collectors.toList());
     }

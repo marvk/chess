@@ -5,16 +5,42 @@ public class Move {
     private final Square target;
     private final ColoredPiece coloredPiece;
     private final ColoredPiece promoteTo;
+    private final boolean castling;
+    private final boolean enPassant;
+    private final boolean pawnDoubleMove;
 
-    public Move(final Square source, final Square target, final ColoredPiece coloredPiece, final ColoredPiece promoteTo) {
+    private Move(final Square source, final Square target, final ColoredPiece coloredPiece, final ColoredPiece promoteTo, final boolean castling, final boolean enPassant, final boolean pawnDoubleMove) {
         this.source = source;
         this.target = target;
         this.coloredPiece = coloredPiece;
         this.promoteTo = promoteTo;
+        this.castling = castling;
+        this.enPassant = enPassant;
+        this.pawnDoubleMove = pawnDoubleMove;
     }
 
-    public Move(final Square source, final Square target, final ColoredPiece coloredPiece) {
-        this(source, target, coloredPiece, null);
+    private Move(final Square source, final Square target, final ColoredPiece coloredPiece) {
+        this(source, target, coloredPiece, null, false, false, false);
+    }
+
+    public static Move simple(final Square source, final Square target, final ColoredPiece coloredPiece) {
+        return new Move(source, target, coloredPiece);
+    }
+
+    public static Move castling(final Square source, final Square target, final ColoredPiece coloredPiece) {
+        return new Move(source, target, coloredPiece, null, true, false, false);
+    }
+
+    public static Move enPassant(final Square source, final Square target, final ColoredPiece coloredPiece) {
+        return new Move(source, target, coloredPiece, null, false, true, false);
+    }
+
+    public static Move pawnDoubleMove(final Square source, final Square target, final ColoredPiece coloredPiece) {
+        return new Move(source, target, coloredPiece, null, false, true, true);
+    }
+
+    public static Move promotion(final Square source, final Square target, final ColoredPiece coloredPiece, final ColoredPiece promoteTo) {
+        return new Move(source, target, coloredPiece, promoteTo, false, true, false);
     }
 
     public Square getSource() {
@@ -31,6 +57,18 @@ public class Move {
 
     public ColoredPiece getPromoteTo() {
         return promoteTo;
+    }
+
+    public boolean isPromotion() {
+        return promoteTo != null;
+    }
+
+    public boolean isCastling() {
+        return castling;
+    }
+
+    public boolean isEnPassant() {
+        return enPassant;
     }
 
     @Override
@@ -64,5 +102,9 @@ public class Move {
                 ", coloredPiece=" + coloredPiece +
                 ", promoteTo=" + promoteTo +
                 '}';
+    }
+
+    public boolean isPawnDoubleMove() {
+        return pawnDoubleMove;
     }
 }

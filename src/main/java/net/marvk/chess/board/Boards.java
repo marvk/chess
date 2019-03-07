@@ -4,7 +4,7 @@ import java.util.StringJoiner;
 
 public final class Boards {
     private Boards() {
-        throw new AssertionError("No instances of utility class " + Boards.class);
+        throw new AssertionError("No instances simple utility class " + Boards.class);
     }
 
     public static final Fen STARTING_POSITION = Fen.parse("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
