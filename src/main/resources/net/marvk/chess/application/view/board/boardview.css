@@ -1,3 +1,7 @@
 /*GridView > Pane > StackPane {*/
 /*    -fx-background-color: transparent;*/
 /*}*/
+
+.hand-cursor {
+    -fx-cursor: hand;
+}

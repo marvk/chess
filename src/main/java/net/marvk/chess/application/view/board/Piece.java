@@ -61,6 +61,8 @@ public class Piece extends Pane {
 
         final Image image = IMAGE_MAP.get(coloredPiece);
         imageView = new ImageView(image);
+        imageView.getStyleClass().add("hand-cursor");
+        getStyleClass().add("hand-cursor");
 
         imageView.fitWidthProperty().bind(widthProperty());
         imageView.fitHeightProperty().bind(heightProperty());

@@ -48,21 +48,8 @@ public class BoardViewModel implements ViewModel {
     }
 
     public boolean move(final Cell<ColoredPiece> source, final Cell<ColoredPiece> target) {
-
-        System.out.println();
-        System.out.println();
-        System.out.println();
-        validMoves.stream().map(MoveResult::getMove).forEach(System.out::println);
-        System.out.println();
-        System.out.println("source = " + source);
-        System.out.println("target = " + target);
-
-        final Move move;
         final Square sourceSquare = convert(source);
         final Square targetSquare = convert(target);
-
-        System.out.println("sourceSquare = " + sourceSquare);
-        System.out.println("targetSquare = " + targetSquare);
 
         final ColoredPiece piece = source.getState();
         final Color color = piece.getColor();
@@ -70,26 +57,23 @@ public class BoardViewModel implements ViewModel {
 
         final boolean pawn = piece.getPiece() == Piece.PAWN;
 
-        final boolean blackPromote = targetRank == Rank.RANK_1 && color == Color.BLACK;
-        final boolean whitePromote = targetRank == Rank.RANK_8 && color == Color.WHITE;
+        final boolean possibleBlackPromotion = targetRank == Rank.RANK_1 && color == Color.BLACK;
+        final boolean possibleWhitePromotion = targetRank == Rank.RANK_8 && color == Color.WHITE;
 
-        System.out.println("pawn = " + pawn);
-        System.out.println("blackPromote = " + blackPromote);
-        System.out.println("whitePromote = " + whitePromote);
+        final boolean promotion = pawn && (possibleBlackPromotion || possibleWhitePromotion);
 
-        if (pawn && (blackPromote || whitePromote)) {
+        final Move move;
+
+        if (promotion) {
             move = Move.promotion(sourceSquare, targetSquare, piece, ColoredPiece.getPiece(color, Piece.QUEEN));
         } else {
             move = Move.simple(sourceSquare, targetSquare, piece);
         }
 
-        System.out.println("move = " + move);
-
-        final Optional<MoveResult> maybeResult = validMoves.stream()
-                                                           .filter(m -> Objects.equals(m.getMove(), move))
-                                                           .findFirst();
-
-        System.out.println("maybeResult = " + maybeResult);
+        final Optional<MoveResult> maybeResult =
+                validMoves.stream()
+                          .filter(possibleMove -> Objects.equals(possibleMove.getMove(), move))
+                          .findFirst();
 
         if (maybeResult.isPresent()) {
             board.set(maybeResult.get().getBoard());

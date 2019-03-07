@@ -101,7 +101,6 @@ public class SimpleBoard implements Board {
             result.setPiece(swap.getSquare(), swap.getColoredPiece());
         }
 
-        System.out.println("Arrays.toString(swaps) = " + Arrays.toString(swaps));
         return new MoveResult(result, move);
     }
 
