@@ -112,7 +112,43 @@ public class SimpleBoard implements Board {
             }
         }
 
-        //TODO
+        for (final Direction direction : Direction.CARDINAL_DIRECTIONS) {
+            if (discoverPieceSingleStep(kingSquare, direction) == ColoredPiece.getPiece(color.opposite(), Piece.KING)) {
+                return true;
+            }
+        }
+
+        for (final Direction direction : Direction.ORTHOGONAL_DIRECTIONS) {
+            final ColoredPiece coloredPiece = discoverPieceMultiStep(kingSquare, direction);
+            if (coloredPiece == ColoredPiece.getPiece(color.opposite(), Piece.QUEEN)
+                    || coloredPiece == ColoredPiece.getPiece(color.opposite(), Piece.ROOK)) {
+                return true;
+            }
+        }
+
+        for (final Direction direction : Direction.DIAGONAL_DIRECTIONS) {
+            final ColoredPiece coloredPiece = discoverPieceMultiStep(kingSquare, direction);
+
+            System.out.println(coloredPiece);
+
+            if (coloredPiece == ColoredPiece.getPiece(color.opposite(), Piece.QUEEN)
+                    || coloredPiece == ColoredPiece.getPiece(color.opposite(), Piece.BISHOP)) {
+                return true;
+            }
+        }
+
+        final Direction westAttackDirection = color == Color.WHITE ? Direction.NORTH_WEST : Direction.SOUTH_WEST;
+        final Direction eastAttackDirection = color == Color.WHITE ? Direction.NORTH_EAST : Direction.SOUTH_EAST;
+
+        final ColoredPiece oppositePawn = ColoredPiece.getPiece(color.opposite(), Piece.PAWN);
+
+        if (getPiece(kingSquare.translate(westAttackDirection)) == oppositePawn) {
+            return true;
+        }
+
+        if (getPiece(kingSquare.translate(eastAttackDirection)) == oppositePawn) {
+            return true;
+        }
 
         return false;
     }
@@ -121,14 +157,13 @@ public class SimpleBoard implements Board {
         Square current = source;
 
         while (current != null) {
+            current = current.translate(direction);
 
             final ColoredPiece piece = getPiece(current);
 
             if (piece != null) {
                 return piece;
             }
-
-            current = current.translate(direction);
         }
 
         return null;
