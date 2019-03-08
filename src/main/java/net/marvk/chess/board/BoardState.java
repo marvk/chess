@@ -84,6 +84,20 @@ public class BoardState {
         return fullmoveClock;
     }
 
+    @Override
+    public String toString() {
+        return "BoardState{" +
+                "activePlayer=" + activePlayer +
+                ", whiteCastleKing=" + whiteCastleKing +
+                ", whiteCastleQueen=" + whiteCastleQueen +
+                ", blackCastleKing=" + blackCastleKing +
+                ", blackCastleQueen=" + blackCastleQueen +
+                ", enPassantTargetSquare=" + enPassantTargetSquare +
+                ", halfmoveClock=" + halfmoveClock +
+                ", fullmoveClock=" + fullmoveClock +
+                '}';
+    }
+
     public BoardStateBuilder nextBuilder() {
         return new BoardStateBuilder(this);
     }
@@ -102,18 +116,6 @@ public class BoardState {
 
         public BoardStateBuilder(final BoardState previous) {
             this.previous = previous;
-        }
-
-        public BoardStateBuilder castle(final Color color) {
-            if (color == Color.BLACK) {
-                blackCastleKing = false;
-                blackCastleQueen = false;
-            } else if (color == Color.WHITE) {
-                whiteCastleKing = false;
-                whiteCastleQueen = false;
-            }
-
-            return this;
         }
 
         public BoardStateBuilder possibleEnPassant(final Square square) {
@@ -143,7 +145,7 @@ public class BoardState {
             if (color == Color.BLACK) {
                 blackCastleKing = false;
             } else if (color == Color.WHITE) {
-                whiteCastleQueen = false;
+                whiteCastleKing = false;
             }
 
             return this;
@@ -160,8 +162,8 @@ public class BoardState {
                     previous.activePlayer.opposite(),
                     nullableOrElse(whiteCastleKing, previous.whiteCastleKing),
                     nullableOrElse(whiteCastleQueen, previous.whiteCastleQueen),
-                    nullableOrElse(whiteCastleKing, previous.whiteCastleKing),
-                    nullableOrElse(whiteCastleKing, previous.whiteCastleKing),
+                    nullableOrElse(blackCastleKing, previous.blackCastleKing),
+                    nullableOrElse(blackCastleQueen, previous.blackCastleQueen),
                     nullableOrElse(enPassantTargetSquare, previous.enPassantTargetSquare),
                     nullableOrElse(halfmoveClock, previous.halfmoveClock),
                     previous.activePlayer == Color.BLACK ? previous.fullmoveClock + 1 : previous.fullmoveClock

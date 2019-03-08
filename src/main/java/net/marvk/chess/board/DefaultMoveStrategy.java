@@ -272,7 +272,7 @@ public class DefaultMoveStrategy implements MoveStrategy {
     private static boolean validCastle(final Square from, final Square to, final Direction direction, final Board board, final Color color) {
         Square current = from.translate(direction);
 
-        while (current != to) {
+        while (current != to && current != null) {
             if (board.getPiece(current) != null || board.isInCheck(color, current)) {
                 return false;
             }

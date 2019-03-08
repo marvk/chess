@@ -1,6 +1,8 @@
 package net.marvk.chess.board;
 
 public class Move {
+    public static final Move NULL_MOVE = new Move(null, null, null);
+
     private final Square source;
     private final Square target;
     private final ColoredPiece coloredPiece;
@@ -9,7 +11,13 @@ public class Move {
     private final boolean enPassant;
     private final boolean pawnDoubleMove;
 
-    private Move(final Square source, final Square target, final ColoredPiece coloredPiece, final ColoredPiece promoteTo, final boolean castling, final boolean enPassant, final boolean pawnDoubleMove) {
+    private Move(final Square source,
+                 final Square target,
+                 final ColoredPiece coloredPiece,
+                 final ColoredPiece promoteTo,
+                 final boolean castling,
+                 final boolean enPassant,
+                 final boolean pawnDoubleMove) {
         this.source = source;
         this.target = target;
         this.coloredPiece = coloredPiece;

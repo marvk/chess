@@ -3,29 +3,36 @@ package net.marvk.chess.application.view.board;
 import de.saxsys.mvvmfx.ViewModel;
 import eu.lestard.grid.Cell;
 import eu.lestard.grid.GridModel;
+import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import lombok.extern.log4j.Log4j2;
 import net.marvk.chess.board.Piece;
 import net.marvk.chess.board.*;
 
-import java.util.Objects;
 import java.util.Optional;
 
+@Log4j2
 public class BoardViewModel implements ViewModel {
     private final ReadOnlyObjectWrapper<Board> board = new ReadOnlyObjectWrapper<>();
     private final GridModel<ColoredPiece> boardGridModel = new GridModel<>();
     private final ObservableList<MoveResult> validMoves = FXCollections.observableArrayList();
+    private final Game game;
 
     public BoardViewModel() {
         boardGridModel.setNumberOfColumns(8);
         boardGridModel.setNumberOfRows(8);
 
+        game = new Game(AsyncPlayer::new, SimpleCpu::new);
+
         board.set(Boards.startingPosition());
         validMoves.setAll(board.get().getValidMoves(Color.BLACK));
 
         updateBoard();
+
+        start();
     }
 
     private void updateBoard() {
@@ -47,7 +54,15 @@ public class BoardViewModel implements ViewModel {
         return boardGridModel;
     }
 
-    public boolean move(final Cell<ColoredPiece> source, final Cell<ColoredPiece> target) {
+    public void move(final Cell<ColoredPiece> source, final Cell<ColoredPiece> target) {
+        final Move move = parseMove(source, target);
+
+        log.info("Received move from UI: " + move);
+
+        ((AsyncPlayer) game.getPlayer(Color.WHITE)).setMove(move);
+    }
+
+    private Move parseMove(final Cell<ColoredPiece> source, final Cell<ColoredPiece> target) {
         final Square sourceSquare = convert(source);
         final Square targetSquare = convert(target);
 
@@ -62,29 +77,28 @@ public class BoardViewModel implements ViewModel {
 
         final boolean promotion = pawn && (possibleBlackPromotion || possibleWhitePromotion);
 
-        final Move move;
-
         if (promotion) {
-            move = Move.promotion(sourceSquare, targetSquare, piece, ColoredPiece.getPiece(color, Piece.QUEEN));
+            return Move.promotion(sourceSquare, targetSquare, piece, ColoredPiece.getPiece(color, Piece.QUEEN));
         } else {
-            move = Move.simple(sourceSquare, targetSquare, piece);
+            return Move.simple(sourceSquare, targetSquare, piece);
         }
+    }
 
-        final Optional<MoveResult> maybeResult =
-                validMoves.stream()
-                          .filter(possibleMove -> Objects.equals(possibleMove.getMove(), move))
-                          .findFirst();
+    public void start() {
+        final Thread thread = new Thread(() -> {
+            while (!game.isGameOver()) {
+                final Optional<MoveResult> moveResult = game.nextMove();
 
-        if (maybeResult.isPresent()) {
-            board.set(maybeResult.get().getBoard());
-            updateBoard();
+                moveResult.ifPresent(result -> Platform.runLater(() -> {
+                    board.set(result.getBoard());
+                    updateBoard();
 
-            validMoves.setAll(board.get().getValidMoves(Color.BLACK));
+                    validMoves.setAll(board.get().getValidMoves(Color.BLACK));
+                }));
+            }
+        });
 
-            return true;
-        }
-
-        return false;
+        thread.start();
     }
 
     private static Square convert(final Cell<?> cell) {
