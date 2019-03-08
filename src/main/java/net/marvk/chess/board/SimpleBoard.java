@@ -2,10 +2,7 @@ package net.marvk.chess.board;
 
 import lombok.extern.log4j.Log4j2;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -60,15 +57,28 @@ public class SimpleBoard implements Board {
                         .toArray(ColoredPiece[][]::new);
     }
 
+    private List<MoveResult> validMoves;
+
     @Override
-    public List<MoveResult> getValidMoves(final Color color) {
+    public List<MoveResult> getValidMoves() {
+        if (validMoves == null) {
+            final Color activePlayer = boardState.getActivePlayer();
+            validMoves = Collections.unmodifiableList(getValidMovesForColor(activePlayer));
+        }
+
+        return validMoves;
+    }
+
+    @Override
+    public List<MoveResult> getValidMovesForColor(final Color color) {
         return Arrays.stream(Square.values())
                      .map(sq -> new SquareColoredPiecePair(sq, getPiece(sq)))
                      .filter(pair -> pair.getColoredPiece() != null)
                      .filter(pair -> pair.getColoredPiece().getColor() == color)
-                     .map(pair -> pair.getColoredPiece().applyStrategy(MOVE_STRATEGY, pair.getSquare(), this))
+                     .map(pair -> pair.getColoredPiece()
+                                      .applyStrategy(MOVE_STRATEGY, pair.getSquare(), this))
                      .flatMap(Collection::stream)
-                     .collect(Collectors.toList());
+                     .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
     }
 
     @Override
@@ -132,6 +142,37 @@ public class SimpleBoard implements Board {
     @Override
     public BoardState getState() {
         return boardState;
+    }
+
+    @Override
+    public Optional<GameResult> findGameResult() {
+        EndCondition endCondition = null;
+
+        if (boardState.getHalfmoveClock() >= 50) {
+            endCondition = EndCondition.DRAW_BY_FIFTY_MOVE_RULE;
+        }
+
+        Color winner = null;
+
+        if (getValidMoves().isEmpty()) {
+            if (isInCheck()) {
+                endCondition = EndCondition.CHECKMATE;
+                winner = boardState.getActivePlayer().opposite();
+            } else {
+                endCondition = EndCondition.DRAW_BY_STALEMATE;
+            }
+        }
+
+        if (endCondition == null) {
+            return Optional.empty();
+        }
+
+        return Optional.of(new GameResult(winner, endCondition));
+    }
+
+    @Override
+    public boolean isInCheck() {
+        return isInCheck(boardState.getActivePlayer());
     }
 
     @Override

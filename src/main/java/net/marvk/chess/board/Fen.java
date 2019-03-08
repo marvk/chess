@@ -9,9 +9,9 @@ public class Fen {
             "(?<piecePlacement>(?!.{0,6}[1-8][1-8])[PNBRQKpnbrqk1-8]{1,8}(?:/(?!.{0,6}[1-8][1-8])[PNBRQKpnbrqk1-8]{1,8}){7}) " +
             "(?<activeColor>[bw]) " +
             "(?<castlingAvailability>(?=[KQkq])(?:K?Q?k?q?)|-) " +
-            "(?<enPassantTargetSquare>[a-h][1-8]|-) " +
+            "(?<enPassantTargetSquare>[a-h][1-8]|-)(:? " +
             "(?<halfmoveClock>\\d+) " +
-            "(?<fullmoveClock>\\d+)" +
+            "(?<fullmoveClock>\\d+))?" +
             "$"
     );
 
@@ -41,8 +41,12 @@ public class Fen {
         this.activeColor = matcher.group("activeColor");
         this.castlingAvailability = matcher.group("castlingAvailability");
         this.enPassantTargetSquare = matcher.group("enPassantTargetSquare");
-        this.halfmoveClock = matcher.group("halfmoveClock");
-        this.fullmoveClock = matcher.group("fullmoveClock");
+
+        final String halfmoveClock = matcher.group("halfmoveClock");
+        this.halfmoveClock = halfmoveClock == null ? "0" : halfmoveClock;
+
+        final String fullmoveClock = matcher.group("fullmoveClock");
+        this.fullmoveClock = fullmoveClock == null ? "1" : fullmoveClock;
     }
 
     private boolean isValid() {

@@ -1,6 +1,7 @@
 package net.marvk.chess.board;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class SimpleCpu extends AlphaBetaPlayer {
     private static final Map<Piece, Double> SCORES;
@@ -25,18 +26,39 @@ public class SimpleCpu extends AlphaBetaPlayer {
 
     @Override
     protected int heuristic(final Board board) {
-        final double score = Arrays.stream(SQUARES)
-                                 .map(board::getPiece)
-                                 .filter(Objects::nonNull)
-                                 .mapToDouble(this::score)
-                                 .sum();
+        double mySum = 0;
+        double theirSum = 0;
 
-        return (int) (score * 10.0);
+        final Optional<GameResult> gameResult = board.findGameResult();
+
+        if (gameResult.isPresent()) {
+            final Color winner = gameResult.get().getWinner();
+
+            if (winner == null) {
+                return 0;
+            }
+
+            return winner == getColor() ? Integer.MAX_VALUE : Integer.MIN_VALUE;
+        }
+
+        for (final Square square : SQUARES) {
+            final ColoredPiece piece = board.getPiece(square);
+
+            if (piece != null) {
+                final double score = score(piece);
+
+                if (piece.getColor() == getColor()) {
+                    mySum += score;
+                } else {
+                    theirSum += score;
+                }
+            }
+        }
+
+        return (int) ((mySum - theirSum) * 1024) + ThreadLocalRandom.current().nextInt(100);
     }
 
     private double score(final ColoredPiece piece) {
-        final double score = SCORES.get(piece.getPiece());
-
-        return piece.getColor() == getColor() ? score : -score;
+        return SCORES.get(piece.getPiece());
     }
 }

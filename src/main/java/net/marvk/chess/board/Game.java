@@ -25,7 +25,7 @@ public class Game {
         this.history = new ArrayList<>();
 
         this.lastMove = new MoveResult(board, Move.NULL_MOVE);
-        this.validMoves = board.getValidMoves(getTurn());
+        this.validMoves = board.getValidMoves();
 
         this.history.add(lastMove);
     }
@@ -46,17 +46,21 @@ public class Game {
             log.info("Player " + getTurn() + " played " + play);
             lastMove = maybeValidMove.get();
             board = lastMove.getBoard();
+
             history.add(lastMove);
         } else {
             log.info("Player " + getTurn() + " tried to play invalid move " + play);
             return Optional.empty();
         }
 
-        validMoves = board.getValidMoves(getTurn());
+        final Optional<GameResult> gameResult = board.findGameResult();
 
-        if (validMoves.isEmpty()) {
-            log.info("Game over, " + getTurn() + " won");
+        if (gameResult.isPresent()) {
+            log.info(gameResult);
+
             gameOver = true;
+        } else {
+            validMoves = board.getValidMoves();
         }
 
         return Optional.of(lastMove);

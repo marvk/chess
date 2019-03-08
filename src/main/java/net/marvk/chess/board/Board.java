@@ -1,6 +1,7 @@
 package net.marvk.chess.board;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface Board {
     ColoredPiece getPiece(Square square);
@@ -11,13 +12,19 @@ public interface Board {
 
     ColoredPiece[][] getBoard();
 
-    List<MoveResult> getValidMoves(final Color color);
+    List<MoveResult> getValidMoves();
+
+    List<MoveResult> getValidMovesForColor(Color color);
 
     MoveResult makeSimpleMove(final Move move);
 
     MoveResult makeComplexMove(final Move move, final SquareColoredPiecePair... pairs);
 
     BoardState getState();
+
+    Optional<GameResult> findGameResult();
+
+    boolean isInCheck();
 
     boolean isInCheck(Color color);
 

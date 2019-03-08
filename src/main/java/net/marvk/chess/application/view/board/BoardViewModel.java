@@ -13,6 +13,7 @@ import net.marvk.chess.board.Piece;
 import net.marvk.chess.board.*;
 
 import java.util.Optional;
+import java.util.Scanner;
 
 @Log4j2
 public class BoardViewModel implements ViewModel {
@@ -25,10 +26,10 @@ public class BoardViewModel implements ViewModel {
         boardGridModel.setNumberOfColumns(8);
         boardGridModel.setNumberOfRows(8);
 
-        game = new Game(AsyncPlayer::new, SimpleCpu::new);
+        game = new Game(SimpleCpu::new, SimpleCpu::new);
 
         board.set(Boards.startingPosition());
-        validMoves.setAll(board.get().getValidMoves(Color.BLACK));
+        validMoves.setAll(board.get().getValidMoves());
 
         updateBoard();
 
@@ -59,7 +60,17 @@ public class BoardViewModel implements ViewModel {
 
         log.info("Received move from UI: " + move);
 
-        ((AsyncPlayer) game.getPlayer(Color.WHITE)).setMove(move);
+        final Player white = game.getPlayer(Color.WHITE);
+
+        if (white instanceof AsyncPlayer) {
+            ((AsyncPlayer) white).setMove(move);
+        }
+
+        final Player black = game.getPlayer(Color.BLACK);
+
+        if (black instanceof AsyncPlayer) {
+            ((AsyncPlayer) black).setMove(move);
+        }
     }
 
     private Move parseMove(final Cell<ColoredPiece> source, final Cell<ColoredPiece> target) {
@@ -86,6 +97,8 @@ public class BoardViewModel implements ViewModel {
 
     public void start() {
         final Thread thread = new Thread(() -> {
+            new Scanner(System.in).nextLine();
+
             while (!game.isGameOver()) {
                 final Optional<MoveResult> moveResult = game.nextMove();
 
@@ -93,7 +106,7 @@ public class BoardViewModel implements ViewModel {
                     board.set(result.getBoard());
                     updateBoard();
 
-                    validMoves.setAll(board.get().getValidMoves(Color.BLACK));
+                    validMoves.setAll(board.get().getValidMoves());
                 }));
             }
         });

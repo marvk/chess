@@ -6,11 +6,13 @@ import net.marvk.chess.util.Stopwatch;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Log4j2
 public abstract class AlphaBetaPlayer extends Player {
-    private static final int MAX_DEPTH = 5;
+    private static final int MAX_DEPTH = 3;
+    private int count;
 
     public AlphaBetaPlayer(final Color color) {
         super(color);
@@ -18,24 +20,31 @@ public abstract class AlphaBetaPlayer extends Player {
 
     @Override
     public Move play(final MoveResult previousMove) {
-        final AtomicReference<Move> move = new AtomicReference<>();
+        final AtomicReference<Pair> move = new AtomicReference<>();
+        count = 0;
+
         final Duration duration = Stopwatch.time(() -> move.set(startExploration(previousMove)));
 
-        log.info("Player calculated move in " + duration);
+        final int nodesPerSecond = (int) Math.round(((double) count / duration.toNanos()) * TimeUnit.SECONDS.toNanos(1));
 
-        return move.get();
+        log.info("Player used " + count + " nodes to calculated move in " + duration + " (" + nodesPerSecond + " NPS), heuristic is " + move
+                .get().score);
+
+        return move.get().moveResult.getMove();
     }
 
-    private Move startExploration(final MoveResult current) {
-        return alphaBeta(current, Integer.MIN_VALUE, Integer.MAX_VALUE, 0).moveResult.getMove();
+    private Pair startExploration(final MoveResult current) {
+        return alphaBeta(current, Integer.MIN_VALUE, Integer.MAX_VALUE, 0);
     }
 
     private Pair alphaBeta(final MoveResult current, int alpha, int beta, final int depth) {
+        count++;
+
         if (depth == MAX_DEPTH) {
             return new Pair(current);
         }
 
-        final List<MoveResult> validMoves = current.getBoard().getValidMoves(getColor());
+        final List<MoveResult> validMoves = current.getBoard().getValidMoves();
 
         if (validMoves.isEmpty()) {
             return new Pair(current);

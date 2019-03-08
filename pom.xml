@@ -111,16 +111,16 @@
             <artifactId>mvvmfx</artifactId>
             <version>1.8.0-SNAPSHOT</version>
         </dependency>
-        <!--        <dependency>-->
-        <!--            <groupId>org.openjfx</groupId>-->
-        <!--            <artifactId>javafx-controls</artifactId>-->
-        <!--            <version>11.0.2</version>-->
-        <!--        </dependency>-->
-        <!--        <dependency>-->
-        <!--            <groupId>org.openjfx</groupId>-->
-        <!--            <artifactId>javafx-fxml</artifactId>-->
-        <!--            <version>11.0.2</version>-->
-        <!--        </dependency>-->
+                <dependency>
+                    <groupId>org.openjfx</groupId>
+                    <artifactId>javafx-controls</artifactId>
+                    <version>11.0.2</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.openjfx</groupId>
+                    <artifactId>javafx-fxml</artifactId>
+                    <version>11.0.2</version>
+                </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
