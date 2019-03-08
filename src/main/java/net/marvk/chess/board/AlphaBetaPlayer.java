@@ -40,6 +40,10 @@ public abstract class AlphaBetaPlayer extends Player {
     private Pair alphaBeta(final MoveResult current, int alpha, int beta, final int depth) {
         count++;
 
+        if (count % 1000 == 0) {
+            log.trace(count);
+        }
+
         if (depth == MAX_DEPTH) {
             return new Pair(current);
         }

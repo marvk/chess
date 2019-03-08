@@ -11,6 +11,7 @@ public class SimpleBoard implements Board {
     private static final MoveStrategy MOVE_STRATEGY = new DefaultMoveStrategy();
 
     private static final int LENGTH = 8;
+    public static final Square[] SQUARES = Square.values();
     private final ColoredPiece[][] board;
     private final BoardState boardState;
 
@@ -71,8 +72,9 @@ public class SimpleBoard implements Board {
 
     @Override
     public List<MoveResult> getValidMovesForColor(final Color color) {
-        return Arrays.stream(Square.values())
-                     .map(sq -> new SquareColoredPiecePair(sq, getPiece(sq)))
+        return Arrays.stream(SQUARES)
+                     .map(sq -> new SquareColoredPiecePair(sq, getPiece(sq)
+                     ))
                      .filter(pair -> pair.getColoredPiece() != null)
                      .filter(pair -> pair.getColoredPiece().getColor() == color)
                      .map(pair -> pair.getColoredPiece()
@@ -178,7 +180,7 @@ public class SimpleBoard implements Board {
     @Override
     public boolean isInCheck(final Color color) {
         final Optional<Square> maybeKingSquare =
-                Arrays.stream(Square.values())
+                Arrays.stream(SQUARES)
                       .filter(square -> getPiece(square) == ColoredPiece.getPiece(color, Piece.KING))
                       .findFirst();
 

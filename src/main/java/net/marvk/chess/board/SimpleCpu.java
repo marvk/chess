@@ -1,11 +1,11 @@
 package net.marvk.chess.board;
 
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class SimpleCpu extends AlphaBetaPlayer {
     private static final Map<Piece, Double> SCORES;
     private static final Square[] SQUARES = Square.values();
+    private static final Random RANDOM = new Random();
 
     static {
         final Map<Piece, Double> map = new EnumMap<>(Piece.class);
@@ -55,7 +55,7 @@ public class SimpleCpu extends AlphaBetaPlayer {
             }
         }
 
-        return (int) ((mySum - theirSum) * 1024) + ThreadLocalRandom.current().nextInt(100);
+        return (int) ((mySum - theirSum) * 1024) + RANDOM.nextInt(100);
     }
 
     private double score(final ColoredPiece piece) {
