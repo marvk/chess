@@ -2,142 +2,156 @@ package net.marvk.chess.board;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
-public class DefaultMoveStrategy implements MoveStrategy {
+import static net.marvk.chess.board.ColoredPiece.*;
+
+public class DefaultMoveStrategy {
     private static final List<Piece> PROMOTION_PIECES = Arrays.asList(Piece.QUEEN, Piece.ROOK, Piece.KNIGHT, Piece.BISHOP);
+    private static final Square[] SQUARES = Square.values();
+    private final Board board;
+    private final Color color;
+    private List<MoveResult> result;
 
-    private static boolean isValidTarget(final Square target, final Board board, final Color sourceColor) {
-        if (target == null) {
-            return false;
+    public DefaultMoveStrategy(final Board simpleBoard, final Color color) {
+        this.board = simpleBoard;
+        this.color = color;
+    }
+
+    public List<MoveResult> generate() {
+        if (this.result != null) {
+            return this.result;
         }
 
-        final ColoredPiece piece = board.getPiece(target);
+        this.result = new ArrayList<>();
 
-        if (piece == null) {
-            return true;
+        Arrays.stream(SQUARES)
+              .map(sq -> new SquareColoredPiecePair(sq, board.getPiece(sq)))
+              .filter(pair -> pair.getColoredPiece() != null)
+              .filter(pair -> pair.getColoredPiece().getColor() == color)
+              .forEach(pair -> applyStrategy(pair.getSquare(), board, pair.getColoredPiece()));
+
+        result.removeIf(r -> r.getBoard().isInCheck(color));
+
+        return result;
+    }
+
+    public void applyStrategy(final Square square, final Board board, final ColoredPiece piece) {
+        switch (piece) {
+            case WHITE_KING:
+                whiteKingStrategy(square, board);
+                break;
+            case WHITE_QUEEN:
+                whiteQueenStrategy(square, board);
+                break;
+            case WHITE_ROOK:
+                whiteRookStrategy(square, board);
+                break;
+            case WHITE_BISHOP:
+                whiteBishopStrategy(square, board);
+                break;
+            case WHITE_KNIGHT:
+                whiteKnightStrategy(square, board);
+                break;
+            case WHITE_PAWN:
+                whitePawnStrategy(square, board);
+                break;
+            case BLACK_KING:
+                blackKingStrategy(square, board);
+                break;
+            case BLACK_QUEEN:
+                blackQueenStrategy(square, board);
+                break;
+            case BLACK_ROOK:
+                blackRookStrategy(square, board);
+                break;
+            case BLACK_BISHOP:
+                blackBishopStrategy(square, board);
+                break;
+            case BLACK_KNIGHT:
+                blackKnightStrategy(square, board);
+                break;
+            case BLACK_PAWN:
+                blackPawnStrategy(square, board);
+                break;
+            default:
+                throw new AssertionError();
         }
-
-        return piece.getColor() != sourceColor && piece.getPiece() != Piece.KING;
     }
 
-    @Override
-    public List<MoveResult> blackKingStrategy(final Square square, final Board board) {
-        return generalKingStrategy(square, board, ColoredPiece.BLACK_KING);
+    private void blackKingStrategy(final Square square, final Board board) {
+        generalKingStrategy(square, board, BLACK_KING);
     }
 
-    @Override
-    public List<MoveResult> blackQueenStrategy(final Square square, final Board board) {
-        return generalQueenStrategy(square, board, ColoredPiece.BLACK_QUEEN);
+    private void blackQueenStrategy(final Square square, final Board board) {
+        generalQueenStrategy(square, board, BLACK_QUEEN);
     }
 
-    @Override
-    public List<MoveResult> blackRookStrategy(final Square square, final Board board) {
-        return generalRookStrategy(square, board, ColoredPiece.BLACK_ROOK);
+    private void blackRookStrategy(final Square square, final Board board) {
+        generalRookStrategy(square, board, BLACK_ROOK);
     }
 
-    @Override
-    public List<MoveResult> blackBishopStrategy(final Square square, final Board board) {
-        return generalBishopStrategy(square, board, ColoredPiece.BLACK_BISHOP);
+    private void blackBishopStrategy(final Square square, final Board board) {
+        generalBishopStrategy(square, board, BLACK_BISHOP);
     }
 
-    @Override
-    public List<MoveResult> blackKnightStrategy(final Square square, final Board board) {
-        return generalKnightStrategy(square, board, ColoredPiece.BLACK_KNIGHT);
+    private void blackKnightStrategy(final Square square, final Board board) {
+        generalKnightStrategy(square, board, BLACK_KNIGHT);
     }
 
-    @Override
-    public List<MoveResult> blackPawnStrategy(final Square square, final Board board) {
-        return generalPawnStrategy(square, board, ColoredPiece.BLACK_PAWN);
+    private void blackPawnStrategy(final Square square, final Board board) {
+        generalPawnStrategy(square, board, BLACK_PAWN);
     }
 
-    @Override
-    public List<MoveResult> whiteKingStrategy(final Square square, final Board board) {
-        return generalKingStrategy(square, board, ColoredPiece.WHITE_KING);
+    private void whiteKingStrategy(final Square square, final Board board) {
+        generalKingStrategy(square, board, WHITE_KING);
     }
 
-    @Override
-    public List<MoveResult> whiteQueenStrategy(final Square square, final Board board) {
-        return generalQueenStrategy(square, board, ColoredPiece.WHITE_QUEEN);
+    private void whiteQueenStrategy(final Square square, final Board board) {
+        generalQueenStrategy(square, board, WHITE_QUEEN);
     }
 
-    @Override
-    public List<MoveResult> whiteRookStrategy(final Square square, final Board board) {
-        return generalRookStrategy(square, board, ColoredPiece.WHITE_ROOK);
+    private void whiteRookStrategy(final Square square, final Board board) {
+        generalRookStrategy(square, board, WHITE_ROOK);
     }
 
-    @Override
-    public List<MoveResult> whiteBishopStrategy(final Square square, final Board board) {
-        return generalBishopStrategy(square, board, ColoredPiece.WHITE_BISHOP);
+    private void whiteBishopStrategy(final Square square, final Board board) {
+        generalBishopStrategy(square, board, WHITE_BISHOP);
     }
 
-    @Override
-    public List<MoveResult> whiteKnightStrategy(final Square square, final Board board) {
-        return generalKnightStrategy(square, board, ColoredPiece.WHITE_KNIGHT);
+    private void whiteKnightStrategy(final Square square, final Board board) {
+        generalKnightStrategy(square, board, WHITE_KNIGHT);
     }
 
-    @Override
-    public List<MoveResult> whitePawnStrategy(final Square square, final Board board) {
-        return generalPawnStrategy(square, board, ColoredPiece.WHITE_PAWN);
+    private void whitePawnStrategy(final Square square, final Board board) {
+        generalPawnStrategy(square, board, WHITE_PAWN);
     }
 
-    private static List<MoveResult> generalKingStrategy(final Square square, final Board board, final ColoredPiece coloredPiece) {
-        final List<MoveResult> results = generalSingleStepStrategy(square, board, Direction.CARDINAL_DIRECTIONS, coloredPiece);
+    private void generalKingStrategy(final Square square, final Board board, final ColoredPiece coloredPiece) {
+        generalSingleStepStrategy(square, board, Direction.CARDINAL_DIRECTIONS, coloredPiece);
 
-        final MoveResult queenSideCastleMove = generateCastleMove(square, board, coloredPiece, Direction.WEST);
+        generateCastleMove(square, board, coloredPiece, Direction.WEST);
 
-        if (queenSideCastleMove != null) {
-            results.add(queenSideCastleMove);
-        }
-
-        final MoveResult kingSideCastleMove = generateCastleMove(square, board, coloredPiece, Direction.EAST);
-
-        if (kingSideCastleMove != null) {
-            results.add(kingSideCastleMove);
-        }
-
-        results.removeIf(r -> r.getBoard().isInCheck(coloredPiece.getColor()));
-
-        return results;
+        generateCastleMove(square, board, coloredPiece, Direction.EAST);
     }
 
-    private static List<MoveResult> generalQueenStrategy(final Square square, final Board board, final ColoredPiece coloredPiece) {
-        final List<MoveResult> results = generalMultiStepStrategy(square, board, Direction.CARDINAL_DIRECTIONS, coloredPiece);
-
-        results.removeIf(r -> r.getBoard().isInCheck(coloredPiece.getColor()));
-
-        return results;
+    private void generalQueenStrategy(final Square square, final Board board, final ColoredPiece coloredPiece) {
+        generalMultiStepStrategy(square, board, Direction.CARDINAL_DIRECTIONS, coloredPiece);
     }
 
-    private static List<MoveResult> generalRookStrategy(final Square square, final Board board, final ColoredPiece coloredPiece) {
-        final List<MoveResult> results = generalMultiStepStrategy(square, board, Direction.ORTHOGONAL_DIRECTIONS, coloredPiece);
-
-        results.removeIf(r -> r.getBoard().isInCheck(coloredPiece.getColor()));
-
-        return results;
+    private void generalRookStrategy(final Square square, final Board board, final ColoredPiece coloredPiece) {
+        generalMultiStepStrategy(square, board, Direction.ORTHOGONAL_DIRECTIONS, coloredPiece);
     }
 
-    private static List<MoveResult> generalBishopStrategy(final Square square, final Board board, final ColoredPiece coloredPiece) {
-        final List<MoveResult> results = generalMultiStepStrategy(square, board, Direction.DIAGONAL_DIRECTIONS, coloredPiece);
-
-        results.removeIf(r -> r.getBoard().isInCheck(coloredPiece.getColor()));
-
-        return results;
+    private void generalBishopStrategy(final Square square, final Board board, final ColoredPiece coloredPiece) {
+        generalMultiStepStrategy(square, board, Direction.DIAGONAL_DIRECTIONS, coloredPiece);
     }
 
-    private static List<MoveResult> generalKnightStrategy(final Square square, final Board board, final ColoredPiece coloredPiece) {
-        final List<MoveResult> results = generalSingleStepStrategy(square, board, Direction.KNIGHT_DIRECTIONS, coloredPiece);
-
-        results.removeIf(r -> r.getBoard().isInCheck(coloredPiece.getColor()));
-
-        return results;
+    private void generalKnightStrategy(final Square square, final Board board, final ColoredPiece coloredPiece) {
+        generalSingleStepStrategy(square, board, Direction.KNIGHT_DIRECTIONS, coloredPiece);
     }
 
-    private static List<MoveResult> generalPawnStrategy(final Square square, final Board board, final ColoredPiece coloredPiece) {
-        final List<MoveResult> results = new ArrayList<>();
-
+    private void generalPawnStrategy(final Square square, final Board board, final ColoredPiece coloredPiece) {
         final boolean isWhite = coloredPiece.getColor() == Color.WHITE;
         final Direction forward = isWhite ? Direction.NORTH : Direction.SOUTH;
         final Rank startingRank = isWhite ? Rank.RANK_2 : Rank.RANK_7;
@@ -149,59 +163,51 @@ public class DefaultMoveStrategy implements MoveStrategy {
         final Square next = square.translate(forward);
 
         if (isValidAndNotOccupied(next, board)) {
-            results.addAll(generatePawnMoves(square, next, board, coloredPiece));
+            generatePawnMoves(square, next, board, coloredPiece);
 
             if (startingRank == square.getRank()) {
                 final Square afterNext = next.translate(forward);
 
                 if (isValidAndNotOccupied(afterNext, board)) {
-                    results.add(board.makeSimpleMove(Move.pawnDoubleMove(square, afterNext, coloredPiece)));
+                    result.add(board.makeSimpleMove(Move.pawnDoubleMove(square, afterNext, coloredPiece)));
                 }
             }
         }
 
-        results.addAll(generatePawnAttack(square, square.translate(eastAttackDirection), Direction.EAST, board, enPassantTargetSquare, coloredPiece));
-        results.addAll(generatePawnAttack(square, square.translate(westAttackDirection), Direction.WEST, board, enPassantTargetSquare, coloredPiece));
-
-        results.removeIf(r -> r.getBoard().isInCheck(coloredPiece.getColor()));
-
-        return results;
+        generatePawnAttack(square, square.translate(eastAttackDirection), Direction.EAST, board, enPassantTargetSquare, coloredPiece);
+        generatePawnAttack(square, square.translate(westAttackDirection), Direction.WEST, board, enPassantTargetSquare, coloredPiece);
     }
 
-    private static List<MoveResult> generatePawnAttack(final Square square, final Square attackSquare, final Direction west, final Board board, final Square enPassantTargetSquare, final ColoredPiece coloredPiece) {
+    private void generatePawnAttack(final Square square, final Square attackSquare, final Direction west, final Board board, final Square enPassantTargetSquare, final ColoredPiece coloredPiece) {
         if (isValidAndOccupiedByAttackableOpponent(attackSquare, board, coloredPiece.getColor())) {
-            return generatePawnMoves(square, attackSquare, board, coloredPiece);
+            generatePawnMoves(square, attackSquare, board, coloredPiece);
         }
 
         if (enPassantTargetSquare == attackSquare && isValidAndNotOccupied(enPassantTargetSquare, board)) {
-            return Collections.singletonList(
-                    board.makeComplexMove(Move.enPassant(square, attackSquare, coloredPiece),
-                            new SquareColoredPiecePair(square, null),
-                            new SquareColoredPiecePair(attackSquare, coloredPiece),
-                            new SquareColoredPiecePair(square.translate(west), null)
-                    )
-            );
+            result.add(board.makeComplexMove(Move.enPassant(square, attackSquare, coloredPiece),
+                    new SquareColoredPiecePair(square, null),
+                    new SquareColoredPiecePair(attackSquare, coloredPiece),
+                    new SquareColoredPiecePair(square.translate(west), null)
+            ));
         }
-
-        return Collections.emptyList();
     }
 
-    private static List<MoveResult> generatePawnMoves(final Square source, final Square target, final Board board, final ColoredPiece coloredPiece) {
+    private void generatePawnMoves(final Square source, final Square target, final Board board, final ColoredPiece coloredPiece) {
         final boolean blackPromotion = target.getRank() == Rank.RANK_1 && coloredPiece.getColor() == Color.BLACK;
         final boolean whitePromotion = target.getRank() == Rank.RANK_8 && coloredPiece.getColor() == Color.WHITE;
 
         if (blackPromotion || whitePromotion) {
-            return PROMOTION_PIECES.stream()
-                                   .map(p -> ColoredPiece.getPiece(coloredPiece.getColor(), p))
-                                   .map(promoteTo -> Move.promotion(source, target, coloredPiece, promoteTo))
-                                   .map(move -> board.makeComplexMove(move,
-                                           new SquareColoredPiecePair(source, null),
-                                           new SquareColoredPiecePair(target, move.getPromoteTo())
-                                   ))
-                                   .collect(Collectors.toList());
+            PROMOTION_PIECES.stream()
+                            .map(p -> getPiece(coloredPiece.getColor(), p))
+                            .map(promoteTo -> Move.promotion(source, target, coloredPiece, promoteTo))
+                            .map(move -> board.makeComplexMove(move,
+                                    new SquareColoredPiecePair(source, null),
+                                    new SquareColoredPiecePair(target, move.getPromoteTo())
+                            ))
+                            .forEach(result::add);
         }
 
-        return Collections.singletonList(board.makeSimpleMove(Move.simple(source, target, coloredPiece)));
+        result.add(board.makeSimpleMove(Move.simple(source, target, coloredPiece)));
     }
 
     private static boolean isValidAndNotOccupied(final Square square, final Board board) {
@@ -213,7 +219,7 @@ public class DefaultMoveStrategy implements MoveStrategy {
         return square != null && piece != null && piece.getPiece() != Piece.KING && piece.getColor() != color;
     }
 
-    private static MoveResult generateCastleMove(final Square source, final Board board, final ColoredPiece coloredPiece, final Direction direction) {
+    private void generateCastleMove(final Square source, final Board board, final ColoredPiece coloredPiece, final Direction direction) {
         final Color color = coloredPiece.getColor();
 
         if (color == Color.WHITE) {
@@ -222,23 +228,23 @@ public class DefaultMoveStrategy implements MoveStrategy {
                             && board.getState().canWhiteCastleQueen()
                             && validCastle(source, Square.A1, Direction.WEST, board, color)
             ) {
-                return board.makeComplexMove(Move.castling(source, Square.C1, coloredPiece),
+                result.add(board.makeComplexMove(Move.castling(source, Square.C1, coloredPiece),
                         new SquareColoredPiecePair(source, null),
                         new SquareColoredPiecePair(Square.C1, coloredPiece),
-                        new SquareColoredPiecePair(Square.D1, ColoredPiece.getPiece(color, Piece.ROOK)),
+                        new SquareColoredPiecePair(Square.D1, getPiece(color, Piece.ROOK)),
                         new SquareColoredPiecePair(Square.A1, null)
-                );
+                ));
             } else if (
                     direction == Direction.EAST
                             && board.getState().canWhiteCastleKing()
                             && validCastle(source, Square.H1, Direction.EAST, board, color)
             ) {
-                return board.makeComplexMove(Move.castling(source, Square.G1, coloredPiece),
+                result.add(board.makeComplexMove(Move.castling(source, Square.G1, coloredPiece),
                         new SquareColoredPiecePair(source, null),
                         new SquareColoredPiecePair(Square.G1, coloredPiece),
-                        new SquareColoredPiecePair(Square.F1, ColoredPiece.getPiece(color, Piece.ROOK)),
+                        new SquareColoredPiecePair(Square.F1, getPiece(color, Piece.ROOK)),
                         new SquareColoredPiecePair(Square.H1, null)
-                );
+                ));
             }
         } else {
             if (
@@ -246,27 +252,25 @@ public class DefaultMoveStrategy implements MoveStrategy {
                             && board.getState().canBlackCastleQueen()
                             && validCastle(source, Square.A8, Direction.WEST, board, color)
             ) {
-                return board.makeComplexMove(Move.castling(source, Square.C8, coloredPiece),
+                result.add(board.makeComplexMove(Move.castling(source, Square.C8, coloredPiece),
                         new SquareColoredPiecePair(source, null),
                         new SquareColoredPiecePair(Square.C8, coloredPiece),
-                        new SquareColoredPiecePair(Square.D8, ColoredPiece.getPiece(color, Piece.ROOK)),
+                        new SquareColoredPiecePair(Square.D8, getPiece(color, Piece.ROOK)),
                         new SquareColoredPiecePair(Square.A8, null)
-                );
+                ));
             } else if (
                     direction == Direction.EAST
                             && board.getState().canBlackCastleKing()
                             && validCastle(source, Square.H8, Direction.EAST, board, color)
             ) {
-                return board.makeComplexMove(Move.castling(source, Square.G8, coloredPiece),
+                result.add(board.makeComplexMove(Move.castling(source, Square.G8, coloredPiece),
                         new SquareColoredPiecePair(source, null),
                         new SquareColoredPiecePair(Square.G8, coloredPiece),
-                        new SquareColoredPiecePair(Square.F8, ColoredPiece.getPiece(color, Piece.ROOK)),
+                        new SquareColoredPiecePair(Square.F8, getPiece(color, Piece.ROOK)),
                         new SquareColoredPiecePair(Square.H8, null)
-                );
+                ));
             }
         }
-
-        return null;
     }
 
     private static boolean validCastle(final Square from, final Square to, final Direction direction, final Board board, final Color color) {
@@ -283,9 +287,7 @@ public class DefaultMoveStrategy implements MoveStrategy {
         return true;
     }
 
-    private static List<MoveResult> generalMultiStepStrategy(final Square square, final Board board, final List<Direction> directions, final ColoredPiece coloredPiece) {
-        final List<MoveResult> result = new ArrayList<>();
-
+    private void generalMultiStepStrategy(final Square square, final Board board, final List<Direction> directions, final ColoredPiece coloredPiece) {
         for (final Direction direction : directions) {
             Square current = square;
 
@@ -303,16 +305,28 @@ public class DefaultMoveStrategy implements MoveStrategy {
                 }
             }
         }
-
-        return result;
     }
 
-    private static List<MoveResult> generalSingleStepStrategy(final Square square, final Board board, final List<Direction> directions, final ColoredPiece coloredPiece) {
-        return directions.stream()
-                         .map(square::translate)
-                         .filter(sq -> isValidTarget(sq, board, coloredPiece.getColor()))
-                         .map(target -> Move.simple(square, target, coloredPiece))
-                         .map(board::makeSimpleMove)
-                         .collect(Collectors.toList());
+    private void generalSingleStepStrategy(final Square square, final Board board, final List<Direction> directions, final ColoredPiece coloredPiece) {
+        directions.stream()
+                  .map(square::translate)
+                  .filter(sq -> isValidTarget(sq, board, coloredPiece.getColor()))
+                  .map(target -> Move.simple(square, target, coloredPiece))
+                  .map(board::makeSimpleMove)
+                  .forEach(result::add);
+    }
+
+    private static boolean isValidTarget(final Square target, final Board board, final Color sourceColor) {
+        if (target == null) {
+            return false;
+        }
+
+        final ColoredPiece piece = board.getPiece(target);
+
+        if (piece == null) {
+            return true;
+        }
+
+        return piece.getColor() != sourceColor && piece.getPiece() != Piece.KING;
     }
 }

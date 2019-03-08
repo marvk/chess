@@ -2,16 +2,16 @@ package net.marvk.chess.board;
 
 import lombok.extern.log4j.Log4j2;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.IntStream;
 
 @Log4j2
 public class SimpleBoard implements Board {
-    private static final MoveStrategy MOVE_STRATEGY = new DefaultMoveStrategy();
-
     private static final int LENGTH = 8;
-    public static final Square[] SQUARES = Square.values();
+    private static final Square[] SQUARES = Square.values();
     private final ColoredPiece[][] board;
     private final BoardState boardState;
 
@@ -72,15 +72,7 @@ public class SimpleBoard implements Board {
 
     @Override
     public List<MoveResult> getValidMovesForColor(final Color color) {
-        return Arrays.stream(SQUARES)
-                     .map(sq -> new SquareColoredPiecePair(sq, getPiece(sq)
-                     ))
-                     .filter(pair -> pair.getColoredPiece() != null)
-                     .filter(pair -> pair.getColoredPiece().getColor() == color)
-                     .map(pair -> pair.getColoredPiece()
-                                      .applyStrategy(MOVE_STRATEGY, pair.getSquare(), this))
-                     .flatMap(Collection::stream)
-                     .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+        return new DefaultMoveStrategy(this, color).generate();
     }
 
     @Override
