@@ -6,7 +6,6 @@ import eu.lestard.grid.Cell;
 import eu.lestard.grid.GridView;
 import javafx.fxml.FXML;
 import javafx.scene.layout.StackPane;
-import lombok.extern.log4j.Log4j2;
 import net.marvk.chess.board.ColoredPiece;
 
 public class BoardView implements FxmlView<BoardViewModel> {

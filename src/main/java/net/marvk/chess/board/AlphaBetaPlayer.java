@@ -50,7 +50,8 @@ public abstract class AlphaBetaPlayer extends Player {
 
         final List<MoveResult> validMoves = current.getBoard().getValidMoves();
 
-        if (validMoves.isEmpty()) {
+        //TODO
+        if (current.getBoard().findGameResult().isPresent()) {
             return new Pair(current);
         }
 
