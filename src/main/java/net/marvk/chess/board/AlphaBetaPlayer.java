@@ -27,7 +27,7 @@ public abstract class AlphaBetaPlayer extends Player {
 
         final int nodesPerSecond = (int) Math.round(((double) count / duration.toNanos()) * TimeUnit.SECONDS.toNanos(1));
 
-        log.info("Player used " + count + " nodes to calculated move in " + duration + " (" + nodesPerSecond + " NPS), heuristic is " + move
+        log.info(getColor() + " used " + count + " nodes to calculated move in " + duration + " (" + nodesPerSecond + " NPS), heuristic is " + move
                 .get().score);
 
         return move.get().moveResult.getMove();

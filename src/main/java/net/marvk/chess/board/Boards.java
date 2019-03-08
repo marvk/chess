@@ -51,4 +51,27 @@ public final class Boards {
 
         return stringJoiner.toString();
     }
+
+    public static String parsePiecePlacement(final String piecePlacement) {
+        final StringBuilder sb = new StringBuilder();
+
+        final String[] ranks = piecePlacement.split("/");
+
+        for (int rank = 0; rank < 8; rank++) {
+            final String rankRecord = ranks[ranks.length - rank - 1];
+
+            for (final char c : rankRecord.toCharArray()) {
+                if (c >= '0' && c <= '9') {
+                    final int offset = c - '0';
+                    for (int i = 0; i < offset; i++) {
+                        sb.append(' ');
+                    }
+                } else {
+                    sb.append(c);
+                }
+            }
+        }
+
+        return sb.toString();
+    }
 }

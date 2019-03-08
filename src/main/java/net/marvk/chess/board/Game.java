@@ -2,7 +2,9 @@ package net.marvk.chess.board;
 
 import lombok.extern.log4j.Log4j2;
 
-import java.util.*;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 @Log4j2
 public class Game {
@@ -12,7 +14,7 @@ public class Game {
     private Board board;
     private MoveResult lastMove;
 
-    private final List<MoveResult> history;
+    //    private final List<MoveResult> history;
     private List<MoveResult> validMoves;
 
     private boolean gameOver = false;
@@ -22,12 +24,12 @@ public class Game {
         this.blackPlayer = black.create(Color.BLACK);
 
         this.board = Boards.startingPosition();
-        this.history = new ArrayList<>();
+//        this.history = new ArrayList<>();
 
         this.lastMove = new MoveResult(board, Move.NULL_MOVE);
         this.validMoves = board.getValidMoves();
 
-        this.history.add(lastMove);
+//        this.history.add(lastMove);
     }
 
     public synchronized Optional<MoveResult> nextMove() {
@@ -43,13 +45,13 @@ public class Game {
                           .findFirst();
 
         if (maybeValidMove.isPresent()) {
-            log.info("Player " + getTurn() + " played " + play);
+            log.info(getTurn() + " played " + play);
             lastMove = maybeValidMove.get();
             board = lastMove.getBoard();
 
-            history.add(lastMove);
+//            history.add(lastMove);
         } else {
-            log.info("Player " + getTurn() + " tried to play invalid move " + play);
+            log.info(getTurn() + " tried to play invalid move " + play);
             return Optional.empty();
         }
 
@@ -97,6 +99,8 @@ public class Game {
     }
 
     public List<MoveResult> getHistory() {
-        return Collections.unmodifiableList(history);
+        throw new UnsupportedOperationException();
+
+//        return Collections.unmodifiableList(history);
     }
 }

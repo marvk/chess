@@ -6,30 +6,28 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.IntStream;
 
 @Log4j2
 public class SimpleBoard implements Board {
     private static final int LENGTH = 8;
     private static final Square[] SQUARES = Square.values();
-    private final ColoredPiece[][] board;
+    private final String board;
     private final BoardState boardState;
 
     public SimpleBoard(final Fen fen) {
-        this.board = new ColoredPiece[LENGTH][LENGTH];
         this.boardState = new BoardState(fen);
 
-        Boards.parsePiecePlacement(fen.getPiecePlacement(), this.board);
+        this.board = Boards.parsePiecePlacement(fen.getPiecePlacement());
     }
 
     private SimpleBoard(final SimpleBoard simpleBoard, final BoardState boardState) {
-        this.board = new ColoredPiece[LENGTH][LENGTH];
-
-        for (int i = 0; i < this.board.length; i++) {
-            System.arraycopy(simpleBoard.board[i], 0, this.board[i], 0, LENGTH);
-        }
-
+        this.board = simpleBoard.board;
         this.boardState = boardState;
+    }
+
+    public SimpleBoard(final String board, final BoardState nextState) {
+        this.board = board;
+        this.boardState = nextState;
     }
 
     @Override
@@ -48,14 +46,15 @@ public class SimpleBoard implements Board {
 
     @Override
     public ColoredPiece getPiece(final int file, final int rank) {
-        return board[rank][file];
+        return ColoredPiece.getPieceFromSan(board.charAt(index(file, rank)));
     }
 
     @Override
     public ColoredPiece[][] getBoard() {
-        return IntStream.range(0, LENGTH)
-                        .mapToObj(i -> Arrays.copyOf(board[i], LENGTH))
-                        .toArray(ColoredPiece[][]::new);
+        throw new UnsupportedOperationException();
+//        return IntStream.range(0, LENGTH)
+//                        .mapToObj(i -> Arrays.copyOf(board[i], LENGTH))
+//                        .toArray(ColoredPiece[][]::new);
     }
 
     private List<MoveResult> validMoves;
@@ -63,8 +62,7 @@ public class SimpleBoard implements Board {
     @Override
     public List<MoveResult> getValidMoves() {
         if (validMoves == null) {
-            final Color activePlayer = boardState.getActivePlayer();
-            validMoves = Collections.unmodifiableList(getValidMovesForColor(activePlayer));
+            validMoves = Collections.unmodifiableList(getValidMovesForColor(boardState.getActivePlayer()));
         }
 
         return validMoves;
@@ -124,13 +122,14 @@ public class SimpleBoard implements Board {
             }
         }
 
-        final SimpleBoard result = new SimpleBoard(this, nextState.build());
+        final StringBuilder boardBuilder = new StringBuilder(board);
 
         for (final SquareColoredPiecePair swap : swaps) {
-            result.setPiece(swap.getSquare(), swap.getColoredPiece());
+            final char san = swap.getColoredPiece() == null ? ' ' : swap.getColoredPiece().getSan();
+            boardBuilder.setCharAt(index(swap.getSquare()), san);
         }
 
-        return new MoveResult(result, move);
+        return new MoveResult(new SimpleBoard(boardBuilder.toString(), nextState.build()), move);
     }
 
     @Override
@@ -252,7 +251,11 @@ public class SimpleBoard implements Board {
         return getPiece(source.translate(direction));
     }
 
-    private void setPiece(final Square source, final ColoredPiece piece) {
-        board[source.getRank().getIndex()][source.getFile().getIndex()] = piece;
+    private static int index(final Square square) {
+        return square.getFile().getIndex() + square.getRank().getIndex() * 8;
+    }
+
+    private static int index(final int file, final int rank) {
+        return file + rank * 8;
     }
 }
