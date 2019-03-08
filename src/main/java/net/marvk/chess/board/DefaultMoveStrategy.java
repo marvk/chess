@@ -31,8 +31,6 @@ public class DefaultMoveStrategy {
               .filter(pair -> pair.getColoredPiece().getColor() == color)
               .forEach(pair -> applyStrategy(pair.getSquare(), board, pair.getColoredPiece()));
 
-        result.removeIf(r -> r.getBoard().isInCheck(color));
-
         return result;
     }
 
@@ -169,7 +167,7 @@ public class DefaultMoveStrategy {
                 final Square afterNext = next.translate(forward);
 
                 if (isValidAndNotOccupied(afterNext, board)) {
-                    result.add(board.makeSimpleMove(Move.pawnDoubleMove(square, afterNext, coloredPiece)));
+                    addMove(board.makeSimpleMove(Move.pawnDoubleMove(square, afterNext, coloredPiece)));
                 }
             }
         }
@@ -184,7 +182,7 @@ public class DefaultMoveStrategy {
         }
 
         if (enPassantTargetSquare == attackSquare && isValidAndNotOccupied(enPassantTargetSquare, board)) {
-            result.add(board.makeComplexMove(Move.enPassant(square, attackSquare, coloredPiece),
+            addMove(board.makeComplexMove(Move.enPassant(square, attackSquare, coloredPiece),
                     new SquareColoredPiecePair(square, null),
                     new SquareColoredPiecePair(attackSquare, coloredPiece),
                     new SquareColoredPiecePair(square.translate(west), null)
@@ -204,10 +202,10 @@ public class DefaultMoveStrategy {
                                     new SquareColoredPiecePair(source, null),
                                     new SquareColoredPiecePair(target, move.getPromoteTo())
                             ))
-                            .forEach(result::add);
+                            .forEach(this::addMove);
         }
 
-        result.add(board.makeSimpleMove(Move.simple(source, target, coloredPiece)));
+        addMove(board.makeSimpleMove(Move.simple(source, target, coloredPiece)));
     }
 
     private static boolean isValidAndNotOccupied(final Square square, final Board board) {
@@ -228,7 +226,7 @@ public class DefaultMoveStrategy {
                             && board.getState().canWhiteCastleQueen()
                             && validCastle(source, Square.A1, Direction.WEST, board, color)
             ) {
-                result.add(board.makeComplexMove(Move.castling(source, Square.C1, coloredPiece),
+                addMove(board.makeComplexMove(Move.castling(source, Square.C1, coloredPiece),
                         new SquareColoredPiecePair(source, null),
                         new SquareColoredPiecePair(Square.C1, coloredPiece),
                         new SquareColoredPiecePair(Square.D1, getPiece(color, Piece.ROOK)),
@@ -239,7 +237,7 @@ public class DefaultMoveStrategy {
                             && board.getState().canWhiteCastleKing()
                             && validCastle(source, Square.H1, Direction.EAST, board, color)
             ) {
-                result.add(board.makeComplexMove(Move.castling(source, Square.G1, coloredPiece),
+                addMove(board.makeComplexMove(Move.castling(source, Square.G1, coloredPiece),
                         new SquareColoredPiecePair(source, null),
                         new SquareColoredPiecePair(Square.G1, coloredPiece),
                         new SquareColoredPiecePair(Square.F1, getPiece(color, Piece.ROOK)),
@@ -252,7 +250,7 @@ public class DefaultMoveStrategy {
                             && board.getState().canBlackCastleQueen()
                             && validCastle(source, Square.A8, Direction.WEST, board, color)
             ) {
-                result.add(board.makeComplexMove(Move.castling(source, Square.C8, coloredPiece),
+                addMove(board.makeComplexMove(Move.castling(source, Square.C8, coloredPiece),
                         new SquareColoredPiecePair(source, null),
                         new SquareColoredPiecePair(Square.C8, coloredPiece),
                         new SquareColoredPiecePair(Square.D8, getPiece(color, Piece.ROOK)),
@@ -263,7 +261,7 @@ public class DefaultMoveStrategy {
                             && board.getState().canBlackCastleKing()
                             && validCastle(source, Square.H8, Direction.EAST, board, color)
             ) {
-                result.add(board.makeComplexMove(Move.castling(source, Square.G8, coloredPiece),
+                addMove(board.makeComplexMove(Move.castling(source, Square.G8, coloredPiece),
                         new SquareColoredPiecePair(source, null),
                         new SquareColoredPiecePair(Square.G8, coloredPiece),
                         new SquareColoredPiecePair(Square.F8, getPiece(color, Piece.ROOK)),
@@ -295,7 +293,7 @@ public class DefaultMoveStrategy {
                 current = current.translate(direction);
 
                 if (isValidTarget(current, board, coloredPiece.getColor())) {
-                    result.add(board.makeSimpleMove(Move.simple(square, current, coloredPiece)));
+                    addMove(board.makeSimpleMove(Move.simple(square, current, coloredPiece)));
 
                     if (board.getPiece(current) != null) {
                         break;
@@ -313,7 +311,7 @@ public class DefaultMoveStrategy {
                   .filter(sq -> isValidTarget(sq, board, coloredPiece.getColor()))
                   .map(target -> Move.simple(square, target, coloredPiece))
                   .map(board::makeSimpleMove)
-                  .forEach(result::add);
+                  .forEach(this::addMove);
     }
 
     private static boolean isValidTarget(final Square target, final Board board, final Color sourceColor) {
@@ -328,5 +326,13 @@ public class DefaultMoveStrategy {
         }
 
         return piece.getColor() != sourceColor && piece.getPiece() != Piece.KING;
+    }
+
+    private void addMove(final MoveResult moveResult) {
+        if (moveResult.getBoard().isInCheck(color)) {
+            return;
+        }
+
+        result.add(moveResult);
     }
 }
