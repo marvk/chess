@@ -50,7 +50,6 @@ public abstract class AlphaBetaPlayer extends Player {
 
         final List<MoveResult> validMoves = current.getBoard().getValidMoves();
 
-        //TODO
         if (current.getBoard().findGameResult().isPresent()) {
             return new Pair(current);
         }
@@ -65,14 +64,14 @@ public abstract class AlphaBetaPlayer extends Player {
             final Pair pair = alphaBeta(move, alpha, beta, depth + 1);
 
             if (maximise) {
-                if (pair.score > value) {
+                if (pair.score >= value) {
                     value = pair.score;
                     best = move;
                 }
 
                 alpha = Math.max(alpha, value);
             } else {
-                if (pair.score < value) {
+                if (pair.score <= value) {
                     value = pair.score;
                     best = move;
                 }
@@ -83,6 +82,10 @@ public abstract class AlphaBetaPlayer extends Player {
             if (beta <= alpha) {
                 break;
             }
+        }
+
+        if (best == null) {
+            System.out.println();
         }
 
         return new Pair(best, value);
