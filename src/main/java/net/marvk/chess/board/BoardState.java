@@ -165,7 +165,7 @@ public class BoardState {
                     nullableOrElse(blackCastleKing, previous.blackCastleKing),
                     nullableOrElse(blackCastleQueen, previous.blackCastleQueen),
                     enPassantTargetSquare,
-                    nullableOrElse(halfmoveClock, previous.halfmoveClock),
+                    nullableOrElse(halfmoveClock, previous.halfmoveClock + 1),
                     previous.activePlayer == Color.BLACK ? previous.fullmoveClock + 1 : previous.fullmoveClock
             );
         }

@@ -65,6 +65,8 @@ public class Game {
             validMoves = board.getValidMoves();
         }
 
+        log.info(board.getState().getHalfmoveClock());
+
         return Optional.of(lastMove);
     }
 

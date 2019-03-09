@@ -3,8 +3,10 @@ package net.marvk.chess.board;
 import lombok.ToString;
 import lombok.extern.log4j.Log4j2;
 import net.marvk.chess.util.Stopwatch;
+import net.marvk.chess.util.Util;
 
 import java.time.Duration;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -57,6 +59,11 @@ public abstract class AlphaBetaPlayer extends Player {
         final boolean maximise = current.getBoard().getState().getActivePlayer() == getColor();
 
         int value = maximise ? Integer.MIN_VALUE : Integer.MAX_VALUE;
+
+        validMoves.sort(Comparator.comparing(moveResult -> {
+            final Board board = moveResult.getBoard();
+            return board.computeScore(Util.SCORES, getColor().opposite()) - board.computeScore(Util.SCORES, getColor());
+        }));
 
         MoveResult best = null;
 

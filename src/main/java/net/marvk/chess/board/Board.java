@@ -1,6 +1,7 @@
 package net.marvk.chess.board;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface Board {
@@ -23,6 +24,8 @@ public interface Board {
     BoardState getState();
 
     Optional<GameResult> findGameResult();
+
+    double computeScore(final Map<Piece, Double> scoreMap, final Color color);
 
     boolean isInCheck();
 

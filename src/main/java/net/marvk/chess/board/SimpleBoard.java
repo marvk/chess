@@ -2,10 +2,7 @@ package net.marvk.chess.board;
 
 import lombok.extern.log4j.Log4j2;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Log4j2
 public class SimpleBoard implements Board {
@@ -62,7 +59,8 @@ public class SimpleBoard implements Board {
     @Override
     public List<MoveResult> getValidMoves() {
         if (validMoves == null) {
-            validMoves = Collections.unmodifiableList(getValidMovesForColor(boardState.getActivePlayer()));
+            //Modifiable!!
+            validMoves = getValidMovesForColor(boardState.getActivePlayer());
         }
 
         return validMoves;
@@ -161,6 +159,43 @@ public class SimpleBoard implements Board {
         }
 
         return Optional.of(new GameResult(winner, endCondition));
+    }
+
+    private Double whiteScore;
+    private Double blackScore;
+
+    @Override
+    public double computeScore(final Map<Piece, Double> scoreMap, final Color color) {
+        Objects.requireNonNull(color);
+
+        if (whiteScore == null) {
+            whiteScore = 0.;
+            blackScore = 0.;
+
+            for (final Square square : SQUARES) {
+                final ColoredPiece piece = getPiece(square);
+
+                if (piece != null) {
+                    final double score = scoreMap.get(piece.getPiece());
+
+                    if (piece.getColor() == Color.WHITE) {
+                        whiteScore += score;
+                    } else {
+                        blackScore += score;
+                    }
+                }
+            }
+        }
+
+        if (color == Color.WHITE) {
+            return whiteScore;
+        }
+
+        if (color == Color.BLACK) {
+            return blackScore;
+        }
+
+        throw new AssertionError();
     }
 
     @Override
