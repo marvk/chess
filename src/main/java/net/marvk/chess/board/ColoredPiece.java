@@ -1,8 +1,6 @@
 package net.marvk.chess.board;
 
 import java.util.Arrays;
-import java.util.EnumMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -29,22 +27,6 @@ public enum ColoredPiece {
             Arrays.stream(ColoredPiece.values())
                   .collect(Collectors.toMap(ColoredPiece::getSan, Function.identity()));
 
-    private static final Map<Color, Map<Piece, ColoredPiece>> COLOR_PIECE_MAP =
-            Arrays.stream(ColoredPiece.values())
-                  .collect(Collectors.groupingBy(
-                          ColoredPiece::getColor,
-                          () -> new EnumMap<>(Color.class),
-                          Collectors.toMap(
-                                  ColoredPiece::getPiece,
-                                  Function.identity(),
-                                  (l, r) -> {
-                                      throw new AssertionError();
-                                  },
-                                  () -> new EnumMap<>(Piece.class)
-                          )
-                          )
-                  );
-
     ColoredPiece(final Piece piece, final Color color, final char san) {
         this.piece = piece;
         this.color = color;
@@ -67,21 +49,7 @@ public enum ColoredPiece {
         return SAN_PIECE_MAP.get(san);
     }
 
-    public static ColoredPiece getPieceFromSan(final String san) {
-        if (san == null || san.length() != 1) {
-            return null;
-        }
-
-        return SAN_PIECE_MAP.get(san.charAt(0));
-    }
-
     public static ColoredPiece getPiece(final Color color, final Piece piece) {
-        final Map<Piece, ColoredPiece> pieceColoredPieceMap = COLOR_PIECE_MAP.get(color);
-
-        if (pieceColoredPieceMap == null) {
-            return null;
-        }
-
-        return pieceColoredPieceMap.get(piece);
+        return piece.ofColor(color);
     }
 }

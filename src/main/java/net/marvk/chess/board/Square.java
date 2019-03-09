@@ -1,10 +1,10 @@
 package net.marvk.chess.board;
 
-import java.util.Arrays;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import lombok.extern.log4j.Log4j2;
 
+import java.util.EnumMap;
+
+@Log4j2
 public enum Square {
     A1(File.FILE_A, Rank.RANK_1), A2(File.FILE_A, Rank.RANK_2), A3(File.FILE_A, Rank.RANK_3), A4(File.FILE_A, Rank.RANK_4), A5(File.FILE_A, Rank.RANK_5), A6(File.FILE_A, Rank.RANK_6), A7(File.FILE_A, Rank.RANK_7), A8(File.FILE_A, Rank.RANK_8),
     B1(File.FILE_B, Rank.RANK_1), B2(File.FILE_B, Rank.RANK_2), B3(File.FILE_B, Rank.RANK_3), B4(File.FILE_B, Rank.RANK_4), B5(File.FILE_B, Rank.RANK_5), B6(File.FILE_B, Rank.RANK_6), B7(File.FILE_B, Rank.RANK_7), B8(File.FILE_B, Rank.RANK_8),
@@ -15,28 +15,32 @@ public enum Square {
     G1(File.FILE_G, Rank.RANK_1), G2(File.FILE_G, Rank.RANK_2), G3(File.FILE_G, Rank.RANK_3), G4(File.FILE_G, Rank.RANK_4), G5(File.FILE_G, Rank.RANK_5), G6(File.FILE_G, Rank.RANK_6), G7(File.FILE_G, Rank.RANK_7), G8(File.FILE_G, Rank.RANK_8),
     H1(File.FILE_H, Rank.RANK_1), H2(File.FILE_H, Rank.RANK_2), H3(File.FILE_H, Rank.RANK_3), H4(File.FILE_H, Rank.RANK_4), H5(File.FILE_H, Rank.RANK_5), H6(File.FILE_H, Rank.RANK_6), H7(File.FILE_H, Rank.RANK_7), H8(File.FILE_H, Rank.RANK_8);
 
-    private static final Map<File, Map<Rank, Square>> FILE_RANK_SQUARE_MAP =
-            Arrays.stream(Square.values())
-                  .collect(Collectors.groupingBy(
-                          Square::getFile,
-                          Collectors.toMap(Square::getRank, Function.identity())
-                          )
-                  );
-
-    private static final Map<Integer, Map<Integer, Square>> INDEX_FILE_RANK_SQUARE_MAP =
-            Arrays.stream(Square.values())
-                  .collect(Collectors.groupingBy(
-                          square -> square.getFile().getIndex(),
-                          Collectors.toMap(square -> square.getRank().getIndex(), Function.identity())
-                          )
-                  );
-
     private final File file;
     private final Rank rank;
+
+    private static final Square[][] SQUARES;
+
+    static {
+        SQUARES = new Square[8][8];
+
+        for (final Square square : values()) {
+            SQUARES[square.file.getIndex()][square.rank.getIndex()] = square;
+        }
+
+        for (final Square square : values()) {
+            for (final Direction value : Direction.values()) {
+                square.translateMap.put(value, square.calculateTranslate(value));
+            }
+        }
+    }
+
+    private final EnumMap<Direction, Square> translateMap;
 
     Square(final File file, final Rank rank) {
         this.file = file;
         this.rank = rank;
+
+        this.translateMap = new EnumMap<>(Direction.class);
     }
 
     public static Square getSquareFromFen(final String fen) {
@@ -51,20 +55,18 @@ public enum Square {
     }
 
     public static Square get(final File file, final Rank rank) {
-        return get(rank.getIndex(), file.getIndex());
+        return get(file.getIndex(), rank.getIndex());
     }
 
     public static Square get(final int file, final int rank) {
-        final Map<Integer, Square> fileSquareMap = INDEX_FILE_RANK_SQUARE_MAP.get(rank);
-
-        if (fileSquareMap == null) {
-            return null;
-        }
-
-        return fileSquareMap.get(file);
+        return SQUARES[file][rank];
     }
 
     public Square translate(final Direction direction) {
+        return translateMap.get(direction);
+    }
+
+    private Square calculateTranslate(final Direction direction) {
         final File translatedFile = file.translate(direction);
         final Rank translatedRank = rank.translate(direction);
 

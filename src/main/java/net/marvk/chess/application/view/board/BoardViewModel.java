@@ -13,10 +13,7 @@ import lombok.extern.log4j.Log4j2;
 import net.marvk.chess.board.Piece;
 import net.marvk.chess.board.*;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
@@ -147,6 +144,9 @@ public class BoardViewModel implements ViewModel {
 
     public void start() {
         final Thread thread = new Thread(() -> {
+            new Scanner(System.in);
+            log.info("Start game loop");
+
             while (!game.isGameOver()) {
                 final Optional<MoveResult> moveResult = game.nextMove();
                 Platform.runLater(this::updateBoard);
