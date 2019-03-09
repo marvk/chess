@@ -2,6 +2,10 @@ package net.marvk.chess.util;
 
 import net.marvk.chess.board.Piece;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.Map;
@@ -24,5 +28,13 @@ public final class Util {
         map.put(Piece.PAWN, 1.);
 
         SCORES = Collections.unmodifiableMap(map);
+    }
+
+    public static String lichessApiToken(final Path path) throws IOException {
+        return String.join("\n", Files.readAllLines(path)).trim();
+    }
+
+    public static String lichessApiToken() throws IOException {
+        return lichessApiToken(Paths.get("lichess-api-token"));
     }
 }
