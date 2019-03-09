@@ -203,9 +203,9 @@ public class DefaultMoveStrategy {
                                     new SquareColoredPiecePair(target, move.getPromoteTo())
                             ))
                             .forEach(this::addMove);
+        } else {
+            addMove(board.makeSimpleMove(Move.simple(source, target, coloredPiece)));
         }
-
-        addMove(board.makeSimpleMove(Move.simple(source, target, coloredPiece)));
     }
 
     private static boolean isValidAndNotOccupied(final Square square, final Board board) {

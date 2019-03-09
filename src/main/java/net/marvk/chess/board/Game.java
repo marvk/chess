@@ -105,4 +105,8 @@ public class Game {
 
 //        return Collections.unmodifiableList(history);
     }
+
+    public Player getActivePlayer() {
+        return getPlayer(getTurn());
+    }
 }

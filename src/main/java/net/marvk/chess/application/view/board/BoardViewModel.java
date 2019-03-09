@@ -6,20 +6,28 @@ import eu.lestard.grid.GridModel;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import lombok.extern.log4j.Log4j2;
 import net.marvk.chess.board.Piece;
 import net.marvk.chess.board.*;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Scanner;
+import java.util.concurrent.CountDownLatch;
+import java.util.stream.Collectors;
 
 @Log4j2
 public class BoardViewModel implements ViewModel {
     private final ReadOnlyObjectWrapper<Board> board = new ReadOnlyObjectWrapper<>();
-    private final GridModel<ColoredPiece> boardGridModel = new GridModel<>();
+    private final GridModel<CellViewModel> boardGridModel = new GridModel<>();
     private final ObservableList<MoveResult> validMoves = FXCollections.observableArrayList();
+
+    private final SimpleBooleanProperty auto = new SimpleBooleanProperty();
+
     private final Game game;
 
     public BoardViewModel() {
@@ -31,15 +39,55 @@ public class BoardViewModel implements ViewModel {
         board.set(Boards.startingPosition());
         validMoves.setAll(board.get().getValidMoves());
 
+        auto.addListener((observable, oldValue, newValue) -> {
+            if (observable.getValue()) {
+                next();
+            }
+        });
+
         updateBoard();
 
         start();
     }
 
     private void updateBoard() {
-        for (final Square value : Square.values()) {
-            final ColoredPiece piece = board.get().getPiece(value);
-            boardGridModel.getCell(value.getFile().getIndex(), 8 - value.getRank().getIndex() - 1).changeState(piece);
+        final Map<Move, Double> lastEvaluation;
+
+        final Player player = game.getPlayer(game.getTurn().opposite());
+
+        if (player instanceof LastEvaluationGettable) {
+            final Map<Move, Double> map = ((LastEvaluationGettable) player).getLastEvaluation();
+
+            lastEvaluation = map == null ? Collections.emptyMap() : map;
+        } else {
+            lastEvaluation = Collections.emptyMap();
+        }
+
+        for (final Square square : Square.values()) {
+            final ColoredPiece piece = board.get().getPiece(square);
+
+            final Map<Square, List<Move>> squareValidMoves =
+                    validMoves.stream()
+                              .map(MoveResult::getMove)
+                              .filter(m -> m.getTarget() == square)
+                              .collect(Collectors.groupingBy(Move::getSource));
+
+            final Map<Move, Double> valueMap =
+                    lastEvaluation.entrySet()
+                                  .stream()
+                                  .filter(kv -> kv.getKey().getTarget() == square)
+                                  .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+            final CellViewModel cellViewModel = new CellViewModel(
+                    piece,
+                    square,
+                    valueMap,
+                    squareValidMoves,
+                    game.getLastMove().getMove()
+            );
+
+            boardGridModel.getCell(square.getFile().getIndex(), 8 - square.getRank().getIndex() - 1)
+                          .changeState(cellViewModel);
         }
     }
 
@@ -51,11 +99,11 @@ public class BoardViewModel implements ViewModel {
         return board.getReadOnlyProperty();
     }
 
-    public GridModel<ColoredPiece> getGridModel() {
+    public GridModel<CellViewModel> getGridModel() {
         return boardGridModel;
     }
 
-    public void move(final Cell<ColoredPiece> source, final Cell<ColoredPiece> target) {
+    public void move(final Cell<CellViewModel> source, final Cell<CellViewModel> target) {
         final Move move = parseMove(source, target);
 
         log.info("Received move from UI: " + move);
@@ -73,11 +121,11 @@ public class BoardViewModel implements ViewModel {
         }
     }
 
-    private Move parseMove(final Cell<ColoredPiece> source, final Cell<ColoredPiece> target) {
+    private Move parseMove(final Cell<CellViewModel> source, final Cell<CellViewModel> target) {
         final Square sourceSquare = convert(source);
         final Square targetSquare = convert(target);
 
-        final ColoredPiece piece = source.getState();
+        final ColoredPiece piece = source.getState().getColoredPiece();
         final Color color = piece.getColor();
         final Rank targetRank = targetSquare.getRank();
 
@@ -95,12 +143,23 @@ public class BoardViewModel implements ViewModel {
         }
     }
 
+    private CountDownLatch countDownLatch;
+
     public void start() {
         final Thread thread = new Thread(() -> {
-            new Scanner(System.in).nextLine();
-
             while (!game.isGameOver()) {
                 final Optional<MoveResult> moveResult = game.nextMove();
+                Platform.runLater(this::updateBoard);
+
+                if (!auto.get()) {
+                    countDownLatch = new CountDownLatch(1);
+                    try {
+                        countDownLatch.await();
+                    } catch (final InterruptedException e) {
+                        log.error(e);
+                        Thread.currentThread().interrupt();
+                    }
+                }
 
                 moveResult.ifPresent(result -> Platform.runLater(() -> {
                     board.set(result.getBoard());
@@ -116,5 +175,15 @@ public class BoardViewModel implements ViewModel {
 
     private static Square convert(final Cell<?> cell) {
         return Square.get(8 - cell.getRow() - 1, cell.getColumn());
+    }
+
+    public void next() {
+        if (countDownLatch != null) {
+            countDownLatch.countDown();
+        }
+    }
+
+    public SimpleBooleanProperty autoProperty() {
+        return auto;
     }
 }

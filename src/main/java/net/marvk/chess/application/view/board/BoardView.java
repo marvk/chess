@@ -4,21 +4,29 @@ import de.saxsys.mvvmfx.FxmlView;
 import de.saxsys.mvvmfx.InjectViewModel;
 import eu.lestard.grid.Cell;
 import eu.lestard.grid.GridView;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.layout.StackPane;
-import net.marvk.chess.board.ColoredPiece;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.layout.Pane;
+import net.marvk.chess.board.Square;
 
 public class BoardView implements FxmlView<BoardViewModel> {
     @FXML
-    public StackPane rootPane;
+    public Pane rootPane;
 
-    private final GridView<ColoredPiece> gridView = new GridView<>();
+    private final GridView<CellViewModel> gridView = new GridView<>();
+
+    @FXML
+    public ToggleButton auto;
 
     @InjectViewModel
     private BoardViewModel viewModel;
 
     public void initialize() {
-        rootPane.getChildren().add(gridView);
+        rootPane.getChildren().add(0, gridView);
+
+        viewModel.autoProperty().bind(auto.selectedProperty());
 
         gridView.setGridModel(viewModel.getGridModel());
 
@@ -26,18 +34,22 @@ public class BoardView implements FxmlView<BoardViewModel> {
 
         gridView.getStyleClass().add("board-grid");
 
-        for (final ColoredPiece value : ColoredPiece.values()) {
-            gridView.addNodeMapping(value, cell -> new Piece(value, cell, this::drag));
-        }
+        final SimpleObjectProperty<Square> hoverSquare = new SimpleObjectProperty<>();
 
-        gridView.addNodeMapping(null, cell -> new Piece(null, cell, null));
+        gridView.setNodeFactory(cell -> new Piece(cell, this::drag, hoverSquare));
+
+        gridView.setOnMouseExited(e -> hoverSquare.set(null));
     }
 
-    private void drag(final Cell<ColoredPiece> source, final Cell<ColoredPiece> target) {
+    private void drag(final Cell<CellViewModel> source, final Cell<CellViewModel> target) {
         if (source.equals(target)) {
             return;
         }
 
         viewModel.move(source, target);
+    }
+
+    public void next(final ActionEvent actionEvent) {
+        viewModel.next();
     }
 }

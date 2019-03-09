@@ -88,13 +88,17 @@
                 <enabled>true</enabled>
             </snapshots>
         </repository>
+        <repository>
+            <id>hellsh</id>
+            <url>https://mvn2.hell.sh</url>
+        </repository>
     </repositories>
 
     <dependencies>
         <dependency>
             <groupId>eu.lestard</groupId>
             <artifactId>grid</artifactId>
-            <version>0.2.0</version>
+            <version>0.3.0</version>
         </dependency>
         <dependency>
             <groupId>com.google.inject</groupId>
@@ -111,16 +115,16 @@
             <artifactId>mvvmfx</artifactId>
             <version>1.8.0-SNAPSHOT</version>
         </dependency>
-                <dependency>
-                    <groupId>org.openjfx</groupId>
-                    <artifactId>javafx-controls</artifactId>
-                    <version>11.0.2</version>
-                </dependency>
-                <dependency>
-                    <groupId>org.openjfx</groupId>
-                    <artifactId>javafx-fxml</artifactId>
-                    <version>11.0.2</version>
-                </dependency>
+<!--                <dependency>-->
+<!--                    <groupId>org.openjfx</groupId>-->
+<!--                    <artifactId>javafx-controls</artifactId>-->
+<!--                    <version>11.0.2</version>-->
+<!--                </dependency>-->
+<!--                <dependency>-->
+<!--                    <groupId>org.openjfx</groupId>-->
+<!--                    <artifactId>javafx-fxml</artifactId>-->
+<!--                    <version>11.0.2</version>-->
+<!--                </dependency>-->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
@@ -156,6 +160,16 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>1.18.6</version>
+        </dependency>
+        <dependency>
+            <groupId>sh.hell</groupId>
+            <artifactId>compactlichess</artifactId>
+            <version>[1.0.7,2.0)</version>
+        </dependency>
+        <dependency>
+            <groupId>eu.lestard</groupId>
+            <artifactId>advanced-bindings</artifactId>
+            <version>0.4.0</version>
         </dependency>
     </dependencies>
 </project>

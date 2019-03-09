@@ -2,11 +2,13 @@ package net.marvk.chess.board;
 
 import net.marvk.chess.util.Util;
 
-import java.util.*;
+import java.util.Optional;
+import java.util.Random;
 
 public class SimpleCpu extends AlphaBetaPlayer {
     private static final Square[] SQUARES = Square.values();
     private static final Random RANDOM = new Random();
+    public static final int NOISE_BOUND = 100;
 
     public SimpleCpu(final Color color) {
         super(color);
@@ -29,6 +31,6 @@ public class SimpleCpu extends AlphaBetaPlayer {
             return winner == getColor() ? Integer.MAX_VALUE : Integer.MIN_VALUE;
         }
 
-        return (int) ((mySum - theirSum) * 1024) + RANDOM.nextInt(100);
+        return (int) ((mySum - theirSum) * 1024) + RANDOM.nextInt(NOISE_BOUND) - NOISE_BOUND / 2;
     }
 }
