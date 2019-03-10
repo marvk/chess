@@ -6,21 +6,26 @@ import net.marvk.chess.util.Stopwatch;
 import net.marvk.chess.util.Util;
 
 import java.time.Duration;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 @Log4j2
-public abstract class AlphaBetaPlayer extends Player implements LastEvaluationGettable {
-    private static final int MAX_DEPTH = 5;
+public class AlphaBetaPlayer extends Player implements LastEvaluationGettable {
+    private static final int MAX_DEPTH = 3;
+    private final Heuristic heuristic;
     private int lastCount;
     private Map<Move, Double> lastEvaluation;
+    private int totalCount;
+    private Duration totalDuration;
 
-    public AlphaBetaPlayer(final Color color) {
+    public AlphaBetaPlayer(final Color color, final Heuristic heuristic) {
         super(color);
+        this.heuristic = heuristic;
+
+        this.totalCount = 0;
+        this.totalDuration = Duration.ZERO;
     }
 
     @Override
@@ -29,14 +34,35 @@ public abstract class AlphaBetaPlayer extends Player implements LastEvaluationGe
         lastCount = 0;
         lastEvaluation = new HashMap<>();
 
-        final Duration duration = Stopwatch.time(() -> move.set(startExploration(previousMove)));
+        final Duration lastDuration = Stopwatch.time(() -> move.set(startExploration(previousMove)));
 
-        final int nodesPerSecond = (int) Math.round(((double) lastCount / duration.toNanos()) * TimeUnit.SECONDS.toNanos(1));
+        final int nodesPerSecond = Util.nodesPerSecond(lastDuration, lastCount);
+        final int score = move.get().score;
 
-        log.info(getColor() + " used " + lastCount + " nodes to calculated move in " + duration + " (" + nodesPerSecond + " NPS), heuristic is " + move
-                .get().score);
+        log.info(getColor() + " used " + lastCount + " nodes to calculated move in " + lastDuration + " (" + nodesPerSecond + " NPS), evaluate is " + score);
 
-        return move.get().moveResult.getMove();
+        totalCount += lastCount;
+        totalDuration = totalDuration.plus(lastDuration);
+
+        final int averageNodesPerSecond = Util.nodesPerSecond(totalDuration, totalCount);
+
+        log.info("average NPS for " + getColor() + ": " + averageNodesPerSecond);
+
+        final double max =
+                lastEvaluation.values()
+                              .stream()
+                              .mapToDouble(Double::doubleValue)
+                              .max()
+                              .orElseThrow(IllegalStateException::new);
+
+        final List<Move> results =
+                lastEvaluation.entrySet()
+                              .stream()
+                              .filter(kv -> Double.compare(kv.getValue(), max) == 0)
+                              .map(Map.Entry::getKey)
+                              .collect(Collectors.toList());
+
+        return results.get(ThreadLocalRandom.current().nextInt(results.size()));
     }
 
     private Pair startExploration(final MoveResult current) {
@@ -50,7 +76,7 @@ public abstract class AlphaBetaPlayer extends Player implements LastEvaluationGe
             log.trace(lastCount);
         }
 
-        if (depth == MAX_DEPTH - 1) {
+        if (depth == MAX_DEPTH) {
             return new Pair(current);
         }
 
@@ -108,7 +134,7 @@ public abstract class AlphaBetaPlayer extends Player implements LastEvaluationGe
         private final int score;
 
         Pair(final MoveResult moveResult) {
-            this(moveResult, heuristic(moveResult.getBoard()));
+            this(moveResult, heuristic.evaluate(moveResult.getBoard(), getColor()));
         }
 
         Pair(final MoveResult moveResult, final int score) {
@@ -121,6 +147,4 @@ public abstract class AlphaBetaPlayer extends Player implements LastEvaluationGe
     public Map<Move, Double> getLastEvaluation() {
         return lastEvaluation;
     }
-
-    protected abstract int heuristic(final Board board);
 }

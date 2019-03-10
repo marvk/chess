@@ -31,7 +31,7 @@ public class BoardViewModel implements ViewModel {
         boardGridModel.setNumberOfColumns(8);
         boardGridModel.setNumberOfRows(8);
 
-        game = new Game(SimpleCpu::new, SimpleCpu::new);
+        game = new Game(AsyncPlayer::new, (color) -> new AlphaBetaPlayer(color, new SimpleHeuristic()));
 
         board.set(Boards.startingPosition());
         validMoves.setAll(board.get().getValidMoves());
@@ -173,8 +173,8 @@ public class BoardViewModel implements ViewModel {
         thread.start();
     }
 
-    private static Square convert(final Cell<?> cell) {
-        return Square.get(8 - cell.getRow() - 1, cell.getColumn());
+    private static Square convert(final Cell<CellViewModel> cell) {
+        return cell.getState().getSquare();
     }
 
     public void next() {

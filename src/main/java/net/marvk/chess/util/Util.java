@@ -6,9 +6,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public final class Util {
     private Util() {
@@ -36,5 +38,9 @@ public final class Util {
 
     public static String lichessApiToken() throws IOException {
         return lichessApiToken(Paths.get("lichess-api-token"));
+    }
+
+    public static int nodesPerSecond(final Duration duration, final int nodes) {
+        return (int) Math.round(((double) nodes / duration.toNanos()) * TimeUnit.SECONDS.toNanos(1));
     }
 }
