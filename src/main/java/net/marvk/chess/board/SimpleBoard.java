@@ -138,14 +138,11 @@ public class SimpleBoard implements Board {
     @Override
     public Optional<GameResult> findGameResult() {
         EndCondition endCondition = null;
+        Color winner = null;
 
         if (boardState.getHalfmoveClock() >= 50) {
             endCondition = EndCondition.DRAW_BY_FIFTY_MOVE_RULE;
-        }
-
-        Color winner = null;
-
-        if (getValidMoves().isEmpty()) {
+        } else if (getValidMoves().isEmpty()) {
             if (isInCheck()) {
                 endCondition = EndCondition.CHECKMATE;
                 winner = boardState.getActivePlayer().opposite();
