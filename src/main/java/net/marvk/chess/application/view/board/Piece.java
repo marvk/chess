@@ -61,12 +61,14 @@ class Piece extends Pane {
         this.scoreLabel = new Label();
         this.scoreLabel.setStyle("-fx-text-fill: black");
 
-        this.state = cell.getState();
+        this.state = cell.getState() == null ? CellViewModel.EMPTY : cell.getState();
 
         final javafx.scene.paint.Color backgroundColor;
 
-        if (state.getLastMove().getSource() == state.getSquare()
-                || state.getLastMove().getTarget() == state.getSquare()) {
+        final boolean wasLastSource = state.getSquare() != null && state.getLastMove().getSource() == state.getSquare();
+        final boolean wasLastTarget = state.getSquare() != null && state.getLastMove().getTarget() == state.getSquare();
+
+        if (wasLastSource || wasLastTarget) {
             backgroundColor = javafx.scene.paint.Color.ORANGERED;
         } else if ((cell.getRow() + cell.getColumn()) % 2 == 0) {
             backgroundColor = javafx.scene.paint.Color.LEMONCHIFFON;
@@ -83,7 +85,7 @@ class Piece extends Pane {
         });
 
         hoverSquare.addListener((observable, oldValue, newValue) -> {
-            final List<Move> moves = state.getValidMoves().get(observable.getValue());
+            final List<Move> moves = state.getValidMoves().get(newValue);
 
             if (moves == null) {
                 setBackground(new Background(backgroundFill));
@@ -92,7 +94,7 @@ class Piece extends Pane {
             }
 
             final Optional<Move> targetSquare = moves.stream()
-                                                     .filter(m -> m.getSource() == observable.getValue())
+                                                     .filter(m -> m.getSource() == newValue)
                                                      .findFirst();
 
             setBackground(new Background(backgroundFill, POSSIBLE_MOVE));

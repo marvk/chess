@@ -15,6 +15,9 @@ public class Fen {
             "$"
     );
 
+    public static final Fen EMPTY_BOARD = Fen.parse("8/8/8/8/8/8/8/8 w - -");
+    public static final Fen STARTING_POSITION = Fen.parse("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+
     private final String input;
     private final String piecePlacement;
     private final String activeColor;

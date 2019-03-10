@@ -3,68 +3,40 @@ package net.marvk.chess.application.view.board;
 import de.saxsys.mvvmfx.ViewModel;
 import eu.lestard.grid.Cell;
 import eu.lestard.grid.GridModel;
-import javafx.application.Platform;
-import javafx.beans.property.ReadOnlyObjectProperty;
-import javafx.beans.property.ReadOnlyObjectWrapper;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
+import javafx.beans.property.SimpleObjectProperty;
 import lombok.extern.log4j.Log4j2;
 import net.marvk.chess.board.Piece;
 import net.marvk.chess.board.*;
 
-import java.util.*;
-import java.util.concurrent.CountDownLatch;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Log4j2
 public class BoardViewModel implements ViewModel {
-    private final ReadOnlyObjectWrapper<Board> board = new ReadOnlyObjectWrapper<>();
     private final GridModel<CellViewModel> boardGridModel = new GridModel<>();
-    private final ObservableList<MoveResult> validMoves = FXCollections.observableArrayList();
 
-    private final SimpleBooleanProperty auto = new SimpleBooleanProperty();
-
-    private final Game game;
+    private final SimpleObjectProperty<BoardStateViewModel> boardState = new SimpleObjectProperty<>(
+            new BoardStateViewModel(new SimpleBoard(Fen.EMPTY_BOARD), null, Collections.emptyMap())
+    );
 
     public BoardViewModel() {
         boardGridModel.setNumberOfColumns(8);
         boardGridModel.setNumberOfRows(8);
 
-        game = new Game(
-                (color) -> new AlphaBetaPlayer(color, new SimpleHeuristic(), 5),
-                (color) -> new AlphaBetaPlayer(color, new SimpleHeuristic(), 5)
-        );
-
-        board.set(Boards.startingPosition());
-        validMoves.setAll(board.get().getValidMoves());
-
-        auto.addListener((observable, oldValue, newValue) -> {
-            if (observable.getValue()) {
-                next();
-            }
-        });
-
-        updateBoard();
-
-        start();
+        boardState.addListener((observable, oldValue, newValue) -> updateBoard(newValue));
     }
 
-    private void updateBoard() {
-        final Map<Move, Double> lastEvaluation;
+    private void updateBoard(final BoardStateViewModel viewModel) {
+        final Board newBoard = viewModel.getNewBoard();
+        final Map<Move, Double> lastEvaluation = viewModel.getLastEvaluation();
+        final Move lastMove = viewModel.getLastMove();
 
-        final Player player = game.getPlayer(game.getTurn().opposite());
-
-        if (player instanceof LastEvaluationGettable) {
-            final Map<Move, Double> map = ((LastEvaluationGettable) player).getLastEvaluation();
-
-            lastEvaluation = map == null ? Collections.emptyMap() : map;
-        } else {
-            lastEvaluation = Collections.emptyMap();
-        }
+        final List<MoveResult> validMoves = newBoard.getValidMoves();
 
         for (final Square square : Square.values()) {
-            final ColoredPiece piece = board.get().getPiece(square);
+            final ColoredPiece piece = newBoard.getPiece(square);
 
             final Map<Square, List<Move>> squareValidMoves =
                     validMoves.stream()
@@ -83,20 +55,12 @@ public class BoardViewModel implements ViewModel {
                     square,
                     valueMap,
                     squareValidMoves,
-                    game.getLastMove().getMove()
+                    lastMove
             );
 
             boardGridModel.getCell(square.getFile().getIndex(), 8 - square.getRank().getIndex() - 1)
                           .changeState(cellViewModel);
         }
-    }
-
-    public Board getBoard() {
-        return board.get();
-    }
-
-    public ReadOnlyObjectProperty<Board> boardProperty() {
-        return board.getReadOnlyProperty();
     }
 
     public GridModel<CellViewModel> getGridModel() {
@@ -107,18 +71,6 @@ public class BoardViewModel implements ViewModel {
         final Move move = parseMove(source, target);
 
         log.info("Received move from UI: " + move);
-
-        final Player white = game.getPlayer(Color.WHITE);
-
-        if (white instanceof AsyncPlayer) {
-            ((AsyncPlayer) white).setMove(move);
-        }
-
-        final Player black = game.getPlayer(Color.BLACK);
-
-        if (black instanceof AsyncPlayer) {
-            ((AsyncPlayer) black).setMove(move);
-        }
     }
 
     private Move parseMove(final Cell<CellViewModel> source, final Cell<CellViewModel> target) {
@@ -143,50 +95,19 @@ public class BoardViewModel implements ViewModel {
         }
     }
 
-    private CountDownLatch countDownLatch;
-
-    public void start() {
-        final Thread thread = new Thread(() -> {
-            new Scanner(System.in);
-            log.info("Start game loop");
-
-            while (!game.isGameOver()) {
-                final Optional<MoveResult> moveResult = game.nextMove();
-                Platform.runLater(this::updateBoard);
-
-                if (!auto.get()) {
-                    countDownLatch = new CountDownLatch(1);
-                    try {
-                        countDownLatch.await();
-                    } catch (final InterruptedException e) {
-                        log.error(e);
-                        Thread.currentThread().interrupt();
-                    }
-                }
-
-                moveResult.ifPresent(result -> Platform.runLater(() -> {
-                    board.set(result.getBoard());
-                    updateBoard();
-
-                    validMoves.setAll(board.get().getValidMoves());
-                }));
-            }
-        });
-
-        thread.start();
-    }
-
     private static Square convert(final Cell<CellViewModel> cell) {
         return cell.getState().getSquare();
     }
 
-    public void next() {
-        if (countDownLatch != null) {
-            countDownLatch.countDown();
-        }
+    public BoardStateViewModel getBoardState() {
+        return boardState.get();
     }
 
-    public SimpleBooleanProperty autoProperty() {
-        return auto;
+    public SimpleObjectProperty<BoardStateViewModel> boardStateProperty() {
+        return boardState;
+    }
+
+    public void setBoardState(final BoardStateViewModel boardState) {
+        this.boardState.set(boardState);
     }
 }

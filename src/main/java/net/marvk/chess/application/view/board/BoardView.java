@@ -5,9 +5,7 @@ import de.saxsys.mvvmfx.InjectViewModel;
 import eu.lestard.grid.Cell;
 import eu.lestard.grid.GridView;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.Pane;
 import net.marvk.chess.board.Square;
 
@@ -17,16 +15,11 @@ public class BoardView implements FxmlView<BoardViewModel> {
 
     private final GridView<CellViewModel> gridView = new GridView<>();
 
-    @FXML
-    public ToggleButton auto;
-
     @InjectViewModel
     private BoardViewModel viewModel;
 
     public void initialize() {
         rootPane.getChildren().add(0, gridView);
-
-        viewModel.autoProperty().bind(auto.selectedProperty());
 
         gridView.setGridModel(viewModel.getGridModel());
 
@@ -47,9 +40,5 @@ public class BoardView implements FxmlView<BoardViewModel> {
         }
 
         viewModel.move(source, target);
-    }
-
-    public void next(final ActionEvent actionEvent) {
-        viewModel.next();
     }
 }
