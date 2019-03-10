@@ -60,7 +60,7 @@ public enum Piece {
                 return ColoredPiece.WHITE_KNIGHT;
             }
 
-            return ColoredPiece.BLACK_KING;
+            return ColoredPiece.BLACK_KNIGHT;
         }
     },
     PAWN {
@@ -72,7 +72,7 @@ public enum Piece {
                 return ColoredPiece.WHITE_PAWN;
             }
 
-            return ColoredPiece.BLACK_KING;
+            return ColoredPiece.BLACK_PAWN;
         }
     };
 
