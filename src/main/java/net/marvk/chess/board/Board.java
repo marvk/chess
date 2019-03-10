@@ -5,15 +5,25 @@ import java.util.Map;
 import java.util.Optional;
 
 public interface Board {
-    ColoredPiece getPiece(Square square);
+    default ColoredPiece getPiece(final Square square) {
+        if (square == null) {
+            return null;
+        }
 
-    ColoredPiece getPiece(File file, Rank rank);
+        return getPiece(square.getFile().getIndex(), square.getRank().getIndex());
+    }
+
+    default ColoredPiece getPiece(final File file, final Rank rank) {
+        return getPiece(file.getIndex(), rank.getIndex());
+    }
 
     ColoredPiece getPiece(int file, int rank);
 
     ColoredPiece[][] getBoard();
 
-    List<MoveResult> getValidMoves();
+    default List<MoveResult> getValidMoves() {
+        return getValidMovesForColor(getState().getActivePlayer());
+    }
 
     List<MoveResult> getValidMovesForColor(Color color);
 
@@ -27,7 +37,9 @@ public interface Board {
 
     double computeScore(final Map<Piece, Double> scoreMap, final Color color);
 
-    boolean isInCheck();
+    default boolean isInCheck() {
+        return isInCheck(getState().getActivePlayer());
+    }
 
     boolean isInCheck(Color color);
 

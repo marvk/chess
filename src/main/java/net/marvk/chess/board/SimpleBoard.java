@@ -28,20 +28,6 @@ public class SimpleBoard implements Board {
     }
 
     @Override
-    public ColoredPiece getPiece(final Square square) {
-        if (square == null) {
-            return null;
-        }
-
-        return getPiece(square.getFile(), square.getRank());
-    }
-
-    @Override
-    public ColoredPiece getPiece(final File file, final Rank rank) {
-        return getPiece(file.getIndex(), rank.getIndex());
-    }
-
-    @Override
     public ColoredPiece getPiece(final int file, final int rank) {
         return ColoredPiece.getPieceFromSan(board.charAt(index(file, rank)));
     }
@@ -193,11 +179,6 @@ public class SimpleBoard implements Board {
         }
 
         throw new AssertionError();
-    }
-
-    @Override
-    public boolean isInCheck() {
-        return isInCheck(boardState.getActivePlayer());
     }
 
     @Override

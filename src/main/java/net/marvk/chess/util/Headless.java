@@ -9,7 +9,7 @@ import java.util.Scanner;
 
 public class Headless {
     public static void main(String[] args) {
-        final PlayerFactory factory = color -> new AlphaBetaPlayer(color, new SimpleHeuristic());
+        final PlayerFactory factory = color -> new AlphaBetaPlayer(color, new SimpleHeuristic(), 5);
 
         final Game game = new Game(factory, factory);
 

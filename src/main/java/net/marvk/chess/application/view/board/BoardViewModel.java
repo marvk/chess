@@ -31,7 +31,10 @@ public class BoardViewModel implements ViewModel {
         boardGridModel.setNumberOfColumns(8);
         boardGridModel.setNumberOfRows(8);
 
-        game = new Game(AsyncPlayer::new, (color) -> new AlphaBetaPlayer(color, new SimpleHeuristic()));
+        game = new Game(
+                (color) -> new AlphaBetaPlayer(color, new SimpleHeuristic(), 5),
+                (color) -> new AlphaBetaPlayer(color, new SimpleHeuristic(), 5)
+        );
 
         board.set(Boards.startingPosition());
         validMoves.setAll(board.get().getValidMoves());

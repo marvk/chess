@@ -6,23 +6,27 @@ import net.marvk.chess.util.Stopwatch;
 import net.marvk.chess.util.Util;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 @Log4j2
 public class AlphaBetaPlayer extends Player implements LastEvaluationGettable {
-    private static final int MAX_DEPTH = 3;
     private final Heuristic heuristic;
+    private final int maxDepth;
     private int lastCount;
     private Map<Move, Double> lastEvaluation;
     private int totalCount;
     private Duration totalDuration;
 
-    public AlphaBetaPlayer(final Color color, final Heuristic heuristic) {
+    public AlphaBetaPlayer(final Color color, final Heuristic heuristic, final int maxDepth) {
         super(color);
         this.heuristic = heuristic;
+        this.maxDepth = maxDepth;
 
         this.totalCount = 0;
         this.totalDuration = Duration.ZERO;
@@ -76,15 +80,15 @@ public class AlphaBetaPlayer extends Player implements LastEvaluationGettable {
             log.trace(lastCount);
         }
 
-        if (depth == MAX_DEPTH) {
+        if (depth == maxDepth) {
             return new Pair(current);
         }
-
-        final List<MoveResult> validMoves = current.getBoard().getValidMoves();
 
         if (current.getBoard().findGameResult().isPresent()) {
             return new Pair(current);
         }
+
+        final List<MoveResult> validMoves = current.getBoard().getValidMoves();
 
         final boolean maximise = current.getBoard().getState().getActivePlayer() == getColor();
 
