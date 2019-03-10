@@ -50,7 +50,11 @@ public class AlphaBetaPlayerExplicit extends Player implements LastEvaluationGet
         return lastEvaluation;
     }
 
-    private class Node {
+    public Node getLastRoot() {
+        return lastRoot;
+    }
+
+    public class Node {
         private final List<Node> children;
 
         private int value;
