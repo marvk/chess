@@ -271,4 +271,9 @@ public class SimpleBoard implements Board {
     private static int index(final int file, final int rank) {
         return file + rank * 8;
     }
+
+    @Override
+    public String toString() {
+        return Boards.toString(this);
+    }
 }

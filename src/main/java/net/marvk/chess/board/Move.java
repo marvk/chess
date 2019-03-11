@@ -115,4 +115,14 @@ public class Move {
     public boolean isPawnDoubleMove() {
         return pawnDoubleMove;
     }
+
+    public String getUci() {
+        final String squares = source.getFen() + target.getFen();
+
+        if (isPromotion()) {
+            return squares + Character.toLowerCase(promoteTo.getSan());
+        } else {
+            return squares;
+        }
+    }
 }

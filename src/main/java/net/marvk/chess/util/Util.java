@@ -3,6 +3,7 @@ package net.marvk.chess.util;
 import net.marvk.chess.board.Piece;
 
 import java.io.IOException;
+import java.nio.CharBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -32,15 +33,29 @@ public final class Util {
         SCORES = Collections.unmodifiableMap(map);
     }
 
-    public static String lichessApiToken(final Path path) throws IOException {
-        return String.join("\n", Files.readAllLines(path)).trim();
+    public static String lichessApiToken(final Path path) {
+        try {
+            return String.join("\n", Files.readAllLines(path)).trim();
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public static String lichessApiToken() throws IOException {
+    public static String lichessApiToken() {
         return lichessApiToken(Paths.get("lichess-api-token"));
     }
 
     public static int nodesPerSecond(final Duration duration, final int nodes) {
         return (int) Math.round(((double) nodes / duration.toNanos()) * TimeUnit.SECONDS.toNanos(1));
+    }
+
+    public static String charBufferToString(final CharBuffer buf) {
+        final StringBuilder stringBuilder = new StringBuilder();
+
+        while (buf.hasRemaining()) {
+            stringBuilder.append(buf.get());
+        }
+
+        return stringBuilder.toString();
     }
 }
