@@ -11,7 +11,6 @@ import net.marvk.chess.board.*;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;
 
 @Log4j2
@@ -69,7 +68,8 @@ public class GameViewModel implements ViewModel {
                 Platform.runLater(() -> boardState.set(new BoardStateViewModel(
                         lastBoard,
                         game.getLastMove().getMove(),
-                        lastEvaluation()
+                        lastEvaluation(),
+                        0.
                 )));
 
                 if (!auto.get()) {
@@ -85,7 +85,8 @@ public class GameViewModel implements ViewModel {
                 moveResult.ifPresent(result -> Platform.runLater(() -> boardState.set(new BoardStateViewModel(
                         game.getBoard(),
                         game.getLastMove().getMove(),
-                        lastEvaluation()
+                        lastEvaluation(),
+                        0.
                 ))));
             }
         });
@@ -94,7 +95,7 @@ public class GameViewModel implements ViewModel {
     }
 
     public void updateBoard() {
-        boardState.set(new BoardStateViewModel(game.getBoard(), game.getLastMove().getMove(), lastEvaluation()));
+        boardState.set(new BoardStateViewModel(game.getBoard(), game.getLastMove().getMove(), lastEvaluation(), 0.));
     }
 
     private Map<Move, Double> lastEvaluation() {

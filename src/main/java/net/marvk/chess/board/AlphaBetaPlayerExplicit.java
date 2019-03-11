@@ -26,23 +26,21 @@ public class AlphaBetaPlayerExplicit extends Player implements LastEvaluationGet
 
         root.startExploration();
 
-        root.children.sort(Comparator.comparingInt((Node node) -> node.value).reversed());
-
-        final int max = root.children.stream().mapToInt(c -> c.value).max().orElseThrow(IllegalStateException::new);
+        final int max = root.children.stream().mapToInt(n -> n.value).max().orElseThrow(IllegalStateException::new);
 
         Collections.shuffle(root.children);
 
         final Node node = root.children.stream()
-                                       .filter(c -> c.value == max)
+                                       .filter(n -> n.value == max)
                                        .findFirst()
                                        .orElseThrow(IllegalStateException::new);
 
-        System.out.println(max);
+        lastEvaluation = root.children.stream().collect(Collectors.toMap(
+                n -> n.getMoveResult().getMove(),
+                n -> ((double) n.value))
+        );
 
-        lastEvaluation = root.children.stream()
-                                      .collect(Collectors.toMap(c -> c.getMove().getMove(), c -> ((double) c.value)));
-
-        return node.getMove().getMove();
+        return node.getMoveResult().getMove();
     }
 
     @Override
@@ -71,7 +69,7 @@ public class AlphaBetaPlayerExplicit extends Player implements LastEvaluationGet
 
             this.depth = parent == null ? maxDepth : parent.depth - 1;
 
-            children = new ArrayList<>();
+            this.children = new ArrayList<>();
         }
 
         private void startExploration() {
@@ -90,6 +88,7 @@ public class AlphaBetaPlayerExplicit extends Player implements LastEvaluationGet
 
             final List<MoveResult> validMoves = move.getBoard().getValidMoves();
 
+            //Sort by piece difference to get better pruning
             validMoves.sort(Comparator.comparing(moveResult -> {
                 final Board board = moveResult.getBoard();
                 return board.computeScore(Util.SCORES, getColor().opposite()) - board.computeScore(Util.SCORES, getColor());
@@ -115,13 +114,27 @@ public class AlphaBetaPlayerExplicit extends Player implements LastEvaluationGet
             return value;
         }
 
-        private MoveResult getMove() {
+        public MoveResult getMoveResult() {
             return move;
         }
 
         @Override
         public String toString() {
-            return String.valueOf(value);
+            return "Node{" +
+                    "children=" + children +
+                    ", value=" + value +
+                    ", color=" + color +
+                    ", depth=" + depth +
+                    ", move=" + move +
+                    '}';
+        }
+
+        public List<Node> getChildren() {
+            return children;
+        }
+
+        public int getValue() {
+            return value;
         }
     }
 }

@@ -84,4 +84,8 @@ public enum Square {
     public File getFile() {
         return file;
     }
+
+    public String getFen() {
+        return Character.toString(file.getFen()) + Character.toString(rank.getFen());
+    }
 }

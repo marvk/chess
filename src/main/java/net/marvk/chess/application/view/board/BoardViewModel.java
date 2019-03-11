@@ -18,7 +18,7 @@ public class BoardViewModel implements ViewModel {
     private final GridModel<CellViewModel> boardGridModel = new GridModel<>();
 
     private final SimpleObjectProperty<BoardStateViewModel> boardState = new SimpleObjectProperty<>(
-            new BoardStateViewModel(new SimpleBoard(Fen.EMPTY_BOARD), null, Collections.emptyMap())
+            new BoardStateViewModel(new SimpleBoard(Fen.EMPTY_BOARD), null, Collections.emptyMap(), 0.)
     );
 
     public BoardViewModel() {

@@ -11,4 +11,5 @@ public class BoardStateViewModel {
     private final Board newBoard;
     private final Move lastMove;
     private final Map<Move, Double> lastEvaluation;
+    private final Double evaluation;
 }
