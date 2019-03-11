@@ -80,12 +80,12 @@ public class TreeExplorerView implements FxmlView<TreeExplorerViewModel> {
             if (lastMove.equals(Move.NULL_MOVE)) {
                 final Board newBoard = viewModel.getNewBoard();
                 final net.marvk.chess.board.Color color = newBoard.getState().getActivePlayer();
-                return color + " -> [" + new SimpleHeuristic().evaluate(newBoard, color) + "]";
+                return color + " -> [" + (new SimpleHeuristic().evaluate(newBoard, color) / 1024.0) + "]";
             }
 
             return lastMove.getColoredPiece().getColor() + " -> " + lastMove.getSource().getFen()
                     + lastMove.getTarget().getFen()
-                    + "[" + viewModel.getEvaluation() + "]";
+                    + "[" + viewModel.getEvaluation() / 1024.0 + "]";
         }
 
         @Override
