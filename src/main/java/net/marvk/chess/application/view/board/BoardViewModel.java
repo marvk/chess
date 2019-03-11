@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 @Log4j2
 public class BoardViewModel implements ViewModel {
     private final GridModel<CellViewModel> boardGridModel = new GridModel<>();
+    private final SimpleObjectProperty<Move> lastUiMove = new SimpleObjectProperty<>();
 
     private final SimpleObjectProperty<BoardStateViewModel> boardState = new SimpleObjectProperty<>(
             new BoardStateViewModel(new SimpleBoard(Fen.EMPTY_BOARD), null, Collections.emptyMap(), 0.)
@@ -29,6 +30,11 @@ public class BoardViewModel implements ViewModel {
     }
 
     private void updateBoard(final BoardStateViewModel viewModel) {
+        if (viewModel == null) {
+            log.warn("null passed into updateBoard");
+            return;
+        }
+
         final Board newBoard = viewModel.getNewBoard();
         final Map<Move, Double> lastEvaluation = viewModel.getLastEvaluation();
         final Move lastMove = viewModel.getLastMove();
@@ -70,6 +76,8 @@ public class BoardViewModel implements ViewModel {
     public void move(final Cell<CellViewModel> source, final Cell<CellViewModel> target) {
         final Move move = parseMove(source, target);
 
+        lastUiMove.set(move);
+
         log.info("Received move from UI: " + move);
     }
 
@@ -109,5 +117,13 @@ public class BoardViewModel implements ViewModel {
 
     public void setBoardState(final BoardStateViewModel boardState) {
         this.boardState.set(boardState);
+    }
+
+    public Move getLastUiMove() {
+        return lastUiMove.get();
+    }
+
+    public SimpleObjectProperty<Move> lastUiMoveProperty() {
+        return lastUiMove;
     }
 }

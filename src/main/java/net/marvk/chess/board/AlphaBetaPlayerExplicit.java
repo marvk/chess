@@ -32,7 +32,7 @@ public class AlphaBetaPlayerExplicit extends Player implements LastEvaluationGet
 
     @Override
     public Move play(final MoveResult previousMove) {
-        final Node root = new Node(null, previousMove);
+        final Node root = new Node(previousMove);
 
         lastCount = 0;
         lastRoot = root;
@@ -40,7 +40,6 @@ public class AlphaBetaPlayerExplicit extends Player implements LastEvaluationGet
         final Duration lastDuration = Stopwatch.time(root::startExploration);
 
         final int nodesPerSecond = Util.nodesPerSecond(lastDuration, lastCount);
-
 
         totalCount += lastCount;
         totalDuration = totalDuration.plus(lastDuration);
@@ -54,19 +53,19 @@ public class AlphaBetaPlayerExplicit extends Player implements LastEvaluationGet
                                      .max()
                                      .orElseThrow(IllegalStateException::new);
 
-        log.info(getColor() + " used " + lastCount + " nodes to calculated move in " + lastDuration + " (" + nodesPerSecond + " NPS), evaluate is " + max);
-
-        Collections.shuffle(root.children);
+        log.info(getColor() + " used " + lastCount + " nodes to calculated currentState in " + lastDuration + " (" + nodesPerSecond + " NPS), evaluate is " + max);
 
         lastEvaluation = root.children.stream().collect(Collectors.toMap(
-                n -> n.getMoveResult().getMove(),
+                n -> n.getCurrentState().getMove(),
                 n -> ((double) n.value))
         );
 
         return root.children.stream()
                             .filter(n -> n.value == max)
                             .findFirst()
-                            .orElseThrow(IllegalStateException::new).getMoveResult().getMove();
+                            .orElseThrow(IllegalStateException::new)
+                            .getCurrentState()
+                            .getMove();
     }
 
     @Override
@@ -80,53 +79,51 @@ public class AlphaBetaPlayerExplicit extends Player implements LastEvaluationGet
 
     public class Node {
         private final List<Node> children;
+        private final Node parent;
 
         private int value;
 
-        private final Color color;
-        private final int depth;
+        private final MoveResult currentState;
 
-        private final MoveResult move;
+        public Node(final MoveResult currentState) {
+            this(null, currentState);
+        }
 
-        Node(final Node parent, final MoveResult move) {
+        Node(final Node parent, final MoveResult currentState) {
+            this.parent = parent;
             lastCount++;
 
-            this.move = move;
-
-            this.color = parent == null ? getColor().opposite() : parent.color.opposite();
-
-            this.depth = parent == null ? maxDepth : parent.depth - 1;
-
+            this.currentState = currentState;
             this.children = new ArrayList<>();
         }
 
         private void startExploration() {
-            value = explore(Integer.MIN_VALUE, Integer.MAX_VALUE);
+            value = explore(Integer.MIN_VALUE, Integer.MAX_VALUE, true, maxDepth);
         }
 
-        private int explore(int alpha, int beta) {
-            if (depth == 0 || move.getBoard().findGameResult().isPresent()) {
-                value = heuristic.evaluate(move.getBoard(), getColor());
+        private int explore(int alpha, int beta, final boolean maximise, final int depth) {
+            if (depth == 0 || currentState.getBoard().findGameResult().isPresent()) {
+                value = heuristic.evaluate(currentState.getBoard(), getColor());
                 return value;
             }
 
-            final boolean maximise = color == getColor();
-
             value = maximise ? Integer.MIN_VALUE : Integer.MAX_VALUE;
 
-            final List<MoveResult> validMoves = move.getBoard().getValidMoves();
+            final List<MoveResult> validMoves = currentState.getBoard().getValidMoves();
 
-            //Sort by piece difference to get better pruning
-            validMoves.sort(Comparator.comparing(moveResult -> {
-                final Board board = moveResult.getBoard();
-                return board.computeScore(Util.SCORES, getColor().opposite()) - board.computeScore(Util.SCORES, getColor());
-            }));
+            Collections.shuffle(validMoves);
+
+//            //Sort by piece difference to get better pruning
+//            validMoves.sort(Comparator.comparing(moveResult -> {
+//                final Board board = moveResult.getBoard();
+//                return board.computeScore(Util.SCORES, getColor().opposite()) - board.computeScore(Util.SCORES, getColor());
+//            }));
 
             for (final MoveResult current : validMoves) {
                 final Node node = new Node(this, current);
                 children.add(node);
 
-                final int childValue = node.explore(alpha, beta);
+                final int childValue = node.explore(alpha, beta, !maximise, depth - 1);
 
                 if (maximise) {
                     value = Math.max(value, childValue);
@@ -144,18 +141,17 @@ public class AlphaBetaPlayerExplicit extends Player implements LastEvaluationGet
             return value;
         }
 
-        public MoveResult getMoveResult() {
-            return move;
+        public MoveResult getCurrentState() {
+            return currentState;
         }
 
         @Override
         public String toString() {
             return "Node{" +
                     "children=" + children +
+                    ", parent=" + parent +
                     ", value=" + value +
-                    ", color=" + color +
-                    ", depth=" + depth +
-                    ", move=" + move +
+                    ", currentState=" + currentState +
                     '}';
         }
 

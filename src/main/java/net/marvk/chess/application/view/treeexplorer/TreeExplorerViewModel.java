@@ -48,8 +48,8 @@ public class TreeExplorerViewModel implements ViewModel {
 
         final TreeItem<BoardStateViewModel> result = new TreeItem<>(
                 new BoardStateViewModel(
-                        node.getMoveResult().getBoard(),
-                        node.getMoveResult().getMove(),
+                        node.getCurrentState().getBoard(),
+                        node.getCurrentState().getMove(),
                         Collections.emptyMap(),
                         ((double) node.getValue())
                 )
@@ -67,9 +67,9 @@ public class TreeExplorerViewModel implements ViewModel {
         return result;
     }
 
-    public void setFen(final Fen parse) {
+    public void set(final Fen parse, final int depth) {
         final SimpleBoard simpleBoard = new SimpleBoard(parse);
-        final AlphaBetaPlayerExplicit alphaBetaPlayer = new AlphaBetaPlayerExplicit(Color.getColorFromFen(parse.getActiveColor()), new SimpleHeuristic(), 4);
+        final AlphaBetaPlayerExplicit alphaBetaPlayer = new AlphaBetaPlayerExplicit(Color.getColorFromFen(parse.getActiveColor()), new SimpleHeuristic(), depth);
         final Move play = alphaBetaPlayer.play(new MoveResult(simpleBoard, Move.NULL_MOVE));
 
         log.info("Bot played " + play);

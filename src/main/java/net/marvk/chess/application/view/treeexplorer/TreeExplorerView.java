@@ -6,9 +6,7 @@ import de.saxsys.mvvmfx.InjectViewModel;
 import de.saxsys.mvvmfx.ViewTuple;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.SplitPane;
-import javafx.scene.control.TextField;
-import javafx.scene.control.TreeView;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.TextFieldTreeCell;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -31,6 +29,9 @@ public class TreeExplorerView implements FxmlView<TreeExplorerViewModel> {
     @FXML
     public TextField fenStringInput;
 
+    @FXML
+    public Spinner<Integer> depthSpinner;
+
     @InjectViewModel
     private TreeExplorerViewModel viewModel;
 
@@ -41,6 +42,8 @@ public class TreeExplorerView implements FxmlView<TreeExplorerViewModel> {
                 nodeTree.getSelectionModel().select(0);
             }
         });
+
+        depthSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 10, 3));
 
         nodeTree.setCellFactory(param -> new TextFieldTreeCell<>(new BoardStateViewModelStringConverter()));
 
@@ -66,7 +69,7 @@ public class TreeExplorerView implements FxmlView<TreeExplorerViewModel> {
 
         if (valid) {
             fenStringInput.setBorder(null);
-            viewModel.setFen(Fen.parse(fenStringInput.getText()));
+            viewModel.set(Fen.parse(fenStringInput.getText()), depthSpinner.getValue());
         } else {
             fenStringInput.setBorder(new Border(new BorderStroke(Color.ORANGERED, BorderStrokeStyle.DOTTED, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
         }
