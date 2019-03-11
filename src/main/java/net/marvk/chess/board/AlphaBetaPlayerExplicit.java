@@ -98,11 +98,13 @@ public class AlphaBetaPlayerExplicit extends Player implements LastEvaluationGet
                 final Node node = new Node(this, current);
                 children.add(node);
 
+                final int childValue = node.explore(alpha, beta);
+
                 if (maximise) {
-                    value = Math.max(value, node.explore(alpha, beta));
+                    value = Math.max(value, childValue);
                     alpha = Math.max(alpha, value);
                 } else {
-                    value = Math.min(value, node.explore(alpha, beta));
+                    value = Math.min(value, childValue);
                     beta = Math.min(beta, value);
                 }
 
