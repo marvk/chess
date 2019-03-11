@@ -65,7 +65,7 @@ public class AlphaBetaPlayerExplicit extends Player implements LastEvaluationGet
         Node(final Node parent, final MoveResult move) {
             this.move = move;
 
-            this.color = parent == null ? getColor() : parent.color.opposite();
+            this.color = parent == null ? getColor().opposite() : parent.color.opposite();
 
             this.depth = parent == null ? maxDepth : parent.depth - 1;
 
