@@ -19,8 +19,6 @@ public class TreeExplorerViewModel implements ViewModel {
 
     public TreeExplorerViewModel() {
         node.addListener((observable, oldValue, newValue) -> rootTreeItem.set(transform(newValue)));
-
-        setFen(Fen.STARTING_POSITION);
     }
 
     public AlphaBetaPlayerExplicit.Node getNode() {
