@@ -43,7 +43,7 @@ class GameStateResponseConsumer extends AsyncCharConsumer<Boolean> {
         if (gameState == null) {
             log.warn("Received malformed game state:\n" + response);
         } else {
-            log.info("Received event " + gameState);
+            log.info("Received game state:\n" + gameState.getBoard());
 
             gameStateConsumer.accept(gameState, gameId);
         }

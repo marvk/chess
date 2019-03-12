@@ -23,7 +23,6 @@ class EventResponseConsumer extends AsyncCharConsumer<Boolean> {
 
     EventResponseConsumer(final Consumer<Event> eventConsumer) {
         this.eventConsumer = eventConsumer;
-        System.out.println("HALlo");
     }
 
     @Override
@@ -43,7 +42,7 @@ class EventResponseConsumer extends AsyncCharConsumer<Boolean> {
                   if (event == null) {
                       log.trace("Received malformed event:\n" + response);
                   } else {
-                      log.info("Received event " + event);
+                      log.info("Received event: " + event);
 
                       eventConsumer.accept(event);
                   }
