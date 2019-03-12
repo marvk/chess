@@ -38,7 +38,7 @@ class GameStateResponseConsumer extends AsyncCharConsumer<Boolean> {
 
         log.trace("Received game state response:\n" + response);
 
-        final GameState gameState = GSON.fromJson(response, GameState.class);
+        final GameState gameState = Util.safeJson(GSON, GameState.class, response);
 
         if (gameState == null) {
             log.warn("Received malformed game state:\n" + response);

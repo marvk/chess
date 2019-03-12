@@ -37,7 +37,7 @@ class EventResponseConsumer extends AsyncCharConsumer<Boolean> {
         log.trace("Received event response:\n" + response);
 
         Arrays.stream(response.split("\n"))
-              .map(line -> GSON.fromJson(line, Event.class))
+              .map(line -> Util.safeJson(GSON, Event.class, response))
               .forEach(event -> {
                   if (event == null) {
                       log.trace("Received malformed event:\n" + response);

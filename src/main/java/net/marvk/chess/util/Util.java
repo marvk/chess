@@ -1,5 +1,9 @@
 package net.marvk.chess.util;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonSyntaxException;
+import lombok.extern.log4j.Log4j2;
 import net.marvk.chess.board.Piece;
 
 import java.io.IOException;
@@ -13,6 +17,7 @@ import java.util.EnumMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+@Log4j2
 public final class Util {
     private Util() {
         throw new AssertionError("No instances of utility class " + Util.class);
@@ -57,5 +62,14 @@ public final class Util {
         }
 
         return stringBuilder.toString();
+    }
+
+    public static <T> T safeJson(final Gson gson, final Class<T> clazz, final String json) {
+        try {
+            return gson.fromJson(json, clazz);
+        } catch (final JsonParseException e) {
+            log.error(e);
+            return null;
+        }
     }
 }
