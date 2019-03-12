@@ -31,7 +31,7 @@ class GameStateResponseConsumer extends AsyncCharConsumer<Boolean> {
     protected void onCharReceived(final CharBuffer buf, final IOControl ioControl) throws IOException {
         final String response = Util.charBufferToString(buf).trim();
 
-        if (response.isEmpty()) {
+        if (response.matches("\\s+")) {
             log.trace("No new game state");
             return;
         }

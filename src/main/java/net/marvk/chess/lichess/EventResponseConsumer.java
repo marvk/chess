@@ -11,6 +11,7 @@ import org.apache.http.protocol.HttpContext;
 
 import java.io.IOException;
 import java.nio.CharBuffer;
+import java.util.Arrays;
 import java.util.function.Consumer;
 
 @Log4j2
@@ -26,23 +27,29 @@ class EventResponseConsumer extends AsyncCharConsumer<Boolean> {
 
     @Override
     protected void onCharReceived(final CharBuffer buf, final IOControl ioControl) throws IOException {
-        final String response = Util.charBufferToString(buf).trim();
+        try {
+            final String response = Util.charBufferToString(buf).trim();
 
-        if (response.isEmpty()) {
-            log.trace("No new events");
-            return;
-        }
+            if (response.isEmpty()) {
+                log.trace("No new events");
+                return;
+            }
 
-        log.debug(response);
+            log.debug(response);
 
-        final Event event = GSON.fromJson(response, Event.class);
+            Arrays.stream(response.split("\n"))
+                  .map(line -> GSON.fromJson(line, Event.class))
+                  .forEach(event -> {
+                      if (event == null) {
+                          log.trace("Received malformed event");
+                      } else {
+                          log.info("Received event " + event);
 
-        if (event == null) {
-            log.trace("Received malformed event");
-        } else {
-            log.info("Received event " + event);
-
-            eventConsumer.accept(event);
+                          eventConsumer.accept(event);
+                      }
+                  });
+        } catch (Throwable t) {
+            t.printStackTrace();
         }
     }
 
