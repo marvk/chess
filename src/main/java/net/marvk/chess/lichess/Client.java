@@ -19,6 +19,8 @@ import org.apache.http.nio.reactor.IOReactorException;
 import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -54,6 +56,7 @@ public class Client implements AutoCloseable {
 
     private void startEventHttpStream(final HttpAsyncRequestProducer request) throws InterruptedException, ExecutionException {
         log.info("Starting event stream");
+
         final Future<Boolean> execute = asyncClient.execute(request, new EventResponseConsumer(this::acceptEvent), null);
 
         execute.get();
@@ -71,15 +74,22 @@ public class Client implements AutoCloseable {
     private void startGameHttpStream(final String gameId) {
         executor.execute(() -> {
             log.info("Starting stream for game " + gameId);
-            final HttpAsyncRequestProducer request = HttpUtil.createAuthenticatedRequestProducer(Endpoints.gameStream(gameId));
+            try (final CloseableHttpAsyncClient client = HttpAsyncClients.createDefault()) {
+                client.start();
 
-            final Future<Boolean> callback = asyncClient.execute(request, new GameStateResponseConsumer(this::acceptGameState, gameId), null);
+                final HttpAsyncRequestProducer request = HttpUtil.createAuthenticatedRequestProducer(Endpoints.gameStream(gameId));
 
-            try {
-                callback.get();
-            } catch (InterruptedException | ExecutionException e) {
+                final Future<Boolean> callback = client.execute(request, new GameStateResponseConsumer(this::acceptGameState, gameId), null);
+
+                try {
+                    callback.get();
+                } catch (InterruptedException | ExecutionException e) {
+                    log.error(e);
+                }
+            } catch (final IOException e) {
                 log.error(e);
             }
+
             log.info("Closing stream for game " + gameId);
         });
     }
@@ -109,11 +119,29 @@ public class Client implements AutoCloseable {
         });
     }
 
+    private final Map<String, Board> lastBoards = new HashMap<>();
+
     private void acceptGameState(final GameState gameState, final String gameId) {
         executor.execute(() -> {
+            if (gameState.getBoard().equals(lastBoards.get(gameId))) {
+                log.debug("Not calculating move for opponent");
+                return;
+            }
+
             final Color activePlayer = gameState.getBoard().getState().getActivePlayer();
             final AlphaBetaPlayerExplicit player = new AlphaBetaPlayerExplicit(activePlayer, new SimpleHeuristic(), 4);
             final Move play = player.play(new MoveResult(gameState.getBoard(), Move.NULL_MOVE));
+
+            final Board lastBoard =
+                    gameState.getBoard()
+                             .getValidMoves()
+                             .stream()
+                             .filter(m -> m.getMove().equals(play))
+                             .map(MoveResult::getBoard)
+                             .findFirst()
+                             .orElseThrow(IllegalStateException::new);
+
+            lastBoards.put(gameId, lastBoard);
 
             final HttpUriRequest request = HttpUtil.createAuthorizedPostRequest(Endpoints.makeMove(gameId, play));
 

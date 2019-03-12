@@ -1,5 +1,10 @@
 package net.marvk.chess.board;
 
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
+
+@ToString
+@EqualsAndHashCode
 public class BoardState {
     private final Color activePlayer;
 
@@ -82,20 +87,6 @@ public class BoardState {
 
     public int getFullmoveClock() {
         return fullmoveClock;
-    }
-
-    @Override
-    public String toString() {
-        return "BoardState{" +
-                "activePlayer=" + activePlayer +
-                ", whiteCastleKing=" + whiteCastleKing +
-                ", whiteCastleQueen=" + whiteCastleQueen +
-                ", blackCastleKing=" + blackCastleKing +
-                ", blackCastleQueen=" + blackCastleQueen +
-                ", enPassantTargetSquare=" + enPassantTargetSquare +
-                ", halfmoveClock=" + halfmoveClock +
-                ", fullmoveClock=" + fullmoveClock +
-                '}';
     }
 
     public BoardStateBuilder nextBuilder() {

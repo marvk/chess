@@ -276,4 +276,23 @@ public class SimpleBoard implements Board {
     public String toString() {
         return Boards.toString(this);
     }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        final SimpleBoard that = (SimpleBoard) o;
+
+        if (board != null ? !board.equals(that.board) : that.board != null) return false;
+        return boardState != null ? boardState.equals(that.boardState) : that.boardState == null;
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = board != null ? board.hashCode() : 0;
+        result = 31 * result + (boardState != null ? boardState.hashCode() : 0);
+        return result;
+    }
 }

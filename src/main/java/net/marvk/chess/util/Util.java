@@ -68,7 +68,7 @@ public final class Util {
         try {
             return gson.fromJson(json, clazz);
         } catch (final JsonParseException e) {
-            log.error(e);
+            log.error(e.getStackTrace());
             return null;
         }
     }
