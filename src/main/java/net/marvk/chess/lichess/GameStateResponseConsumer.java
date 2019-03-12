@@ -12,31 +12,40 @@ import org.apache.http.protocol.HttpContext;
 
 import java.io.IOException;
 import java.nio.CharBuffer;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 @Log4j2
 class GameStateResponseConsumer extends AsyncCharConsumer<Boolean> {
     private static final Gson GSON = new GsonBuilder().registerTypeAdapter(GameState.class, new GameState.Deserializer())
                                                       .create();
 
-    private final Consumer<GameState> gameStateConsumer;
+    private final BiConsumer<GameState, String> gameStateConsumer;
+    private final String gameId;
 
-    GameStateResponseConsumer(final Consumer<GameState> gameStateConsumer) {
+    GameStateResponseConsumer(final BiConsumer<GameState, String> gameStateConsumer, final String gameId) {
         this.gameStateConsumer = gameStateConsumer;
+        this.gameId = gameId;
     }
 
     @Override
     protected void onCharReceived(final CharBuffer buf, final IOControl ioControl) throws IOException {
-        final String response = Util.charBufferToString(buf);
+        final String response = Util.charBufferToString(buf).trim();
+
+        if (response.isEmpty()) {
+            log.trace("No new game state");
+            return;
+        }
+
+        log.debug(response);
 
         final GameState gameState = GSON.fromJson(response, GameState.class);
 
         if (gameState == null) {
-            log.trace("No new game state");
+            log.trace("Received malformed game state");
         } else {
             log.info("Received event " + gameState);
 
-            gameStateConsumer.accept(gameState);
+            gameStateConsumer.accept(gameState, gameId);
         }
     }
 

@@ -3,16 +3,23 @@ package net.marvk.chess.lichess;
 import lombok.extern.log4j.Log4j2;
 import net.marvk.chess.board.*;
 import net.marvk.chess.util.Util;
-import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 import org.apache.http.impl.nio.client.HttpAsyncClients;
 import org.apache.http.impl.nio.conn.PoolingNHttpClientConnectionManager;
 import org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor;
+import org.apache.http.impl.nio.reactor.IOReactorConfig;
 import org.apache.http.nio.client.methods.HttpAsyncMethods;
+import org.apache.http.nio.conn.NHttpClientConnectionManager;
 import org.apache.http.nio.protocol.HttpAsyncRequestProducer;
+import org.apache.http.nio.reactor.ConnectingIOReactor;
 import org.apache.http.nio.reactor.IOReactorException;
+import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
@@ -24,17 +31,26 @@ import java.util.concurrent.Future;
 public class Client implements AutoCloseable {
     private static final String HEADER_AUTHORIZATION_KEY = "Authorization";
     private static final String HEADER_AUTHORIZATION_VALUE = "Bearer " + Util.lichessApiToken();
-    private final CloseableHttpAsyncClient client;
+    private final CloseableHttpAsyncClient asyncClient;
 
-    private final ExecutorService gameExecutor = Executors.newCachedThreadPool();
+    private final ExecutorService executor = Executors.newCachedThreadPool();
+    private final CloseableHttpClient httpClient;
 
     public Client() throws IOReactorException {
-        final PoolingNHttpClientConnectionManager connectionManager = new PoolingNHttpClientConnectionManager(new DefaultConnectingIOReactor());
-        this.client = HttpAsyncClients.custom().setConnectionManager(connectionManager).setMaxConnTotal(100).build();
+        final IOReactorConfig ioReactorConfig = IOReactorConfig.custom().setIoThreadCount(10).build();
+        final ConnectingIOReactor ioReactor = new DefaultConnectingIOReactor(ioReactorConfig);
+        final NHttpClientConnectionManager connectionManager = new PoolingNHttpClientConnectionManager(ioReactor);
+
+        this.httpClient = HttpClientBuilder.create().build();
+
+        this.asyncClient = HttpAsyncClients.custom()
+                                           .setConnectionManager(connectionManager)
+                                           .setMaxConnTotal(100)
+                                           .build();
     }
 
     public void start() throws ExecutionException, InterruptedException {
-        client.start();
+        asyncClient.start();
 
         final HttpAsyncRequestProducer request = createAuthenticatedRequestProducer(Endpoints.eventStream());
 
@@ -42,7 +58,7 @@ public class Client implements AutoCloseable {
     }
 
     private void startEventHttpStream(final HttpAsyncRequestProducer request) throws InterruptedException, ExecutionException {
-        final Future<Boolean> execute = client.execute(request, new EventResponseConsumer(this::acceptEvent), null);
+        final Future<Boolean> execute = asyncClient.execute(request, new EventResponseConsumer(this::acceptEvent), null);
 
         execute.get();
     }
@@ -56,11 +72,11 @@ public class Client implements AutoCloseable {
     }
 
     private void startGameHttpStream(final String gameId) {
-        final HttpAsyncRequestProducer request = createAuthenticatedRequestProducer(Endpoints.gameStream(gameId));
+        executor.execute(() -> {
+            final HttpAsyncRequestProducer request = createAuthenticatedRequestProducer(Endpoints.gameStream(gameId));
 
-        final Future<Boolean> callback = client.execute(request, new GameStateResponseConsumer(this::acceptGameState), null);
+            final Future<Boolean> callback = asyncClient.execute(request, new GameStateResponseConsumer(this::acceptGameState, gameId), null);
 
-        gameExecutor.execute(() -> {
             try {
                 callback.get();
             } catch (InterruptedException | ExecutionException e) {
@@ -70,46 +86,62 @@ public class Client implements AutoCloseable {
     }
 
     private void acceptChallenge(final String gameId) {
-        final HttpUriRequest request = createAuthorizedPostRequest(Endpoints.acceptChallange(gameId));
-        final Future<HttpResponse> callback = client.execute(request, null);
+        executor.execute(() -> {
+            final HttpUriRequest request = createAuthorizedPostRequest(Endpoints.acceptChallange(gameId));
 
-        try {
-            final HttpResponse httpResponse = callback.get();
+            log.info("Trying to accept challenge " + gameId + "...");
 
-            if (httpResponse.getStatusLine().getStatusCode() == 200) {
-                log.info("Accepted challenge " + gameId);
-            } else {
-                log.warn("Failed to accept challenge " + gameId);
+            try (final CloseableHttpResponse httpResponse = httpClient.execute(request)) {
+
+                if (httpResponse.getStatusLine().getStatusCode() == 200) {
+                    log.info("Accepted challenge " + gameId);
+                } else {
+                    log.warn("Failed to accept challenge " + gameId);
+                }
+
+                EntityUtils.consume(httpResponse.getEntity());
+
+                log.debug("Consumed entity");
+            } catch (final ClientProtocolException e) {
+                log.error("Failed to accept challenge " + gameId, e);
+            } catch (final IOException e) {
+                log.error(e);
             }
-        } catch (InterruptedException | ExecutionException e) {
-            log.error("Failed to accept challenge " + gameId, e);
-        }
+        });
     }
 
-    private void acceptGameState(final GameState gameState) {
-        final Color activePlayer = gameState.getBoard().getState().getActivePlayer();
-        final AlphaBetaPlayerExplicit player = new AlphaBetaPlayerExplicit(activePlayer, new SimpleHeuristic(), 4);
-        final Move play = player.play(new MoveResult(gameState.getBoard(), Move.NULL_MOVE));
+    private void acceptGameState(final GameState gameState, final String gameId) {
+        executor.execute(() -> {
+            final Color activePlayer = gameState.getBoard().getState().getActivePlayer();
+            final AlphaBetaPlayerExplicit player = new AlphaBetaPlayerExplicit(activePlayer, new SimpleHeuristic(), 4);
+            final Move play = player.play(new MoveResult(gameState.getBoard(), Move.NULL_MOVE));
 
-        final HttpUriRequest request = createAuthorizedPostRequest(Endpoints.makeMove(gameState.getId(), play));
-        final Future<HttpResponse> callback = client.execute(request, null);
+            final HttpUriRequest request = createAuthorizedPostRequest(Endpoints.makeMove(gameId, play));
 
-        try {
-            final HttpResponse httpResponse = callback.get();
+            log.info("Trying to play move " + play + " in game " + gameId + "...");
+            try (CloseableHttpResponse httpResponse = httpClient.execute(request)) {
 
-            if (httpResponse.getStatusLine().getStatusCode() == 200) {
-                log.info("Played move " + play + " in game " + gameState.getId());
-            } else {
-                log.warn("Failed to play move " + play + " in game " + gameState.getId());
+                if (httpResponse.getStatusLine().getStatusCode() == 200) {
+                    log.info("Played move " + play + " in game " + gameId);
+                } else {
+                    log.warn("Failed to play move " + play + " in game " + gameId);
+                }
+
+                EntityUtils.consume(httpResponse.getEntity());
+
+                log.debug("Consumed entity");
+            } catch (final ClientProtocolException e) {
+                log.error("Failed to play move " + play + " in game " + gameId, e);
+            } catch (final IOException e) {
+                log.error(e);
             }
-        } catch (InterruptedException | ExecutionException e) {
-            log.error("Failed to play move " + play + " in game " + gameState.getId(), e);
-        }
+        });
     }
 
     @Override
     public void close() throws IOException {
-        client.close();
+        asyncClient.close();
+        httpClient.close();
     }
 
     private static HttpUriRequest createAuthorizedPostRequest(final String url) {

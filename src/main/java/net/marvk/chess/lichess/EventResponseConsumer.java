@@ -26,12 +26,19 @@ class EventResponseConsumer extends AsyncCharConsumer<Boolean> {
 
     @Override
     protected void onCharReceived(final CharBuffer buf, final IOControl ioControl) throws IOException {
-        final String response = Util.charBufferToString(buf);
+        final String response = Util.charBufferToString(buf).trim();
+
+        if (response.isEmpty()) {
+            log.trace("No new events");
+            return;
+        }
+
+        log.debug(response);
 
         final Event event = GSON.fromJson(response, Event.class);
 
         if (event == null) {
-            log.trace("No new events");
+            log.trace("Received malformed event");
         } else {
             log.info("Received event " + event);
 
