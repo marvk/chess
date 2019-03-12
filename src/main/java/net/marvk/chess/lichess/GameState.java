@@ -14,6 +14,9 @@ public class GameState {
     public static class Deserializer implements JsonDeserializer<GameState> {
         private static final String[] EMPTY_STRING_ARRAY = new String[0];
 
+        public Deserializer(final String botName) {
+        }
+
         @Override
         public GameState deserialize(final JsonElement jsonElement, final Type type, final JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
             final JsonObject jsonObject = jsonElement.getAsJsonObject();

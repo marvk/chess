@@ -26,7 +26,7 @@ class EventResponseConsumer extends AsyncCharConsumer<Boolean> {
     }
 
     @Override
-    protected void onCharReceived(final CharBuffer buf, final IOControl ioControl) throws IOException {
+    protected void onCharReceived(final CharBuffer buf, final IOControl ioControl) {
         final String response = Util.charBufferToString(buf).trim();
 
         if (response.matches("\\s*")) {
