@@ -5,10 +5,7 @@ import net.marvk.chess.util.Stopwatch;
 import net.marvk.chess.util.Util;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Log4j2
@@ -117,11 +114,13 @@ public class AlphaBetaPlayerExplicit extends Player implements LastEvaluationGet
 
             Collections.shuffle(validMoves);
 
-//            //Sort by piece difference to get better pruning
-//            validMoves.sort(Comparator.comparing(moveResult -> {
-//                final Board board = moveResult.getBoard();
-//                return board.computeScore(Util.SCORES, getColor().opposite()) - board.computeScore(Util.SCORES, getColor());
-//            }));
+            //Sort by piece difference to get better pruning
+            validMoves.sort(Comparator.comparing(moveResult -> {
+                final Board board = moveResult.getBoard();
+                final double diff = board.computeScore(Util.SCORES, getColor().opposite()) - board.computeScore(Util.SCORES, getColor());
+
+                return maximise ? diff : -diff;
+            }));
 
             for (final MoveResult current : validMoves) {
                 final Node node = new Node(this, current);
