@@ -23,34 +23,31 @@ class EventResponseConsumer extends AsyncCharConsumer<Boolean> {
 
     EventResponseConsumer(final Consumer<Event> eventConsumer) {
         this.eventConsumer = eventConsumer;
+        System.out.println("HALlo");
     }
 
     @Override
     protected void onCharReceived(final CharBuffer buf, final IOControl ioControl) throws IOException {
-        try {
-            final String response = Util.charBufferToString(buf).trim();
+        final String response = Util.charBufferToString(buf).trim();
 
-            if (response.isEmpty()) {
-                log.trace("No new events");
-                return;
-            }
-
-            log.debug(response);
-
-            Arrays.stream(response.split("\n"))
-                  .map(line -> GSON.fromJson(line, Event.class))
-                  .forEach(event -> {
-                      if (event == null) {
-                          log.trace("Received malformed event");
-                      } else {
-                          log.info("Received event " + event);
-
-                          eventConsumer.accept(event);
-                      }
-                  });
-        } catch (Throwable t) {
-            t.printStackTrace();
+        if (response.matches("\\s*")) {
+            log.trace("No new events");
+            return;
         }
+
+        log.trace("Received event response:\n" + response);
+
+        Arrays.stream(response.split("\n"))
+              .map(line -> GSON.fromJson(line, Event.class))
+              .forEach(event -> {
+                  if (event == null) {
+                      log.trace("Received malformed event:\n" + response);
+                  } else {
+                      log.info("Received event " + event);
+
+                      eventConsumer.accept(event);
+                  }
+              });
     }
 
     @Override

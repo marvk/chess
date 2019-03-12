@@ -31,17 +31,17 @@ class GameStateResponseConsumer extends AsyncCharConsumer<Boolean> {
     protected void onCharReceived(final CharBuffer buf, final IOControl ioControl) throws IOException {
         final String response = Util.charBufferToString(buf).trim();
 
-        if (response.matches("\\s+")) {
+        if (response.matches("\\s*")) {
             log.trace("No new game state");
             return;
         }
 
-        log.debug(response);
+        log.trace("Received game state response:\n" + response);
 
         final GameState gameState = GSON.fromJson(response, GameState.class);
 
         if (gameState == null) {
-            log.trace("Received malformed game state");
+            log.warn("Received malformed game state:\n" + response);
         } else {
             log.info("Received event " + gameState);
 

@@ -9,5 +9,8 @@
         <Root level="trace">
             <AppenderRef ref="Console"/>
         </Root>
+        <Logger name="net.marvk.chess.lichess" level="info">
+            <AppenderRef ref="Console"/>
+        </Logger>
     </Loggers>
 </Configuration>
