@@ -220,6 +220,11 @@ public class DefaultMoveStrategy {
     private void generateCastleMove(final Square source, final Board board, final ColoredPiece coloredPiece, final Direction direction) {
         final Color color = coloredPiece.getColor();
 
+        // No castle while in check
+        if (board.isInCheck(color, source)) {
+            return;
+        }
+
         if (color == Color.WHITE) {
             if (
                     direction == Direction.WEST
