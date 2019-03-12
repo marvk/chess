@@ -1,28 +1,32 @@
 package net.marvk.chess.lichess;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.google.gson.JsonParser;
 import lombok.extern.log4j.Log4j2;
+import net.marvk.chess.lichess.model.Challenge;
+import net.marvk.chess.lichess.model.EventResponse;
+import net.marvk.chess.lichess.model.GameStart;
 import net.marvk.chess.util.Util;
 import org.apache.http.HttpResponse;
 import org.apache.http.nio.IOControl;
 import org.apache.http.nio.client.methods.AsyncCharConsumer;
 import org.apache.http.protocol.HttpContext;
 
-import java.io.IOException;
 import java.nio.CharBuffer;
 import java.util.Arrays;
 import java.util.function.Consumer;
 
 @Log4j2
 class EventResponseConsumer extends AsyncCharConsumer<Boolean> {
-    private static final Gson GSON = new GsonBuilder().registerTypeAdapter(Event.class, new Event.Deserializer())
-                                                      .create();
+    private static final Gson GSON = new Gson();
+    private static final JsonParser JSON_PARSER = new JsonParser();
 
-    private final Consumer<Event> eventConsumer;
+    private final Consumer<Challenge> challengeConsumer;
+    private final Consumer<GameStart> gameStartConsumer;
 
-    EventResponseConsumer(final Consumer<Event> eventConsumer) {
-        this.eventConsumer = eventConsumer;
+    EventResponseConsumer(final Consumer<Challenge> challengeConsumer, final Consumer<GameStart> gameStartConsumer) {
+        this.challengeConsumer = challengeConsumer;
+        this.gameStartConsumer = gameStartConsumer;
     }
 
     @Override
@@ -37,16 +41,24 @@ class EventResponseConsumer extends AsyncCharConsumer<Boolean> {
         log.trace("Received event response:\n" + response);
 
         Arrays.stream(response.split("\n"))
-              .map(line -> Util.safeJson(GSON, Event.class, response))
-              .forEach(event -> {
-                  if (event == null) {
-                      log.trace("Received malformed event:\n" + response);
-                  } else {
-                      log.info("Received event: " + event);
+              .map(s -> GSON.fromJson(s, EventResponse.class))
+              .forEach(this::acceptEvent);
+    }
 
-                      eventConsumer.accept(event);
-                  }
-              });
+    private void acceptEvent(final EventResponse eventResponse) {
+        if (eventResponse.getType() == EventResponse.Type.CHALLENGE) {
+            final Challenge challenge = eventResponse.getChallenge();
+            log.info("Received challenge: " + challenge);
+
+            challengeConsumer.accept(challenge);
+        } else if (eventResponse.getType() == EventResponse.Type.GAME_START) {
+            final GameStart game = eventResponse.getGameStart();
+            log.info("Received game start event: " + game);
+
+            gameStartConsumer.accept(game);
+        } else {
+            log.warn("Received malformed event: " + eventResponse);
+        }
     }
 
     @Override

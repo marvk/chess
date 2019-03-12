@@ -2,6 +2,8 @@ package net.marvk.chess.lichess;
 
 import lombok.extern.log4j.Log4j2;
 import net.marvk.chess.board.*;
+import net.marvk.chess.lichess.model.Challenge;
+import net.marvk.chess.lichess.model.GameStart;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -57,21 +59,15 @@ public class Client implements AutoCloseable {
     private void startEventHttpStream(final HttpAsyncRequestProducer request) throws InterruptedException, ExecutionException {
         log.info("Starting event stream");
 
-        final Future<Boolean> execute = asyncClient.execute(request, new EventResponseConsumer(this::acceptEvent), null);
+        final Future<Boolean> execute = asyncClient.execute(request, new EventResponseConsumer(this::acceptChallenge, this::startGameHttpStream), null);
 
         execute.get();
         log.info("Closing event stream");
     }
 
-    private void acceptEvent(final Event event) {
-        if (event.getType() == Event.Type.CHALLENGE) {
-            acceptChallenge(event.getId());
-        } else {
-            startGameHttpStream(event.getId());
-        }
-    }
+    private void startGameHttpStream(final GameStart gameStart) {
+        final String gameId = gameStart.getId();
 
-    private void startGameHttpStream(final String gameId) {
         executor.execute(() -> {
             log.info("Starting stream for game " + gameId);
             try (final CloseableHttpAsyncClient client = HttpAsyncClients.createDefault()) {
@@ -94,7 +90,9 @@ public class Client implements AutoCloseable {
         });
     }
 
-    private void acceptChallenge(final String gameId) {
+    private void acceptChallenge(final Challenge challenge) {
+        final String gameId = challenge.getId();
+
         executor.execute(() -> {
             final HttpUriRequest request = HttpUtil.createAuthorizedPostRequest(Endpoints.acceptChallange(gameId));
 
