@@ -8,8 +8,11 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 import org.apache.http.impl.nio.client.HttpAsyncClients;
+import org.apache.http.impl.nio.conn.PoolingNHttpClientConnectionManager;
+import org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor;
 import org.apache.http.nio.client.methods.HttpAsyncMethods;
 import org.apache.http.nio.protocol.HttpAsyncRequestProducer;
+import org.apache.http.nio.reactor.IOReactorException;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
@@ -25,8 +28,9 @@ public class Client implements AutoCloseable {
 
     private final ExecutorService gameExecutor = Executors.newCachedThreadPool();
 
-    public Client() {
-        this.client = HttpAsyncClients.custom().setMaxConnTotal(100).build();
+    public Client() throws IOReactorException {
+        final PoolingNHttpClientConnectionManager connectionManager = new PoolingNHttpClientConnectionManager(new DefaultConnectingIOReactor());
+        this.client = HttpAsyncClients.custom().setConnectionManager(connectionManager).setMaxConnTotal(100).build();
     }
 
     public void start() throws ExecutionException, InterruptedException {

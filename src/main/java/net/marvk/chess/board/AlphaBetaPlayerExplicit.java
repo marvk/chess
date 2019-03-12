@@ -5,7 +5,10 @@ import net.marvk.chess.util.Stopwatch;
 import net.marvk.chess.util.Util;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Log4j2
@@ -20,6 +23,8 @@ public class AlphaBetaPlayerExplicit extends Player implements LastEvaluationGet
 
     private int totalCount;
     private Duration totalDuration;
+    private Duration lastDuration;
+    private int lastNps;
 
     public AlphaBetaPlayerExplicit(final Color color, final Heuristic heuristic, final int maxDepth) {
         super(color);
@@ -37,9 +42,8 @@ public class AlphaBetaPlayerExplicit extends Player implements LastEvaluationGet
         lastCount = 0;
         lastRoot = root;
 
-        final Duration lastDuration = Stopwatch.time(root::startExploration);
-
-        final int nodesPerSecond = Util.nodesPerSecond(lastDuration, lastCount);
+        lastDuration = Stopwatch.time(root::startExploration);
+        lastNps = Util.nodesPerSecond(lastDuration, lastCount);
 
         totalCount += lastCount;
         totalDuration = totalDuration.plus(lastDuration);
@@ -53,7 +57,7 @@ public class AlphaBetaPlayerExplicit extends Player implements LastEvaluationGet
                                      .max()
                                      .orElseThrow(IllegalStateException::new);
 
-        log.info(getColor() + " used " + lastCount + " nodes to calculated currentState in " + lastDuration + " (" + nodesPerSecond + " NPS), evaluate is " + max);
+        log.info(getColor() + " used " + lastCount + " nodes to calculated currentState in " + lastDuration + " (" + lastNps + " NPS), evaluate is " + max);
 
         lastEvaluation = root.children.stream().collect(Collectors.toMap(
                 n -> n.getCurrentState().getMove(),
@@ -162,5 +166,17 @@ public class AlphaBetaPlayerExplicit extends Player implements LastEvaluationGet
         public int getValue() {
             return value;
         }
+    }
+
+    public int getLastCount() {
+        return lastCount;
+    }
+
+    public Duration getLastDuration() {
+        return lastDuration;
+    }
+
+    public int getLastNps() {
+        return lastNps;
     }
 }

@@ -20,7 +20,13 @@ public class GameState {
             try {
                 final JsonObject jsonObject = jsonElement.getAsJsonObject();
 
-                final String id = jsonObject.get("id").getAsString();
+                final JsonElement idElement = jsonObject.get("id");
+
+                if (idElement == null) {
+                    return null;
+                }
+
+                final String id = idElement.getAsString();
 
                 if (id == null || id.isEmpty()) {
                     return null;
