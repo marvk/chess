@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 @Log4j2
 public class GameThread implements Runnable {
@@ -26,17 +27,16 @@ public class GameThread implements Runnable {
     private final CloseableHttpClient httpClient;
     private final ExecutorService executorService;
     private final String botId;
-    private final PlayerFactory playerFactory;
+    private PlayerFactory playerFactory;
 
     private Color myColor;
     private Player player;
 
-    public GameThread(final String gameId, final CloseableHttpClient httpClient, final ExecutorService executorService, final String botId, final PlayerFactory playerFactory) {
+    public GameThread(final String gameId, final CloseableHttpClient httpClient, final ExecutorService executorService, final String botId) {
         this.gameId = gameId;
         this.httpClient = httpClient;
         this.executorService = executorService;
         this.botId = botId;
-        this.playerFactory = playerFactory;
     }
 
     public void acceptFullGameState(final GameStateFull gameStateFull) {
@@ -46,7 +46,21 @@ public class GameThread implements Runnable {
             this.myColor = Color.BLACK;
         }
 
-        this.player = playerFactory.create(myColor);
+        final int initialClock = gameStateFull.getClock().getInitial();
+
+        final int ply;
+
+        if (initialClock < TimeUnit.SECONDS.toMillis(30)) {
+            ply = 3;
+        } else if (initialClock < TimeUnit.SECONDS.toMillis(90)) {
+            ply = 4;
+        } else {
+            ply = 5;
+        }
+
+        writeInChat("Hey there, I will play this game with " + ply + " ply lookahead! For more information on my source code and who created me, see my profile. Good luck!");
+
+        this.player = new AlphaBetaPlayerExplicit(myColor, new SimpleHeuristic(), ply);
 
         log.info("Bot color set to " + myColor + " in game " + gameId);
 
@@ -88,6 +102,18 @@ public class GameThread implements Runnable {
 
     public void acceptChatLine(final ChatLine chatLine) {
 
+    }
+
+    private void writeInChat(final String text) {
+        executorService.execute(() -> {
+            final HttpUriRequest request = HttpUtil.createAuthorizedPostRequest(Endpoints.writeInChat(gameId, Room.PLAYER, text));
+
+            try (final CloseableHttpResponse ignored = httpClient.execute(request)) {
+
+            } catch (final IOException e) {
+                log.error("", e);
+            }
+        });
     }
 
     @Override

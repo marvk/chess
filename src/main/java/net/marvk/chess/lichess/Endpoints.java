@@ -2,6 +2,9 @@ package net.marvk.chess.lichess;
 
 import net.marvk.chess.board.Move;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+
 public final class Endpoints {
     private static final String URL = "https://lichess.org";
 
@@ -34,6 +37,10 @@ public final class Endpoints {
     }
 
     public static String writeInChat(final String gameId, final Room room, final String text) {
-        return URL + "/api/bot/game/" + gameId + "/chat?room=" + room.getRepresentation() + "&text=" + text;
+        try {
+            return URL + "/api/bot/game/" + gameId + "/chat?room=" + room.getRepresentation() + "&text=" + URLEncoder.encode(text, "UTF-8");
+        } catch (final UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

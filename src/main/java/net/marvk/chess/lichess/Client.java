@@ -119,7 +119,7 @@ public class Client implements AutoCloseable {
     }
 
     private void startGameHttpStream(final GameStart gameStart) {
-        executor.execute(new GameThread(gameStart.getId(), httpClient, executor, lichessBotId, PLAYER_FACTORY));
+        executor.execute(new GameThread(gameStart.getId(), httpClient, executor, lichessBotId));
     }
 
     @Override
