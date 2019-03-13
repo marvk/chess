@@ -25,41 +25,44 @@ public class GameThread implements Runnable {
     private final String gameId;
     private final CloseableHttpClient httpClient;
     private final ExecutorService executorService;
+    private final String botId;
+    private final PlayerFactory playerFactory;
 
-    private Board lastBoard;
+    private Color myColor;
+    private Player player;
 
-    public GameThread(final String gameId, final CloseableHttpClient httpClient, final ExecutorService executorService) {
+    public GameThread(final String gameId, final CloseableHttpClient httpClient, final ExecutorService executorService, final String botId, final PlayerFactory playerFactory) {
         this.gameId = gameId;
         this.httpClient = httpClient;
         this.executorService = executorService;
+        this.botId = botId;
+        this.playerFactory = playerFactory;
     }
 
     public void acceptFullGameState(final GameStateFull gameStateFull) {
+        if (botId.equals(gameStateFull.getWhite().getId())) {
+            this.myColor = Color.WHITE;
+        } else if (botId.equals(gameStateFull.getBlack().getId())) {
+            this.myColor = Color.BLACK;
+        }
+
+        this.player = playerFactory.create(myColor);
+
+        log.info("Bot color set to " + myColor + " in game " + gameId);
+
         this.acceptGameState(gameStateFull.getGameState());
     }
 
     public void acceptGameState(final GameState gameState) {
         final Board board = UciMove.getBoard(gameState.getMoves());
 
+        if (board.getState().getActivePlayer() != myColor) {
+            log.debug("Not calculating move for opponent");
+            return;
+        }
+
         executorService.execute(() -> {
-            if (board.equals(lastBoard)) {
-                log.debug("Not calculating move for opponent");
-                return;
-            }
-
-            final Color activePlayer = board.getState().getActivePlayer();
-            final AlphaBetaPlayerExplicit player = new AlphaBetaPlayerExplicit(activePlayer, new SimpleHeuristic(), 4);
             final Move play = player.play(new MoveResult(board, Move.NULL_MOVE));
-
-            final Board boardAfterMove =
-                    board.getValidMoves()
-                         .stream()
-                         .filter(m -> m.getMove().equals(play))
-                         .map(MoveResult::getBoard)
-                         .findFirst()
-                         .orElseThrow(IllegalStateException::new);
-
-            this.lastBoard = boardAfterMove;
 
             final HttpUriRequest request = HttpUtil.createAuthorizedPostRequest(Endpoints.makeMove(gameId, play));
 

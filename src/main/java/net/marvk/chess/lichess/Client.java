@@ -1,6 +1,9 @@
 package net.marvk.chess.lichess;
 
 import lombok.extern.log4j.Log4j2;
+import net.marvk.chess.board.AlphaBetaPlayerExplicit;
+import net.marvk.chess.board.PlayerFactory;
+import net.marvk.chess.board.SimpleHeuristic;
 import net.marvk.chess.lichess.model.Challenge;
 import net.marvk.chess.lichess.model.GameStart;
 import org.apache.http.client.ClientProtocolException;
@@ -31,8 +34,12 @@ public class Client implements AutoCloseable {
     private final CloseableHttpClient httpClient;
 
     private final ExecutorService executor = Executors.newCachedThreadPool();
+    private final String lichessBotId;
+    public static final PlayerFactory PLAYER_FACTORY = c -> new AlphaBetaPlayerExplicit(c, new SimpleHeuristic(), 3);
 
-    public Client() throws IOReactorException {
+    public Client(final String lichessBotId) throws IOReactorException {
+        this.lichessBotId = lichessBotId;
+
         final IOReactorConfig ioReactorConfig = IOReactorConfig.custom().setIoThreadCount(10).build();
         final ConnectingIOReactor ioReactor = new DefaultConnectingIOReactor(ioReactorConfig);
         final NHttpClientConnectionManager connectionManager = new PoolingNHttpClientConnectionManager(ioReactor);
@@ -90,7 +97,7 @@ public class Client implements AutoCloseable {
     }
 
     private void startGameHttpStream(final GameStart gameStart) {
-        executor.execute(new GameThread(gameStart.getId(), httpClient, executor));
+        executor.execute(new GameThread(gameStart.getId(), httpClient, executor, lichessBotId, PLAYER_FACTORY));
     }
 
     @Override
@@ -100,7 +107,7 @@ public class Client implements AutoCloseable {
     }
 
     public static void main(final String[] args) {
-        try (Client client = new Client()) {
+        try (Client client = new Client("queensgambot")) {
             client.start();
         } catch (InterruptedException | ExecutionException | IOException e) {
             log.error("", e);

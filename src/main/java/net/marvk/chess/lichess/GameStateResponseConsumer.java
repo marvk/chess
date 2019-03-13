@@ -52,8 +52,6 @@ class GameStateResponseConsumer extends AsyncCharConsumer<Boolean> {
 
         final GameStateResponse gameStateResponse = GSON.fromJson(response, GameStateResponse.class);
 
-        System.out.println(gameStateResponse);
-
         if (gameStateResponse != null) {
             acceptGameStateResponse(gameStateResponse);
         }
