@@ -46,6 +46,11 @@ class EventResponseConsumer extends AsyncCharConsumer<Boolean> {
     }
 
     private void acceptEvent(final EventResponse eventResponse) {
+        if (eventResponse == null) {
+            log.warn("Received null event response");
+            return;
+        }
+
         if (eventResponse.getType() == EventResponse.Type.CHALLENGE) {
             final Challenge challenge = eventResponse.getChallenge();
             log.info("Received challenge: " + challenge);

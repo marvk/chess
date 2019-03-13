@@ -1,7 +1,6 @@
 package net.marvk.chess.lichess;
 
 import lombok.extern.log4j.Log4j2;
-import net.marvk.chess.board.*;
 import net.marvk.chess.lichess.model.Challenge;
 import net.marvk.chess.lichess.model.GameStart;
 import org.apache.http.client.ClientProtocolException;
@@ -21,8 +20,6 @@ import org.apache.http.nio.reactor.IOReactorException;
 import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -65,31 +62,6 @@ public class Client implements AutoCloseable {
         log.info("Closing event stream");
     }
 
-    private void startGameHttpStream(final GameStart gameStart) {
-        final String gameId = gameStart.getId();
-
-        executor.execute(() -> {
-            log.info("Starting stream for game " + gameId);
-            try (final CloseableHttpAsyncClient client = HttpAsyncClients.createDefault()) {
-                client.start();
-
-                final HttpAsyncRequestProducer request = HttpUtil.createAuthenticatedRequestProducer(Endpoints.gameStream(gameId));
-
-                final Future<Boolean> callback = client.execute(request, new GameStateResponseConsumer(this::acceptGameState, gameId), null);
-
-                try {
-                    callback.get();
-                } catch (InterruptedException | ExecutionException e) {
-                    log.error(e);
-                }
-            } catch (final IOException e) {
-                log.error(e);
-            }
-
-            log.info("Closing stream for game " + gameId);
-        });
-    }
-
     private void acceptChallenge(final Challenge challenge) {
         final String gameId = challenge.getId();
 
@@ -117,50 +89,8 @@ public class Client implements AutoCloseable {
         });
     }
 
-    private final Map<String, Board> lastBoards = new HashMap<>();
-
-    private void acceptGameState(final GameState gameState, final String gameId) {
-        executor.execute(() -> {
-            if (gameState.getBoard().equals(lastBoards.get(gameId))) {
-                log.debug("Not calculating move for opponent");
-                return;
-            }
-
-            final Color activePlayer = gameState.getBoard().getState().getActivePlayer();
-            final AlphaBetaPlayerExplicit player = new AlphaBetaPlayerExplicit(activePlayer, new SimpleHeuristic(), 4);
-            final Move play = player.play(new MoveResult(gameState.getBoard(), Move.NULL_MOVE));
-
-            final Board lastBoard =
-                    gameState.getBoard()
-                             .getValidMoves()
-                             .stream()
-                             .filter(m -> m.getMove().equals(play))
-                             .map(MoveResult::getBoard)
-                             .findFirst()
-                             .orElseThrow(IllegalStateException::new);
-
-            lastBoards.put(gameId, lastBoard);
-
-            final HttpUriRequest request = HttpUtil.createAuthorizedPostRequest(Endpoints.makeMove(gameId, play));
-
-            log.info("Trying to play move " + play + " in game " + gameId + "...");
-            try (CloseableHttpResponse httpResponse = httpClient.execute(request)) {
-
-                if (httpResponse.getStatusLine().getStatusCode() == 200) {
-                    log.info("Played move " + play + " in game " + gameId);
-                } else {
-                    log.warn("Failed to play move " + play + " in game " + gameId);
-                }
-
-                EntityUtils.consume(httpResponse.getEntity());
-
-                log.debug("Consumed entity");
-            } catch (final ClientProtocolException e) {
-                log.error("Failed to play move " + play + " in game " + gameId, e);
-            } catch (final IOException e) {
-                log.error(e);
-            }
-        });
+    private void startGameHttpStream(final GameStart gameStart) {
+        executor.execute(new GameThread(gameStart.getId(), httpClient, executor));
     }
 
     @Override
@@ -173,7 +103,7 @@ public class Client implements AutoCloseable {
         try (Client client = new Client()) {
             client.start();
         } catch (InterruptedException | ExecutionException | IOException e) {
-            log.error(e);
+            log.error("", e);
         }
     }
 }

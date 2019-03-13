@@ -8,6 +8,7 @@ public class UserData {
     private final String name;
     private final String title;
     private final Integer rating;
+    private final Boolean provisional;
     private final Boolean patron;
     private final Boolean online;
     private final Integer lag;
