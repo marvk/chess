@@ -89,7 +89,7 @@ public class GameViewModel implements ViewModel {
                     try {
                         countDownLatch.await();
                     } catch (final InterruptedException e) {
-                        log.error(e);
+                        log.error("", e);
                         Thread.currentThread().interrupt();
                     }
                 }

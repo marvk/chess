@@ -78,7 +78,7 @@ public class GameThread implements Runnable {
             } catch (final ClientProtocolException e) {
                 log.error("Failed to play move " + play + " in game " + gameId, e);
             } catch (final IOException e) {
-                log.error(e);
+                log.error("", e);
             }
         });
     }

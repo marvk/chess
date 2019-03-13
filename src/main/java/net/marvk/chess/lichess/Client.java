@@ -84,7 +84,7 @@ public class Client implements AutoCloseable {
             } catch (final ClientProtocolException e) {
                 log.error("Failed to accept challenge " + gameId, e);
             } catch (final IOException e) {
-                log.error(e);
+                log.error("", e);
             }
         });
     }

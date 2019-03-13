@@ -63,13 +63,4 @@ public final class Util {
 
         return stringBuilder.toString();
     }
-
-    public static <T> T safeJson(final Gson gson, final Class<T> clazz, final String json) {
-        try {
-            return gson.fromJson(json, clazz);
-        } catch (final JsonParseException e) {
-            log.error(e.getStackTrace());
-            return null;
-        }
-    }
 }
