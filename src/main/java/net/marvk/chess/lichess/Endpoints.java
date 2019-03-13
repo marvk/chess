@@ -17,7 +17,7 @@ public final class Endpoints {
         return URL + "/api/stream/event";
     }
 
-    public static String acceptChallange(final String gameId) {
+    public static String acceptChallenge(final String gameId) {
         return URL + "/api/challenge/" + gameId + "/accept";
     }
 

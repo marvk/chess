@@ -66,7 +66,7 @@ public class Client implements AutoCloseable {
         final String gameId = challenge.getId();
 
         executor.execute(() -> {
-            final HttpUriRequest request = HttpUtil.createAuthorizedPostRequest(Endpoints.acceptChallange(gameId));
+            final HttpUriRequest request = HttpUtil.createAuthorizedPostRequest(Endpoints.acceptChallenge(gameId));
 
             log.info("Trying to accept challenge " + gameId + "...");
 
