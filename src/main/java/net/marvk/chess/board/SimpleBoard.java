@@ -96,10 +96,10 @@ public class SimpleBoard implements Board {
             case A1:
                 nextState.lostQueenSideCastle(Color.WHITE);
                 break;
-            case A8:
+            case H1:
                 nextState.lostKingSideCastle(Color.WHITE);
                 break;
-            case H1:
+            case A8:
                 nextState.lostQueenSideCastle(Color.BLACK);
                 break;
             case H8:
@@ -111,10 +111,10 @@ public class SimpleBoard implements Board {
             case A1:
                 nextState.lostQueenSideCastle(Color.WHITE);
                 break;
-            case A8:
+            case H1:
                 nextState.lostKingSideCastle(Color.WHITE);
                 break;
-            case H1:
+            case A8:
                 nextState.lostQueenSideCastle(Color.BLACK);
                 break;
             case H8:

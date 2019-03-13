@@ -11,11 +11,11 @@
     <Loggers>
         <Root level="trace">
             <AppenderRef ref="Console" level="info"/>
-            <AppenderRef ref="Logfile" level="debug"/>
+            <AppenderRef ref="Logfile" level="trace"/>
         </Root>
         <Logger name="net.marvk.chess.lichess" level="trace" additivity="false">
             <AppenderRef ref="Console" level="warn"/>
-            <AppenderRef ref="Logfile" level="debug"/>
+            <AppenderRef ref="Logfile" level="trace"/>
         </Logger>
     </Loggers>
 </Configuration>

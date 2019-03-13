@@ -3,6 +3,7 @@ package net.marvk.chess.lichess.model;
 import lombok.Data;
 import net.marvk.chess.board.*;
 
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
@@ -50,7 +51,10 @@ public class UciMove {
                          .filter(uciMove::representsMove)
                          .findFirst();
 
-            maybeMove.orElseThrow(IllegalStateException::new);
+            if (!maybeMove.isPresent()) {
+                throw new IllegalStateException("Seemingly the opponent tried play an illegal move, this is probably a bug in the move generator. Move history was " + Arrays
+                        .toString(uciMoves));
+            }
 
             board = maybeMove.get().getBoard();
         }
