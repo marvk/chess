@@ -77,3 +77,4 @@ tmp/
 .scala_dependencies
 .worksheet
 lichess-api-token
+logs/

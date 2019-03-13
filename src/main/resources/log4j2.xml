@@ -4,13 +4,18 @@
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
         </Console>
+        <File name="Logfile" fileName="logs/chess.${date:yyyy-MM-dd-HH-mm-ss}.log">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+        </File>
     </Appenders>
     <Loggers>
-        <Root level="trace">
-            <AppenderRef ref="Console"/>
+        <Root>
+            <AppenderRef ref="Console" level="info"/>
+            <AppenderRef ref="Logfile" level="debug"/>
         </Root>
-        <Logger name="net.marvk.chess.lichess" level="info" additivity="false">
-            <AppenderRef ref="Console"/>
+        <Logger name="net.marvk.chess.lichess" additivity="false">
+            <AppenderRef ref="Console" level="warn"/>
+            <AppenderRef ref="Logfile" level="debug"/>
         </Logger>
     </Loggers>
 </Configuration>
