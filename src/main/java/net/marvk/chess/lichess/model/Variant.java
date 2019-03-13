@@ -6,7 +6,11 @@ import lombok.Data;
 @Data
 public class Variant {
     private final String key;
-    private final String name;
+    private final Name name;
     @SerializedName("short")
     private final String shortName;
+
+    public enum Name {
+
+    }
 }

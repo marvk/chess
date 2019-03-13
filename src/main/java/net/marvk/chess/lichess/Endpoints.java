@@ -21,6 +21,10 @@ public final class Endpoints {
         return URL + "/api/challenge/" + gameId + "/accept";
     }
 
+    public static String declineChallenge(final String gameId) {
+        return URL + "/api/challenge/" + gameId + "/decline";
+    }
+
     public static String makeMove(final String gameId, final Move move) {
         return URL + "/api/bot/game/" + gameId + "/move/" + move.getUci();
     }

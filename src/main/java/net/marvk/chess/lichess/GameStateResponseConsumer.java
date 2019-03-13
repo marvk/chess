@@ -6,6 +6,7 @@ import lombok.extern.log4j.Log4j2;
 import net.marvk.chess.lichess.model.*;
 import net.marvk.chess.lichess.serialization.GameStateResponseDeserializer;
 import net.marvk.chess.lichess.serialization.LocalDateTimeDeserializer;
+import net.marvk.chess.lichess.serialization.PerfDeserializer;
 import net.marvk.chess.lichess.serialization.UciMoveArrayDeserializer;
 import net.marvk.chess.util.Util;
 import org.apache.http.HttpResponse;
@@ -23,6 +24,7 @@ class GameStateResponseConsumer extends AsyncCharConsumer<Boolean> {
             new GsonBuilder().registerTypeAdapter(UciMove[].class, new UciMoveArrayDeserializer())
                              .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeDeserializer())
                              .registerTypeAdapter(GameStateResponse.class, new GameStateResponseDeserializer())
+                             .registerTypeAdapter(Perf.class, new PerfDeserializer())
                              .create();
 
     private final Consumer<GameStateFull> gameStateFullConsumer;

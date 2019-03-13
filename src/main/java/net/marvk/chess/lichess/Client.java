@@ -6,6 +6,7 @@ import net.marvk.chess.board.PlayerFactory;
 import net.marvk.chess.board.SimpleHeuristic;
 import net.marvk.chess.lichess.model.Challenge;
 import net.marvk.chess.lichess.model.GameStart;
+import net.marvk.chess.lichess.model.Perf;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -23,22 +24,32 @@ import org.apache.http.nio.reactor.IOReactorException;
 import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Log4j2
 public class Client implements AutoCloseable {
+    private static final PlayerFactory PLAYER_FACTORY = c -> new AlphaBetaPlayerExplicit(c, new SimpleHeuristic(), 3);
+
     private final CloseableHttpAsyncClient asyncClient;
     private final CloseableHttpClient httpClient;
 
     private final ExecutorService executor = Executors.newCachedThreadPool();
     private final String lichessBotId;
-    public static final PlayerFactory PLAYER_FACTORY = c -> new AlphaBetaPlayerExplicit(c, new SimpleHeuristic(), 3);
+    private final Set<Perf> allowedPerfs;
 
-    public Client(final String lichessBotId) throws IOReactorException {
+    public Client(final String lichessBotId, final Perf allowedPerf, final Perf... additionalPerfs) throws IOReactorException {
+        this(lichessBotId, mergePerfsList(allowedPerf, additionalPerfs));
+    }
+
+    public Client(final String lichessBotId, final Collection<Perf> allowedPerfs) throws IOReactorException {
         this.lichessBotId = lichessBotId;
+        this.allowedPerfs = EnumSet.copyOf(allowedPerfs);
 
         final IOReactorConfig ioReactorConfig = IOReactorConfig.custom().setIoThreadCount(10).build();
         final ConnectingIOReactor ioReactor = new DefaultConnectingIOReactor(ioReactorConfig);
@@ -63,33 +74,44 @@ public class Client implements AutoCloseable {
     private void startEventHttpStream(final HttpAsyncRequestProducer request) throws InterruptedException, ExecutionException {
         log.info("Starting event stream");
 
-        final Future<Boolean> execute = asyncClient.execute(request, new EventResponseConsumer(this::acceptChallenge, this::startGameHttpStream), null);
+        final Future<Boolean> execute = asyncClient.execute(request, new EventResponseConsumer(this::handleChallenge, this::startGameHttpStream), null);
 
         execute.get();
         log.info("Closing event stream");
     }
 
-    private void acceptChallenge(final Challenge challenge) {
+    private void handleChallenge(final Challenge challenge) {
         final String gameId = challenge.getId();
+        final Perf perf = challenge.getPerf();
+
+        final String endpoint;
+
+        if (!allowedPerfs.contains(perf)) {
+            log.info("Declining challenge " + challenge.getId() + " due to perf mismatch, allowed perfs are " + allowedPerfs + " but got " + perf);
+            endpoint = Endpoints.declineChallenge(gameId);
+        } else {
+            log.info("Accepting challenge " + gameId + " with perf " + perf);
+            endpoint = Endpoints.acceptChallenge(gameId);
+        }
 
         executor.execute(() -> {
-            final HttpUriRequest request = HttpUtil.createAuthorizedPostRequest(Endpoints.acceptChallenge(gameId));
+            final HttpUriRequest request = HttpUtil.createAuthorizedPostRequest(endpoint);
 
-            log.info("Trying to accept challenge " + gameId + "...");
+            log.trace("Trying to handle challenge " + gameId + "...");
 
             try (final CloseableHttpResponse httpResponse = httpClient.execute(request)) {
 
                 if (httpResponse.getStatusLine().getStatusCode() == 200) {
-                    log.info("Accepted challenge " + gameId);
+                    log.info("Handled challenge " + gameId);
                 } else {
-                    log.warn("Failed to accept challenge " + gameId);
+                    log.warn("Failed to handle challenge " + gameId);
                 }
 
                 EntityUtils.consume(httpResponse.getEntity());
 
-                log.debug("Consumed entity");
+                log.trace("Consumed entity");
             } catch (final ClientProtocolException e) {
-                log.error("Failed to accept challenge " + gameId, e);
+                log.error("Failed to handle challenge " + gameId, e);
             } catch (final IOException e) {
                 log.error("", e);
             }
@@ -107,10 +129,14 @@ public class Client implements AutoCloseable {
     }
 
     public static void main(final String[] args) {
-        try (Client client = new Client("queensgambot")) {
+        try (Client client = new Client("queensgambot", Perf.ULTRA_BULLET, Perf.BULLET)) {
             client.start();
         } catch (InterruptedException | ExecutionException | IOException e) {
             log.error("", e);
         }
+    }
+
+    private static List<Perf> mergePerfsList(final Perf perf, final Perf[] perfs) {
+        return Stream.concat(Stream.of(perf), Arrays.stream(perfs)).collect(Collectors.toList());
     }
 }

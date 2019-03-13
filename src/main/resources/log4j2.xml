@@ -9,11 +9,11 @@
         </File>
     </Appenders>
     <Loggers>
-        <Root>
+        <Root level="trace">
             <AppenderRef ref="Console" level="info"/>
             <AppenderRef ref="Logfile" level="debug"/>
         </Root>
-        <Logger name="net.marvk.chess.lichess" additivity="false">
+        <Logger name="net.marvk.chess.lichess" level="trace" additivity="false">
             <AppenderRef ref="Console" level="warn"/>
             <AppenderRef ref="Logfile" level="debug"/>
         </Logger>
