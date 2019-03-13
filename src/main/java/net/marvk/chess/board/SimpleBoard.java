@@ -92,18 +92,34 @@ public class SimpleBoard implements Board {
             nextState.lostCastle(Color.BLACK);
         }
 
-        if (move.getColoredPiece() == ColoredPiece.WHITE_ROOK) {
-            if (move.getSource() == Square.A1) {
+        switch (move.getTarget()) {
+            case A1:
                 nextState.lostQueenSideCastle(Color.WHITE);
-            } else if (move.getSource() == Square.H1) {
+                break;
+            case A8:
                 nextState.lostKingSideCastle(Color.WHITE);
-            }
-        } else if (move.getColoredPiece() == ColoredPiece.BLACK_ROOK) {
-            if (move.getSource() == Square.A8) {
+                break;
+            case H1:
                 nextState.lostQueenSideCastle(Color.BLACK);
-            } else if (move.getSource() == Square.H8) {
+                break;
+            case H8:
                 nextState.lostKingSideCastle(Color.BLACK);
-            }
+                break;
+        }
+
+        switch (move.getSource()) {
+            case A1:
+                nextState.lostQueenSideCastle(Color.WHITE);
+                break;
+            case A8:
+                nextState.lostKingSideCastle(Color.WHITE);
+                break;
+            case H1:
+                nextState.lostQueenSideCastle(Color.BLACK);
+                break;
+            case H8:
+                nextState.lostKingSideCastle(Color.BLACK);
+                break;
         }
 
         final StringBuilder boardBuilder = new StringBuilder(board);
