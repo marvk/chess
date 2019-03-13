@@ -72,7 +72,7 @@ public class ConsoleUIChannel implements UIChannel {
 
     @Override
     public void info(final Info info) {
-        send("info " + info.toCommand());
+        send(info.toCommand());
     }
 
     @Override

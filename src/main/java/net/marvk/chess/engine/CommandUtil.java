@@ -1,8 +1,10 @@
 package net.marvk.chess.engine;
 
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 final class CommandUtil {
     private CommandUtil() {
@@ -22,8 +24,7 @@ final class CommandUtil {
     }
 
     static String convertToCommandString(final UciMove[] moves) {
-        //TODO
-        throw new UnsupportedOperationException();
+        return Arrays.stream(moves).map(UciMove::toString).collect(Collectors.joining(" "));
     }
 
     static String optionCommand(final String name, final String type) {

@@ -21,7 +21,7 @@ public interface Engine {
      * This mode should be switched off by default and this command can be sent
      * any time, also when the engine is thinking.</p>
      *
-     * @param debug
+     * @param debug debug enabled
      */
     void setDebug(final boolean debug);
 
@@ -43,7 +43,7 @@ public interface Engine {
      * <p>UCI Description:</p>
      * {@link Engine#setOption(String, String)}
      *
-     * @param name
+     * @param name the option name
      */
     void setOption(final String name);
 
@@ -134,15 +134,15 @@ public interface Engine {
     void go(
             final UciMove[] searchMoves,
             final boolean ponder,
-            final long whiteTime,
-            final long blackTime,
-            final long whiteIncrement,
-            final long blackIncrement,
+            final int whiteTime,
+            final int blackTime,
+            final int whiteIncrement,
+            final int blackIncrement,
             final int movesToGo,
             final int depth,
             final int nodes,
             final int mate,
-            final long moveTime,
+            final int moveTime,
             final boolean infinite
     );
 

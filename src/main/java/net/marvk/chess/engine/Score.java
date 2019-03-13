@@ -4,13 +4,33 @@ import lombok.Data;
 
 @Data
 public class Score {
-    private final Double scoreInCentipawns;
+    private final Integer scoreInCentipawns;
     private final Integer mateIn;
-    private final Boolean scoreIsLowerBound;
-    private final Boolean scoreIsUpperBound;
+    private final Bound bound;
 
     public String toCommand() {
-        //TODO
-        throw new UnsupportedOperationException();
+        final String boundCommand;
+
+        if (bound != null) {
+            boundCommand = " " + bound.command;
+        } else {
+            boundCommand = "";
+        }
+
+        return "score"
+                + CommandUtil.toCommand("cp", scoreInCentipawns)
+                + CommandUtil.toCommand("mate", mateIn)
+                + boundCommand;
+    }
+
+    public enum Bound {
+        LOWER("lowerbound"),
+        UPPER("upperbound");
+
+        private final String command;
+
+        Bound(final String command) {
+            this.command = command;
+        }
     }
 }
