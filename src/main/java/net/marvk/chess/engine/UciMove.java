@@ -1,4 +1,4 @@
-package net.marvk.chess.lichess.model;
+package net.marvk.chess.engine;
 
 import lombok.Data;
 import net.marvk.chess.board.*;
@@ -60,5 +60,16 @@ public class UciMove {
         }
 
         return board;
+    }
+
+    @Override
+    public String toString() {
+        final String squares = source.getFen() + target.getFen();
+
+        if (promote != null) {
+            return squares + Character.toLowerCase(promote.ofColor(Color.BLACK).getSan());
+        } else {
+            return squares;
+        }
     }
 }

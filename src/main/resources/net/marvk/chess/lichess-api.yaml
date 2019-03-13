@@ -908,7 +908,7 @@ paths:
                   default: true
                 position:
                   type: string
-                  description: Custom initial position (in FEN) for all games of the tournament. Must be one of [these positions](https://github.com/ornicar/scalachess/blob/ab61b7e6d8d4ab602f6366b29b0e5715717e8944/src/main/scala/StartingPosition.scala#L25)
+                  description: Custom initial defaultPosition (in FEN) for all games of the tournament. Must be one of [these positions](https://github.com/ornicar/scalachess/blob/ab61b7e6d8d4ab602f6366b29b0e5715717e8944/src/main/scala/StartingPosition.scala#L25)
                   default: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
                 berserkable:
                   type: boolean
@@ -1511,7 +1511,7 @@ paths:
                   default: standard
                 position:
                   type: string
-                  description: Custom initial position (in FEN). Variant must be standard, and the game cannot be rated.
+                  description: Custom initial defaultPosition (in FEN). Variant must be standard, and the game cannot be rated.
                   default: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
               required:
                 - rated

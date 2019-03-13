@@ -2,6 +2,7 @@ package net.marvk.chess.lichess.model;
 
 import com.google.gson.annotations.SerializedName;
 import lombok.Data;
+import net.marvk.chess.engine.UciMove;
 
 @Data
 public class GameState {

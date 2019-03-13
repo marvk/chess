@@ -3,6 +3,7 @@ package net.marvk.chess.lichess;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.extern.log4j.Log4j2;
+import net.marvk.chess.engine.UciMove;
 import net.marvk.chess.lichess.model.*;
 import net.marvk.chess.lichess.serialization.GameStateResponseDeserializer;
 import net.marvk.chess.lichess.serialization.LocalDateTimeDeserializer;

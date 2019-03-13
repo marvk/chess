@@ -5,7 +5,7 @@ import net.marvk.chess.board.*;
 import net.marvk.chess.lichess.model.ChatLine;
 import net.marvk.chess.lichess.model.GameState;
 import net.marvk.chess.lichess.model.GameStateFull;
-import net.marvk.chess.lichess.model.UciMove;
+import net.marvk.chess.engine.UciMove;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
