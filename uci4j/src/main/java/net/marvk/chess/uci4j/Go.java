@@ -54,6 +54,8 @@ import net.marvk.chess.core.board.UciMove;
 @Data
 @Builder
 public class Go {
+    static final Go EMPTY = Go.builder().build();
+
     private final UciMove[] searchMoves;
     private final Boolean ponder;
     private final Integer whiteTime;

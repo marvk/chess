@@ -1,6 +1,6 @@
 package net.marvk.chess.lichess4j;
 
-import net.marvk.chess.core.board.Move;
+import net.marvk.chess.core.board.UciMove;
 import net.marvk.chess.lichess4j.model.Room;
 
 import java.io.UnsupportedEncodingException;
@@ -29,8 +29,8 @@ public final class Endpoints {
         return URL + "/api/challenge/" + gameId + "/decline";
     }
 
-    public static String makeMove(final String gameId, final Move move) {
-        return URL + "/api/bot/game/" + gameId + "/move/" + move.getUci();
+    public static String makeMove(final String gameId, final UciMove move) {
+        return URL + "/api/bot/game/" + gameId + "/move/" + move;
     }
 
     public static String gameStream(final String gameId) {

@@ -13,21 +13,27 @@ public interface UIChannel {
      *
      * @param name the name
      */
-    void idName(final String name);
+    default void idName(final String name) {
+
+    }
 
     /**
      * {@link UIChannel#idName(String)}
      *
      * @param author the name
      */
-    void idAuthor(final String author);
+    default void idAuthor(final String author) {
+
+    }
 
     /**
      * <p>UCI Description:</p>
      * <p>Must be sent after the id and optional options to tell the GUI that the engine
      * has sent all infos and is ready in uci mode.</p>
      */
-    void uciOk();
+    default void uciOk() {
+
+    }
 
     /**
      * <p>UCI Description:</p>
@@ -37,7 +43,9 @@ public interface UIChannel {
      * but it can be used anytime, even when the engine is searching,
      * and must always be answered with "isready".</p>
      */
-    void readyOk();
+    default void readyOk() {
+
+    }
 
     /**
      * {@link UIChannel#bestMove(UciMove, UciMove)}
@@ -58,7 +66,9 @@ public interface UIChannel {
      * @param move   best move the engine found
      * @param ponder move engine would like to ponder on
      */
-    void bestMove(final UciMove move, final UciMove ponder);
+    default void bestMove(final UciMove move, final UciMove ponder) {
+        bestMove(move);
+    }
 
     /**
      * <p>UCI Description:</p>
@@ -78,7 +88,9 @@ public interface UIChannel {
      *     TellGUI("copyprotection error\n");
      * </pre></p>
      */
-    void copyProtection();
+    default void copyProtection() {
+
+    }
 
     /**
      * <p>UCI Description:</p>
@@ -99,7 +111,9 @@ public interface UIChannel {
      * This way the engine knows that the GUI can deal with the registration procedure and the user
      * will be informed that the engine is not properly registered.</p>
      */
-    void registration();
+    default void registration() {
+
+    }
 
     /**
      * <p>UCI Description:</p>
@@ -112,7 +126,9 @@ public interface UIChannel {
      * I suggest to start sending "currmove", "currmovenumber", "currline" and "refutation" only after one second
      * to avoid too much traffic.</p>
      */
-    void info(final Info info);
+    default void info(final Info info) {
+
+    }
 
     /**
      * <p>UCI Description:</p>
@@ -129,25 +145,35 @@ public interface UIChannel {
      * as some combinations of this tokens don't make sense.
      * One string will be sent for each parameter.</p>
      */
-    void optionCheck(final String name, final boolean enabled);
+    default void optionCheck(final String name, final boolean enabled) {
+
+    }
 
     /**
      * {@link UIChannel#optionCheck(String, boolean)}
      */
-    void optionSpin(final String name, final int defaultValue, final int min, final int max);
+    default void optionSpin(final String name, final int defaultValue, final int min, final int max) {
+
+    }
 
     /**
      * {@link UIChannel#optionCheck(String, boolean)}
      */
-    void optionCombo(final String name, final String defaultValue, final List<String> possibleValues);
+    default void optionCombo(final String name, final String defaultValue, final List<String> possibleValues) {
+
+    }
 
     /**
      * {@link UIChannel#optionCheck(String, boolean)}
      */
-    void optionString(final String name, final String defaultValue);
+    default void optionString(final String name, final String defaultValue) {
+
+    }
 
     /**
      * {@link UIChannel#optionCheck(String, boolean)}
      */
-    void optionButton(final String name);
+    default void optionButton(final String name) {
+
+    }
 }

@@ -126,6 +126,10 @@ public abstract class Engine {
      */
     public abstract void go(final Go go);
 
+    public void go() {
+        go(Go.EMPTY);
+    }
+
     /**
      * <p>UCI Description:</p>
      * <p>stop calculating as soon as possible,
