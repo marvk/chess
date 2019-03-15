@@ -9,7 +9,7 @@ import net.marvk.chess.lichess4j.model.GameState;
 import net.marvk.chess.lichess4j.model.GameStateFull;
 import net.marvk.chess.lichess4j.model.Room;
 import net.marvk.chess.lichess4j.util.HttpUtil;
-import net.marvk.chess.uci4j.Engine;
+import net.marvk.chess.uci4j.UciEngine;
 import net.marvk.chess.uci4j.EngineFactory;
 import net.marvk.chess.uci4j.UIChannel;
 import org.apache.http.HttpEntity;
@@ -34,7 +34,7 @@ class GameThread implements Runnable, UIChannel {
     private final CloseableHttpClient httpClient;
     private final ExecutorService executorService;
     private final String botId;
-    private final Engine engine;
+    private final UciEngine engine;
 
     private Color myColor;
 

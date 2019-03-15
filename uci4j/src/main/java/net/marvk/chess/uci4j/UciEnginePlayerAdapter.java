@@ -6,7 +6,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-public class EnginePlayerAdapter extends Engine {
+public class UciEnginePlayerAdapter extends UciEngine {
     private static final String PLY_OPTION = "ply";
     private int ply = 3;
     private Board board;
@@ -14,7 +14,7 @@ public class EnginePlayerAdapter extends Engine {
     private final ExecutorService executor;
     private Future<Object> calculationFuture;
 
-    public EnginePlayerAdapter(final UIChannel uiChannel) {
+    public UciEnginePlayerAdapter(final UIChannel uiChannel) {
         super(uiChannel);
 
         this.executor = Executors.newSingleThreadExecutor();

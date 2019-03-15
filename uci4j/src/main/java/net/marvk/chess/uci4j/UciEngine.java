@@ -2,10 +2,10 @@ package net.marvk.chess.uci4j;
 
 import net.marvk.chess.core.board.UciMove;
 
-public abstract class Engine {
+public abstract class UciEngine {
     protected final UIChannel uiChannel;
 
-    public Engine(final UIChannel uiChannel) {
+    public UciEngine(final UIChannel uiChannel) {
         this.uiChannel = uiChannel;
     }
 
@@ -64,7 +64,7 @@ public abstract class Engine {
     /**
      * <p>UCI Description:</p>
      * <p>this is the command to tell the engine that registration
-     * will be done later. See also: {@link Engine#register(String, String)}</p>
+     * will be done later. See also: {@link UciEngine#register(String, String)}</p>
      */
     public abstract void registerLater();
 

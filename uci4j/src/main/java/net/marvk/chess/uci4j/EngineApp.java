@@ -5,7 +5,7 @@ import lombok.extern.log4j.Log4j2;
 @Log4j2
 public class EngineApp {
     public static void main(final String[] args) {
-        final Engine engine = new EnginePlayerAdapter(new ConsoleUIChannel(s -> {
+        final UciEngine engine = new UciEnginePlayerAdapter(new ConsoleUIChannel(s -> {
             log.info(s);
             System.out.println(s);
         }));

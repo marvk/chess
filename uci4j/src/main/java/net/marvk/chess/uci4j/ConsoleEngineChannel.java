@@ -12,10 +12,10 @@ import java.util.function.Function;
 @Log4j2
 public class ConsoleEngineChannel implements AutoCloseable {
     private static final UciMove[] UCI_MOVES_EMPTY = new UciMove[0];
-    private final Engine engine;
+    private final UciEngine engine;
     private final Scanner scanner;
 
-    public ConsoleEngineChannel(final Engine engine, final InputStream inputStream) {
+    public ConsoleEngineChannel(final UciEngine engine, final InputStream inputStream) {
         this.engine = engine;
         this.scanner = new Scanner(inputStream);
     }
