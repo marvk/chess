@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Appenders>
+        <File name="Logfile" fileName="B:/Marvin/Desktop/chess.${date:yyyy-MM-dd-HH-mm-ss}.log">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+        </File>
+    </Appenders>
+    <Loggers>
+        <Root level="trace">
+            <AppenderRef ref="Logfile"/>
+        </Root>
+    </Loggers>
+</Configuration>
