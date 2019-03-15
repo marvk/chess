@@ -68,7 +68,7 @@ tmp/
 .autotools
 .factorypath
 .buildpath
-.target
+**/target
 .tern-project
 .texlipse
 .springBeans
