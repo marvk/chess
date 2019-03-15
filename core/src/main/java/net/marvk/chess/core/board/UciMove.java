@@ -48,8 +48,8 @@ public class UciMove {
         return representsMove(moveResult.getMove());
     }
 
-    public static Board getBoard(final UciMove[] uciMoves) {
-        Board board = new SimpleBoard(Fen.STARTING_POSITION);
+    private static Board getBoard(final UciMove[] uciMoves, final Board startingBoard) {
+        Board board = startingBoard;
 
         for (final UciMove uciMove : uciMoves) {
             final Optional<MoveResult> maybeMove =
@@ -67,6 +67,14 @@ public class UciMove {
         }
 
         return board;
+    }
+
+    public static Board getBoard(final UciMove[] uciMoves, final Fen fen) {
+        return getBoard(uciMoves, new SimpleBoard(fen));
+    }
+
+    public static Board getBoard(final UciMove[] uciMoves) {
+        return getBoard(uciMoves, new SimpleBoard(Fen.STARTING_POSITION));
     }
 
     @Override

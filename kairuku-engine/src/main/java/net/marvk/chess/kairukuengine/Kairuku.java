@@ -1,74 +1,71 @@
-package net.marvk.chess.uci4j;
+package net.marvk.chess.kairukuengine;
 
+import lombok.extern.log4j.Log4j2;
 import net.marvk.chess.core.board.*;
+import net.marvk.chess.uci4j.*;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-public class UciEnginePlayerAdapter extends UciEngine {
+@Log4j2
+public class Kairuku extends UciEngine {
     private static final String PLY_OPTION = "ply";
-    private int ply = 3;
-    private Board board;
 
     private final ExecutorService executor;
-    private Future<Object> calculationFuture;
 
-    public UciEnginePlayerAdapter(final UIChannel uiChannel) {
+    private Future<Void> calculationFuture;
+    private int ply;
+    private Board board;
+
+    public Kairuku(final UIChannel uiChannel) {
         super(uiChannel);
 
+        this.ply = 3;
         this.executor = Executors.newSingleThreadExecutor();
     }
 
-    @Override
     public void uci() {
-        uiChannel.idAuthor("Marvin");
+        uiChannel.idName("kairuku");
         uiChannel.optionSpin(PLY_OPTION, ply, 1, 7);
     }
 
-    @Override
     public void setDebug(final boolean debug) {
 
     }
 
-    @Override
     public void isReady() {
         uiChannel.readyOk();
     }
 
-    @Override
     public void setOption(final String name, final String value) {
         if (PLY_OPTION.equals(name)) {
             ply = Integer.parseInt(value);
         }
     }
 
-    @Override
     public void registerLater() {
 
     }
 
-    @Override
     public void register(final String name, final String code) {
 
     }
 
-    @Override
     public void uciNewGame() {
+        stop();
 
+        board = null;
     }
 
-    @Override
     public void positionFromDefault(final UciMove[] moves) {
         board = UciMove.getBoard(moves);
     }
 
-    @Override
     public void position(final String fenString, final UciMove[] moves) {
-        board = new SimpleBoard(Fen.parse(fenString));
+        board = UciMove.getBoard(moves, Fen.parse(fenString));
     }
 
-    @Override
     public void go(final Go go) {
         final AlphaBetaPlayerExplicit player =
                 new AlphaBetaPlayerExplicit(board.getState().getActivePlayer(), new SimpleHeuristic(), ply);
@@ -93,17 +90,14 @@ public class UciEnginePlayerAdapter extends UciEngine {
         });
     }
 
-    @Override
     public void stop() {
         calculationFuture.cancel(true);
     }
 
-    @Override
     public void ponderHit() {
 
     }
 
-    @Override
     public void quit() {
         calculationFuture.cancel(true);
     }

@@ -9,18 +9,13 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>queensgambot</artifactId>
+    <artifactId>kairuku-engine</artifactId>
+
     <dependencies>
         <dependency>
             <groupId>net.marvk.chess</groupId>
-            <artifactId>lichess4j</artifactId>
+            <artifactId>uci4j</artifactId>
             <version>1.0-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>net.marvk.chess</groupId>
-            <artifactId>kairuku-engine</artifactId>
-            <version>1.0-SNAPSHOT</version>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
 
@@ -53,7 +48,7 @@
                     <archive>
                         <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>net.marvk.chess.queensgambot.App</mainClass>
+                            <mainClass>net.marvk.chess.kairukuengine.ConsoleApp</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
