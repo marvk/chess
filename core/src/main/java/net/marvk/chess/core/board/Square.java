@@ -18,6 +18,13 @@ public enum Square {
     private final File file;
     private final Rank rank;
 
+    private final int bitboardIndex;
+    private final long occupiedBitMask;
+
+    private final boolean northSouthEdgeSquare;
+    private final boolean eastWestEdgeSquare;
+    private final boolean edgeSquare;
+
     private static final Square[][] SQUARES;
 
     static {
@@ -40,7 +47,16 @@ public enum Square {
         this.file = file;
         this.rank = rank;
 
+        this.bitboardIndex = rank.getIndex() * 8 + file.getIndex();
+
+        this.occupiedBitMask = 1L << bitboardIndex;
+
         this.translateMap = new EnumMap<>(Direction.class);
+
+        this.northSouthEdgeSquare = rank == Rank.RANK_1 || rank == Rank.RANK_8;
+        this.eastWestEdgeSquare = file == File.FILE_A || file == File.FILE_H;
+
+        this.edgeSquare = northSouthEdgeSquare || eastWestEdgeSquare;
     }
 
     public static Square getSquareFromFen(final String fen) {
@@ -85,7 +101,45 @@ public enum Square {
         return file;
     }
 
+    public int getBitboardIndex() {
+        return bitboardIndex;
+    }
+
+    public long getOccupiedBitMask() {
+        return occupiedBitMask;
+    }
+
     public String getFen() {
         return Character.toString(file.getFen()) + Character.toString(rank.getFen());
+    }
+
+    public boolean isEdgeForDirection(final Direction direction) {
+        switch (direction) {
+            case NORTH:
+            case SOUTH:
+                return northSouthEdgeSquare;
+            case EAST:
+            case WEST:
+                return eastWestEdgeSquare;
+            case NORTH_EAST:
+            case NORTH_WEST:
+            case SOUTH_EAST:
+            case SOUTH_WEST:
+                return edgeSquare;
+            default:
+                return false;
+        }
+    }
+
+    public boolean isEdgeSquare() {
+        return edgeSquare;
+    }
+
+    public boolean isNorthSouthEdge() {
+        return edgeSquare;
+    }
+
+    public boolean isEastWestEdge() {
+        return edgeSquare;
     }
 }

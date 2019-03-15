@@ -1,57 +1,59 @@
-package net.marvk.chess.core.board;
+package net.marvk.chess.core.bitboards;
+
+import net.marvk.chess.core.board.*;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public class MagicBitBoard implements Board {
+public class MagicBitboard implements Board {
     @Override
     public ColoredPiece getPiece(final int file, final int rank) {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     @Override
     public ColoredPiece[][] getBoard() {
-        throw new UnsupportedOperationException();
+        return new ColoredPiece[0][];
     }
 
     @Override
     public List<MoveResult> getValidMovesForColor(final Color color) {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     @Override
     public MoveResult makeSimpleMove(final Move move) {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     @Override
     public MoveResult makeComplexMove(final Move move, final SquareColoredPiecePair... pairs) {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     @Override
     public BoardState getState() {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     @Override
     public Optional<GameResult> findGameResult() {
-        throw new UnsupportedOperationException();
+        return Optional.empty();
     }
 
     @Override
     public double computeScore(final Map<Piece, Double> scoreMap, final Color color) {
-        throw new UnsupportedOperationException();
+        return 0;
     }
 
     @Override
     public boolean isInCheck(final Color color) {
-        throw new UnsupportedOperationException();
+        return false;
     }
 
     @Override
     public boolean isInCheck(final Color color, final Square square) {
-        throw new UnsupportedOperationException();
+        return false;
     }
 }
