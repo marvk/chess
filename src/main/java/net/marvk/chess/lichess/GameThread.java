@@ -2,10 +2,11 @@ package net.marvk.chess.lichess;
 
 import lombok.extern.log4j.Log4j2;
 import net.marvk.chess.board.*;
+import net.marvk.chess.engine.UciMove;
 import net.marvk.chess.lichess.model.ChatLine;
+import net.marvk.chess.lichess.model.Clock;
 import net.marvk.chess.lichess.model.GameState;
 import net.marvk.chess.lichess.model.GameStateFull;
-import net.marvk.chess.engine.UciMove;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -46,7 +47,8 @@ public class GameThread implements Runnable {
             this.myColor = Color.BLACK;
         }
 
-        final int initialClock = gameStateFull.getClock().getInitial();
+        final Clock clock = gameStateFull.getClock();
+        final int initialClock = clock != null ? clock.getInitial() : Integer.MAX_VALUE;
 
         final int ply;
 
