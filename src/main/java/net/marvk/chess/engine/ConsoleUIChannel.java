@@ -3,17 +3,18 @@ package net.marvk.chess.engine;
 import java.io.PrintStream;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class ConsoleUIChannel implements UIChannel {
-    private final PrintStream console;
+    private final Consumer<String> console;
 
-    public ConsoleUIChannel(final PrintStream console) {
+    public ConsoleUIChannel(final Consumer<String> console) {
         this.console = console;
     }
 
     private void send(final String string) {
-        console.println(string);
+        console.accept(string);
     }
 
     @Override

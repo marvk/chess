@@ -100,7 +100,7 @@ public class Info {
                 + CommandUtil.toCommand("nodes", nodes)
                 + CommandUtil.toCommand("pv", principalVariation)
                 + CommandUtil.toCommand("multipv", multiPrincipalVariation)
-                + CommandUtil.toCommand("score", score, Score::toCommand)
+                + CommandUtil.toCommand("score", score, Score::toCommand).replaceAll("\\s+", " ")
                 + CommandUtil.toCommand("currmove", currentMove)
                 + CommandUtil.toCommand("currmovenumber", currentMoveNumber)
                 + CommandUtil.toCommand("hashfull", hashFull)

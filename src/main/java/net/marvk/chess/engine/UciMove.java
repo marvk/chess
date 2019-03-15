@@ -31,6 +31,14 @@ public class UciMove {
         return new UciMove(source, target, promotion);
     }
 
+    public static UciMove[] parseLine(final String asString) {
+        return Arrays.stream(asString.split(" "))
+                     .map(String::trim)
+                     .filter(s -> !s.isEmpty())
+                     .map(UciMove::parse)
+                     .toArray(UciMove[]::new);
+    }
+
     public boolean representsMove(final Move move) {
         return move.getSource() == source &&
                 move.getTarget() == target &&

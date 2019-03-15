@@ -39,7 +39,7 @@ final class CommandUtil {
         Objects.requireNonNull(defaultValue);
         requireElseThrow(name, CommandUtil::isStringNotEmpty);
 
-        return "option name " + name + "type " + type + " default " + defaultValue;
+        return "option name " + name + " type " + type + " default " + defaultValue;
     }
 
     static boolean isStringNotEmpty(final String string) {

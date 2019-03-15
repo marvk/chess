@@ -17,8 +17,7 @@ public class Score {
             boundCommand = "";
         }
 
-        return "score"
-                + CommandUtil.toCommand("cp", scoreInCentipawns)
+        return CommandUtil.toCommand("cp", scoreInCentipawns)
                 + CommandUtil.toCommand("mate", mateIn)
                 + boundCommand;
     }

@@ -36,7 +36,7 @@ public class Fen {
 
     private Fen(final String input, final Matcher matcher) {
         if (!matcher.matches()) {
-            throw new IllegalArgumentException("Input string is not a valid FEN notation");
+            throw new IllegalArgumentException("Input string is not a valid FEN notation: " + input);
         }
 
         this.input = input;

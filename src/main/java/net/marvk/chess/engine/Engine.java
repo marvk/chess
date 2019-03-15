@@ -1,6 +1,12 @@
 package net.marvk.chess.engine;
 
-public interface Engine {
+public abstract class Engine {
+    protected final UIChannel uiChannel;
+
+    public Engine(final UIChannel uiChannel) {
+        this.uiChannel = uiChannel;
+    }
+
     /**
      * <p>UCI Description:</p>
      * <p>tell engine to use the uci (universal chess interface),
@@ -11,7 +17,7 @@ public interface Engine {
      * After that the engine should send "uciok" to acknowledge the uci mode.
      * If no uciok is sent within a certain time period, the engine task will be killed by the GUI.</p>
      */
-    void uci();
+    public abstract void uci();
 
     /**
      * <p>UCI Description:</p>
@@ -23,7 +29,21 @@ public interface Engine {
      *
      * @param debug debug enabled
      */
-    void setDebug(final boolean debug);
+    public abstract void setDebug(final boolean debug);
+
+    /**
+     * <p>UCI Description:</p>
+     * <p>	this is used to synchronize the engine with the GUI. When the GUI has sent a command or
+     * multiple commands that can take some time to complete,
+     * this command can be used to wait for the engine to be ready again or
+     * to ping the engine to find out if it is still alive.
+     * E.g. this should be sent after setting the path to the tablebases as this can take some time.
+     * This command is also required once before the engine is asked to do any search
+     * to wait for the engine to finish initializing.
+     * This command must always be answered with "readyok" and can be sent also when the engine is calculating
+     * in which case the engine should also immediately answer with "readyok" without stopping the search.</p>
+     */
+    public abstract void isReady();
 
     /**
      * <p>UCI Description:</p>
@@ -37,22 +57,14 @@ public interface Engine {
      * @param name  the name
      * @param value the value
      */
-    void setOption(final String name, final String value);
-
-    /**
-     * <p>UCI Description:</p>
-     * {@link Engine#setOption(String, String)}
-     *
-     * @param name the option name
-     */
-    void setOption(final String name);
+    public abstract void setOption(final String name, final String value);
 
     /**
      * <p>UCI Description:</p>
      * <p>this is the command to tell the engine that registration
      * will be done later. See also: {@link Engine#register(String, String)}</p>
      */
-    void registerLater();
+    public abstract void registerLater();
 
     /**
      * <p>UCI Description:</p>
@@ -62,7 +74,7 @@ public interface Engine {
      * @param name the engine should be registered with the name
      * @param code the engine should be registered with the code
      */
-    void register(final String name, final String code);
+    public abstract void register(final String name, final String code);
 
     /**
      * <p>UCI Description:</p>
@@ -75,7 +87,7 @@ public interface Engine {
      * As the engine's reaction to "ucinewgame" can take some time the GUI should always send "isready"
      * after "ucinewgame" to wait for the engine to finish its operation.</p>
      */
-    void uciNewGame();
+    public abstract void uciNewGame();
 
     /**
      * <p>UCI Description:</p>
@@ -86,7 +98,7 @@ public interface Engine {
      *
      * @param moves the moves
      */
-    void positionFromDefault(final UciMove[] moves);
+    public abstract void positionFromDefault(final UciMove[] moves);
 
     /**
      * <p>UCI Description:</p>
@@ -98,7 +110,7 @@ public interface Engine {
      * @param fenString the fen string
      * @param moves     the moves
      */
-    void position(final String fenString, final UciMove[] moves);
+    public abstract void position(final String fenString, final UciMove[] moves);
 
     /**
      * <p>UCI Description:</p>
@@ -106,63 +118,29 @@ public interface Engine {
      * There are a number of commands that can follow this command, all will be sent in the same string.
      * If one command is not sent its value should be interpreted as it would not influence the search.</p>
      *
-     * @param searchMoves    restrict search to this moves only
-     *                       Example: After "position startpos" and "go infinite searchmoves e2e4 d2d4"
-     *                       the engine should only search the two moves e2e4 and d2d4 in the initial position.
-     * @param ponder         start searching in pondering mode.
-     *                       Do not exit the search in ponder mode, even if it's mate!
-     *                       This means that the last move sent in in the position string is the ponder move.
-     *                       The engine can do what it wants to do, but after a "ponderhit" command
-     *                       it should execute the suggested move to ponder on. This means that the ponder move sent by
-     *                       the GUI can be interpreted as a recommendation about which move to ponder. However, if the
-     *                       engine decides to ponder on a different move, it should not display any mainlines as they are
-     *                       likely to be misinterpreted by the GUI because the GUI expects the engine to ponder
-     *                       on the suggested move.
-     * @param whiteTime      white has {@code whiteTime} msec left on the clock
-     * @param blackTime      black has {@code blackTime} msec left on the clock
-     * @param whiteIncrement white increment per move in mseconds if {@code whiteIncrement} > 0
-     * @param blackIncrement black increment per move in mseconds if {@code blackIncrement} > 0
-     * @param movesToGo      there are {@code movesToGo} moves to the next time control,
-     *                       this will only be sent if {@code movesToGo} > 0,
-     *                       if you don't get this and get the wtime and btime it's sudden death
-     * @param depth          search {@code } plies only.
-     * @param nodes          search {@code } nodes only,
-     * @param mate           search for a mate in {@code } moves
-     * @param moveTime       search exactly {@code } mseconds
-     * @param infinite       search until the "stop" command. Do not exit the search without being told so in this mode!
+     * See also {@link Go}
+     *
+     * @param go the values for the go command
      */
-    void go(
-            final UciMove[] searchMoves,
-            final boolean ponder,
-            final int whiteTime,
-            final int blackTime,
-            final int whiteIncrement,
-            final int blackIncrement,
-            final int movesToGo,
-            final int depth,
-            final int nodes,
-            final int mate,
-            final int moveTime,
-            final boolean infinite
-    );
+    public abstract void go(final Go go);
 
     /**
      * <p>UCI Description:</p>
      * <p>stop calculating as soon as possible,
      * don't forget the "bestmove" and possibly the "ponder" token when finishing the search</p>
      */
-    void stop();
+    public abstract void stop();
 
     /**
      * <p>UCI Description:</p>
      * <p>the user has played the expected move. This will be sent if the engine was told to ponder on the same move
      * the user has played. The engine should continue searching but switch from pondering to normal search.</p>
      */
-    void ponderHit();
+    public abstract void ponderHit();
 
     /**
      * <p>UCI Description:</p>
      * <p>quit the program as soon as possible</p>
      */
-    void quit();
+    public abstract void quit();
 }
