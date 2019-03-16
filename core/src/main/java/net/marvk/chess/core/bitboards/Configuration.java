@@ -1,13 +1,15 @@
 package net.marvk.chess.core.bitboards;
 
+import lombok.extern.log4j.Log4j2;
 import net.marvk.chess.core.board.Direction;
 import net.marvk.chess.core.board.Piece;
 import net.marvk.chess.core.board.Square;
 
 import java.util.*;
 
-public class Configuration {
-    private static final Random RANDOM = new Random(0);
+@Log4j2
+public final class Configuration {
+    private final Random random = new Random(0);
 
     private final Piece piece;
     private final Square square;
@@ -21,7 +23,7 @@ public class Configuration {
     private final long hashShift;
     private final long magic;
 
-    private Configuration(final Piece piece, final Square square) {
+    public Configuration(final Piece piece, final Square square, final Long precalculatedMagic) {
         if (piece == Piece.ROOK) {
             directions = Direction.ORTHOGONAL_DIRECTIONS;
         } else if (piece == Piece.BISHOP) {
@@ -43,7 +45,7 @@ public class Configuration {
         this.hashMask = (1 << numRelevantSquares) - 1;
         this.hashShift = 64L - numRelevantSquares;
 
-        this.magic = findMagic();
+        this.magic = Objects.requireNonNullElseGet(precalculatedMagic, this::findMagic);
     }
 
     public long[] generateAllAttacks() {
@@ -106,6 +108,7 @@ public class Configuration {
     }
 
     private long findMagic() {
+        log.error("Generating " + piece + " magic for " + square);
         while (true) {
             final long candidate = magicCandidate();
 
@@ -149,8 +152,12 @@ public class Configuration {
         return magic;
     }
 
-    private static long magicCandidate() {
-        return RANDOM.nextLong() & RANDOM.nextLong() & RANDOM.nextLong();
+    public List<Square> getRelevantSquares() {
+        return relevantSquares;
+    }
+
+    private long magicCandidate() {
+        return random.nextLong() & random.nextLong() & random.nextLong();
     }
 
     private static List<Square> relevantSquares(final Square square, final Collection<Direction> directions) {
@@ -171,29 +178,18 @@ public class Configuration {
     }
 
     public static Configuration rookConfiguration(final Square square) {
-        return new Configuration(Piece.ROOK, square);
+        return new Configuration(Piece.ROOK, square, null);
+    }
+
+    public static Configuration rookConfiguration(final Square square, final long precalculatedMagic) {
+        return new Configuration(Piece.ROOK, square, precalculatedMagic);
     }
 
     public static Configuration bishopConfiguration(final Square square) {
-        return new Configuration(Piece.BISHOP, square);
+        return new Configuration(Piece.BISHOP, square, null);
     }
 
-    public List<Square> getRelevantSquares() {
-        return relevantSquares;
-    }
-
-    public static void main(String[] args) {
-        final Configuration x = Configuration.rookConfiguration(Square.A8);
-
-        System.out.println(MagicBitboards.toBoardString(x.getMask()));
-
-        final long l1 = MagicBitboards.setAllBits(0L, Arrays.asList(Square.A4, Square.C3));
-
-        System.out.println(MagicBitboards.toBoardString(l1));
-
-        final long l = x.generateAllAttacks()[x.hash(l1)];
-
-        System.out.println(MagicBitboards.toBoardString(l));
-
+    public static Configuration bishopConfiguration(final Square square, final long precalculatedMagic) {
+        return new Configuration(Piece.BISHOP, square, precalculatedMagic);
     }
 }

@@ -12,10 +12,6 @@ public final class MagicBitboards {
         throw new AssertionError("No instances of utility class " + MagicBitboards.class);
     }
 
-    public static void main(String[] args) {
-
-    }
-
     public static String toPaddedBinaryString(final long l, final int pad) {
         if (pad == 0) {
             return "";
