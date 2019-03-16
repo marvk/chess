@@ -15,7 +15,7 @@ import java.util.ResourceBundle;
 public class TreeExplorer extends MvvmfxGuiceApplication {
     @Override
     public void startMvvmfx(final Stage stage) {
-        final ResourceBundle bundle = ResourceBundle.getBundle("net.marvk.chess.default", Locale.ENGLISH);
+        final ResourceBundle bundle = ResourceBundle.getBundle("default", Locale.ENGLISH);
 
         final ViewTuple<TreeExplorerView, TreeExplorerViewModel>
                 viewTuple = FluentViewLoader.fxmlView(TreeExplorerView.class)
