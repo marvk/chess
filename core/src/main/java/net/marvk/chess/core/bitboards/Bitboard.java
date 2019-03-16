@@ -12,6 +12,8 @@ public class Bitboard implements Board {
     private static final long[] WHITE_PAWN_ATTACKS;
     private static final long[] BLACK_PAWN_ATTACKS;
 
+    private static int ep = 0;
+
     static {
         SQUARES = new Square[64];
 
@@ -49,6 +51,12 @@ public class Bitboard implements Board {
 
     private static final long RANK_SEVEN_SQUARES = getRankSquares(Rank.RANK_7);
     private static final long RANK_EIGHT_SQUARES = getRankSquares(Rank.RANK_8);
+
+    /* PERF */
+
+    private boolean enPassantMove;
+
+    /* END_PERF */
 
     private static long getRankSquares(final Rank rank) {
         return Arrays.stream(SQUARES)
@@ -423,6 +431,8 @@ public class Bitboard implements Board {
                 nextSelf.pawns |= attack;
 
                 if (attack == enPassant) {
+                    nextBoard.enPassantMove = true;
+
                     if (color == Color.WHITE) {
                         nextOpponent.pawns &= ~(enPassant >> 8L);
                     } else {
@@ -734,6 +744,14 @@ public class Bitboard implements Board {
 
     private static Move makeMove(final long source, final long target, final ColoredPiece piece) {
         return Move.simple(SQUARES[Long.numberOfTrailingZeros(source)], SQUARES[Long.numberOfTrailingZeros(target)], piece);
+    }
+
+    public int numPieces() {
+        return Long.bitCount(white.occupancy() | black.occupancy());
+    }
+
+    public boolean enPassantMove() {
+        return enPassantMove;
     }
 
     private static class PlayerBoard {
