@@ -37,7 +37,7 @@ public class BoardState {
         this.fullmoveClock = Integer.parseInt(fen.getFullmoveClock());
     }
 
-    private BoardState(
+    public BoardState(
             final Color activePlayer,
             final boolean whiteCastleKing,
             final boolean whiteCastleQueen,
@@ -93,7 +93,7 @@ public class BoardState {
         return new BoardStateBuilder(this);
     }
 
-    static class BoardStateBuilder {
+    public static class BoardStateBuilder {
         private final BoardState previous;
 
         private Boolean whiteCastleKing;

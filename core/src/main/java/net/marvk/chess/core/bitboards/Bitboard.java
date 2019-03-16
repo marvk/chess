@@ -68,16 +68,30 @@ public class Bitboard implements Board {
     private final PlayerBoard black;
     private final PlayerBoard white;
 
+    private final Color turn;
     private long enPassant = 0L;
 
-    public Bitboard(final PlayerBoard white, final PlayerBoard black) {
-        this.white = new PlayerBoard(white);
-        this.black = new PlayerBoard(black);
+    private final int halfmoveClock;
+    private final int fullmoveClock;
+
+    private Bitboard(final Bitboard previous) {
+        this.white = new PlayerBoard(previous.white);
+        this.black = new PlayerBoard(previous.black);
+
+        this.turn = previous.turn.opposite();
+        this.halfmoveClock = previous.halfmoveClock + 1;
+        this.fullmoveClock = turn == Color.WHITE ? previous.fullmoveClock + 1 : previous.fullmoveClock;
     }
 
     public Bitboard(final Fen fen) {
         this.white = new PlayerBoard();
         this.black = new PlayerBoard();
+
+        turn = Color.getColorFromFen(fen.getActiveColor());
+        halfmoveClock = Integer.parseInt(fen.getHalfmoveClock());
+        fullmoveClock = Integer.parseInt(fen.getFullmoveClock());
+
+        //TODO load en passant and castle
 
         loadFen(fen);
     }
@@ -113,7 +127,7 @@ public class Bitboard implements Board {
                     //no promotion moves
                     final Move move = makeMove(source, singleMoveTarget, piece);
 
-                    final Bitboard board = new Bitboard(white, black);
+                    final Bitboard board = new Bitboard(this);
 
                     final PlayerBoard self;
                     final PlayerBoard opponent;
@@ -123,7 +137,7 @@ public class Bitboard implements Board {
                         opponent = board.black;
                     } else {
                         self = board.black;
-                        opponent = board.black;
+                        opponent = board.white;
                     }
 
                     self.pawns &= ~source;
@@ -140,7 +154,7 @@ public class Bitboard implements Board {
                             doubleMoveSourceRank = RANK_TWO_SQUARES;
                         } else {
                             doubleMoveTarget = singleMoveTarget >> 8;
-                            doubleMoveSourceRank = RANK_TWO_SQUARES;
+                            doubleMoveSourceRank = RANK_SEVEN_SQUARES;
                         }
 
                         if ((source & doubleMoveSourceRank) != 0L && (doubleMoveTarget & occupancy) == 0L) {
@@ -148,7 +162,7 @@ public class Bitboard implements Board {
 
                             final Move doubleMove = makeMove(source, doubleMoveTarget, piece);
 
-                            final Bitboard doubleMoveBoard = new Bitboard(white, black);
+                            final Bitboard doubleMoveBoard = new Bitboard(this);
 
                             final PlayerBoard doubleMoveSelf;
 
@@ -160,6 +174,8 @@ public class Bitboard implements Board {
 
                             doubleMoveSelf.pawns &= ~source;
                             doubleMoveSelf.pawns |= doubleMoveTarget;
+
+                            doubleMoveBoard.enPassant = singleMoveTarget;
 
                             result.add(new MoveResult(doubleMoveBoard, doubleMove));
                         }
@@ -240,7 +256,7 @@ public class Bitboard implements Board {
             final long attack = Long.highestOneBit(remainingAttacks);
             remainingAttacks &= ~attack;
 
-            final Bitboard nextBoard = new Bitboard(this.white, this.black);
+            final Bitboard nextBoard = new Bitboard(this);
 
             final PlayerBoard self;
             final PlayerBoard opponent;
@@ -268,6 +284,14 @@ public class Bitboard implements Board {
                 self.kings |= attack;
             } else if (piece == Piece.PAWN) {
                 self.pawns |= attack;
+
+                if (attack == enPassant) {
+                    if (color == Color.WHITE) {
+                        opponent.pawns &= ~(enPassant >> 8L);
+                    } else {
+                        opponent.pawns &= ~(enPassant << 8L);
+                    }
+                }
             } else {
                 throw new IllegalStateException();
             }
@@ -453,7 +477,16 @@ public class Bitboard implements Board {
 
     @Override
     public BoardState getState() {
-        return new BoardState(Fen.STARTING_POSITION);
+        return new BoardState(
+                turn,
+                false,
+                false,
+                false,
+                false,
+                enPassant == 0L ? null : SQUARES[Long.numberOfTrailingZeros(enPassant)],
+                halfmoveClock,
+                fullmoveClock
+        );
     }
 
     @Override
@@ -520,6 +553,9 @@ public class Bitboard implements Board {
         private long knights;
         private long pawns;
 
+        private boolean queenSideCastle;
+        private boolean kingSideCastle;
+
         public PlayerBoard() {
         }
 
@@ -530,6 +566,9 @@ public class Bitboard implements Board {
             this.bishops = other.bishops;
             this.knights = other.knights;
             this.pawns = other.pawns;
+
+            this.kingSideCastle = other.kingSideCastle;
+            this.queenSideCastle = other.queenSideCastle;
         }
 
         public long occupancy() {
