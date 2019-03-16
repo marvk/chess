@@ -1,7 +1,7 @@
 package net.marvk.chess.core.board;
 
 import lombok.extern.log4j.Log4j2;
-import net.marvk.chess.core.bitboards.MagicBitboard;
+import net.marvk.chess.core.bitboards.Bitboard;
 
 import java.util.List;
 import java.util.Objects;
@@ -24,7 +24,7 @@ public class Game {
         this.whitePlayer = white.create(Color.WHITE);
         this.blackPlayer = black.create(Color.BLACK);
 
-        this.board = new MagicBitboard(Fen.STARTING_POSITION);
+        this.board = new Bitboard(Fen.STARTING_POSITION);
 //        this.history = new ArrayList<>();
 
         this.lastMove = new MoveResult(board, Move.NULL_MOVE);
