@@ -3,11 +3,14 @@ package net.marvk.chess.core.bitboards;
 import net.marvk.chess.core.board.*;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class Bitboard implements Board {
     private static final Square[] SQUARES;
     private static final long[] KNIGHT_ATTACKS;
+    private static final long[] KING_ATTACKS;
+
+    private static final long[] WHITE_PAWN_ATTACKS;
+    private static final long[] BLACK_PAWN_ATTACKS;
 
     static {
         SQUARES = new Square[64];
@@ -19,18 +22,53 @@ public class Bitboard implements Board {
         KNIGHT_ATTACKS = new long[64];
 
         for (final Square square : SQUARES) {
-            KNIGHT_ATTACKS[square.getBitboardIndex()] =
-                    Direction.KNIGHT_DIRECTIONS.stream()
-                                               .map(square::translate)
-                                               .filter(Objects::nonNull)
-                                               .mapToInt(Square::getBitboardIndex)
-                                               .mapToLong(i -> 1L << i)
-                                               .reduce(0L, (l1, l2) -> l1 | l2);
+            KNIGHT_ATTACKS[square.getBitboardIndex()] = staticAttacks(Direction.KNIGHT_DIRECTIONS, square);
         }
+
+        KING_ATTACKS = new long[64];
+
+        for (final Square square : SQUARES) {
+            KING_ATTACKS[square.getBitboardIndex()] = staticAttacks(Direction.CARDINAL_DIRECTIONS, square);
+        }
+
+        WHITE_PAWN_ATTACKS = new long[64];
+
+        for (final Square square : SQUARES) {
+            WHITE_PAWN_ATTACKS[square.getBitboardIndex()] = staticAttacks(List.of(Direction.NORTH_WEST, Direction.NORTH_EAST), square);
+        }
+
+        BLACK_PAWN_ATTACKS = new long[64];
+
+        for (final Square square : SQUARES) {
+            BLACK_PAWN_ATTACKS[square.getBitboardIndex()] = staticAttacks(List.of(Direction.SOUTH_WEST, Direction.SOUTH_EAST), square);
+        }
+    }
+
+    private static final long RANK_ONE_SQUARES = getRankSquares(Rank.RANK_1);
+    private static final long RANK_TWO_SQUARES = getRankSquares(Rank.RANK_2);
+
+    private static final long RANK_SEVEN_SQUARES = getRankSquares(Rank.RANK_7);
+    private static final long RANK_EIGHT_SQUARES = getRankSquares(Rank.RANK_8);
+
+    private static long getRankSquares(final Rank rank) {
+        return Arrays.stream(SQUARES)
+                     .filter(s -> s.getRank() == rank)
+                     .mapToLong(Square::getOccupiedBitMask)
+                     .reduce(0L, (l1, l2) -> l1 | l2);
+    }
+
+    private static long staticAttacks(final Collection<Direction> directions, final Square square) {
+        return directions.stream()
+                         .map(square::translate)
+                         .filter(Objects::nonNull)
+                         .mapToLong(Square::getOccupiedBitMask)
+                         .reduce(0L, (l1, l2) -> l1 | l2);
     }
 
     private final PlayerBoard black;
     private final PlayerBoard white;
+
+    private long enPassant = 0L;
 
     public Bitboard(final PlayerBoard white, final PlayerBoard black) {
         this.white = new PlayerBoard(white);
@@ -44,7 +82,138 @@ public class Bitboard implements Board {
         loadFen(fen);
     }
 
-    private List<MoveResult> attacks(
+    private void pawnMoves(
+            final List<MoveResult> result,
+            final long pawns,
+            final long occupancy,
+            final Color color
+    ) {
+        long remainingPawns = pawns;
+
+        while (remainingPawns != 0L) {
+            final long source = Long.highestOneBit(remainingPawns);
+            remainingPawns &= ~source;
+
+            final long singleMoveTarget;
+            final ColoredPiece piece;
+            final long promoteRank;
+
+            if (color == Color.WHITE) {
+                singleMoveTarget = source << 8;
+                promoteRank = RANK_EIGHT_SQUARES;
+                piece = ColoredPiece.WHITE_PAWN;
+            } else {
+                singleMoveTarget = source >> 8;
+                promoteRank = RANK_ONE_SQUARES;
+                piece = ColoredPiece.BLACK_PAWN;
+            }
+
+            if ((singleMoveTarget & occupancy) == 0L) {
+                if ((singleMoveTarget & promoteRank) == 0L) {
+                    //no promotion moves
+                    final Move move = makeMove(source, singleMoveTarget, piece);
+
+                    final Bitboard board = new Bitboard(white, black);
+
+                    final PlayerBoard self;
+                    final PlayerBoard opponent;
+
+                    if (color == Color.WHITE) {
+                        self = board.white;
+                        opponent = board.black;
+                    } else {
+                        self = board.black;
+                        opponent = board.black;
+                    }
+
+                    self.pawns &= ~source;
+                    self.pawns |= singleMoveTarget;
+
+                    if (!board.isInCheck(color, opponent)) {
+                        result.add(new MoveResult(board, move));
+
+                        final long doubleMoveTarget;
+                        final long doubleMoveSourceRank;
+
+                        if (color == Color.WHITE) {
+                            doubleMoveTarget = singleMoveTarget << 8;
+                            doubleMoveSourceRank = RANK_TWO_SQUARES;
+                        } else {
+                            doubleMoveTarget = singleMoveTarget >> 8;
+                            doubleMoveSourceRank = RANK_TWO_SQUARES;
+                        }
+
+                        if ((source & doubleMoveSourceRank) != 0L && (doubleMoveTarget & occupancy) == 0L) {
+                            //is in starting rank and free double move target square
+
+                            final Move doubleMove = makeMove(source, doubleMoveTarget, piece);
+
+                            final Bitboard doubleMoveBoard = new Bitboard(white, black);
+
+                            final PlayerBoard doubleMoveSelf;
+
+                            if (color == Color.WHITE) {
+                                doubleMoveSelf = doubleMoveBoard.white;
+                            } else {
+                                doubleMoveSelf = doubleMoveBoard.black;
+                            }
+
+                            doubleMoveSelf.pawns &= ~source;
+                            doubleMoveSelf.pawns |= doubleMoveTarget;
+
+                            result.add(new MoveResult(doubleMoveBoard, doubleMove));
+                        }
+                    }
+                } else {
+                    //promotion moves
+                }
+            }
+        }
+    }
+
+    private void pawnAttacks(
+            final List<MoveResult> result,
+            final long pawns,
+            final long selfOccupancy,
+            final long opponentOccupancy,
+            final Color color
+    ) {
+        long remainingPawns = pawns;
+
+        final long[] pawnAttacks = color == Color.WHITE ? WHITE_PAWN_ATTACKS : BLACK_PAWN_ATTACKS;
+
+        while (remainingPawns != 0L) {
+            final long source = Long.highestOneBit(remainingPawns);
+            remainingPawns &= ~source;
+
+            final long attacks = pawnAttacks[Long.numberOfTrailingZeros(source)] & (opponentOccupancy | enPassant) & ~selfOccupancy;
+
+            generateAttacks(color, Piece.PAWN, result, source, attacks);
+        }
+    }
+
+    private void singleAttacks(
+            final List<MoveResult> result,
+            final long pieces,
+            final long[] attacksArray,
+            final long selfOccupancy,
+            final Color color,
+            final Piece piece
+    ) {
+        long remainingPieces = pieces;
+
+        while (remainingPieces != 0L) {
+            final long source = Long.highestOneBit(remainingPieces);
+            remainingPieces &= ~source;
+
+            long attacks = attacksArray[Long.numberOfTrailingZeros(source)] & ~selfOccupancy;
+
+            generateAttacks(color, piece, result, source, attacks);
+        }
+    }
+
+    private void slidingAttacks(
+            final List<MoveResult> result,
             final MagicBitboard bitboard,
             final long pieces,
             final long fullOccupancy,
@@ -54,55 +223,59 @@ public class Bitboard implements Board {
     ) {
         long remainingPieces = pieces;
 
-        final ArrayList<MoveResult> result = new ArrayList<>();
-
         while (remainingPieces != 0L) {
             final long source = Long.highestOneBit(remainingPieces);
             remainingPieces &= ~source;
 
-            long remainingAttacks = bitboard.attacks(fullOccupancy, Long.numberOfTrailingZeros(source)) & ~selfOccupancy;
+            long attacks = bitboard.attacks(fullOccupancy, Long.numberOfTrailingZeros(source)) & ~selfOccupancy;
 
-            while (remainingAttacks != 0L) {
-                final long attack = Long.highestOneBit(remainingAttacks);
-                remainingAttacks &= ~attack;
-
-                final Bitboard nextBoard = new Bitboard(this.white, this.black);
-
-                final PlayerBoard self;
-                final PlayerBoard opponent;
-
-                if (color == Color.WHITE) {
-                    self = nextBoard.white;
-                    opponent = nextBoard.black;
-                } else {
-                    self = nextBoard.black;
-                    opponent = nextBoard.white;
-                }
-
-                self.unsetAll(source);
-                opponent.unsetAll(attack);
-
-                if (piece == Piece.QUEEN) {
-                    self.queens |= attack;
-                } else if (piece == Piece.ROOK) {
-                    self.rooks |= attack;
-                } else if (piece == Piece.BISHOP) {
-                    self.bishops |= attack;
-                } else {
-                    throw new IllegalStateException();
-                }
-
-                if (!nextBoard.isInCheck(color, opponent)) {
-                    result.add(new MoveResult(nextBoard, makeMove(source, attack, piece.ofColor(color))));
-                }
-            }
+            generateAttacks(color, piece, result, source, attacks);
         }
-
-        return result;
     }
 
-    private Move makeMove(final long source, final long target, final ColoredPiece piece) {
-        return Move.simple(SQUARES[Long.numberOfTrailingZeros(source)], SQUARES[Long.numberOfTrailingZeros(target)], piece);
+    private void generateAttacks(final Color color, final Piece piece, final List<MoveResult> result, final long source, final long attacks) {
+        long remainingAttacks = attacks;
+
+        while (remainingAttacks != 0L) {
+            final long attack = Long.highestOneBit(remainingAttacks);
+            remainingAttacks &= ~attack;
+
+            final Bitboard nextBoard = new Bitboard(this.white, this.black);
+
+            final PlayerBoard self;
+            final PlayerBoard opponent;
+
+            if (color == Color.WHITE) {
+                self = nextBoard.white;
+                opponent = nextBoard.black;
+            } else {
+                self = nextBoard.black;
+                opponent = nextBoard.white;
+            }
+
+            self.unsetAll(source);
+            opponent.unsetAll(attack);
+
+            if (piece == Piece.QUEEN) {
+                self.queens |= attack;
+            } else if (piece == Piece.ROOK) {
+                self.rooks |= attack;
+            } else if (piece == Piece.BISHOP) {
+                self.bishops |= attack;
+            } else if (piece == Piece.KNIGHT) {
+                self.knights |= attack;
+            } else if (piece == Piece.KING) {
+                self.kings |= attack;
+            } else if (piece == Piece.PAWN) {
+                self.pawns |= attack;
+            } else {
+                throw new IllegalStateException();
+            }
+
+            if (!nextBoard.isInCheck(color, opponent)) {
+                result.add(new MoveResult(nextBoard, makeMove(source, attack, piece.ofColor(color))));
+            }
+        }
     }
 
     private void loadFen(final Fen fen) {
@@ -128,7 +301,6 @@ public class Bitboard implements Board {
                         black.kings |= shift;
                         break;
                     case 'K':
-                        System.out.println("lineIndex = " + lineIndex);
                         white.kings |= shift;
                         break;
                     case 'q':
@@ -255,16 +427,18 @@ public class Bitboard implements Board {
 
         final long occupancy = selfOccupancy | opponentOccupancy;
 
-        BitboardUtil.printBoardString(occupancy);
+        final List<MoveResult> result = new ArrayList<>();
 
-        final List<List<MoveResult>> attacks = List.of(
-                attacks(MagicBitboard.ROOK, self.queens, occupancy, selfOccupancy, color, Piece.QUEEN),
-                attacks(MagicBitboard.ROOK, self.rooks, occupancy, selfOccupancy, color, Piece.ROOK),
-                attacks(MagicBitboard.BISHOP, self.queens, occupancy, selfOccupancy, color, Piece.QUEEN),
-                attacks(MagicBitboard.BISHOP, self.bishops, occupancy, selfOccupancy, color, Piece.BISHOP)
-        );
+        slidingAttacks(result, MagicBitboard.ROOK, self.queens, occupancy, selfOccupancy, color, Piece.QUEEN);
+        slidingAttacks(result, MagicBitboard.ROOK, self.rooks, occupancy, selfOccupancy, color, Piece.ROOK);
+        slidingAttacks(result, MagicBitboard.BISHOP, self.queens, occupancy, selfOccupancy, color, Piece.QUEEN);
+        slidingAttacks(result, MagicBitboard.BISHOP, self.bishops, occupancy, selfOccupancy, color, Piece.BISHOP);
+        singleAttacks(result, self.knights, KNIGHT_ATTACKS, selfOccupancy, color, Piece.KNIGHT);
+        singleAttacks(result, self.kings, KING_ATTACKS, selfOccupancy, color, Piece.KING);
+        pawnAttacks(result, self.pawns, selfOccupancy, opponentOccupancy, color);
+        pawnMoves(result, self.pawns, occupancy, color);
 
-        return attacks.stream().flatMap(Collection::stream).collect(Collectors.toList());
+        return result;
     }
 
     @Override
@@ -333,7 +507,12 @@ public class Bitboard implements Board {
         return false;
     }
 
+    private static Move makeMove(final long source, final long target, final ColoredPiece piece) {
+        return Move.simple(SQUARES[Long.numberOfTrailingZeros(source)], SQUARES[Long.numberOfTrailingZeros(target)], piece);
+    }
+
     private static class PlayerBoard {
+
         private long kings;
         private long queens;
         private long rooks;
