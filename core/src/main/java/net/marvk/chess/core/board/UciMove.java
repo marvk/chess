@@ -1,6 +1,7 @@
 package net.marvk.chess.core.board;
 
 import lombok.Data;
+import net.marvk.chess.core.bitboards.Bitboard;
 
 import java.util.Arrays;
 import java.util.Optional;
@@ -70,11 +71,11 @@ public class UciMove {
     }
 
     public static Board getBoard(final UciMove[] uciMoves, final Fen fen) {
-        return getBoard(uciMoves, new SimpleBoard(fen));
+        return getBoard(uciMoves, new Bitboard(fen));
     }
 
     public static Board getBoard(final UciMove[] uciMoves) {
-        return getBoard(uciMoves, new SimpleBoard(Fen.STARTING_POSITION));
+        return getBoard(uciMoves, new Bitboard(Fen.STARTING_POSITION));
     }
 
     @Override

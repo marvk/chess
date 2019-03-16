@@ -56,10 +56,12 @@ public class AlphaBetaPlayerExplicit extends Player implements LastEvaluationGet
 
         log.info(getColor() + " used " + lastCount + " nodes to calculated currentState in " + lastDuration + " (" + lastNps + " NPS), evaluate is " + max);
 
-        lastEvaluation = root.children.stream().collect(Collectors.toMap(
-                n -> n.getCurrentState().getMove(),
-                n -> ((double) n.value))
-        );
+        lastEvaluation = Collections.emptyMap();
+
+//        lastEvaluation = root.children.stream().collect(Collectors.toMap(
+//                n -> n.getCurrentState().getMove(),
+//                n -> ((double) n.value))
+//        );
 
         return root.children.stream()
                             .filter(n -> n.value == max)

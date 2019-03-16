@@ -5,6 +5,7 @@ import eu.lestard.grid.Cell;
 import eu.lestard.grid.GridModel;
 import javafx.beans.property.SimpleObjectProperty;
 import lombok.extern.log4j.Log4j2;
+import net.marvk.chess.core.bitboards.Bitboard;
 import net.marvk.chess.core.board.Piece;
 import net.marvk.chess.core.board.*;
 
@@ -19,7 +20,7 @@ public class BoardViewModel implements ViewModel {
     private final SimpleObjectProperty<Move> lastUiMove = new SimpleObjectProperty<>();
 
     private final SimpleObjectProperty<BoardStateViewModel> boardState = new SimpleObjectProperty<>(
-            new BoardStateViewModel(new SimpleBoard(Fen.EMPTY_BOARD), null, Collections.emptyMap(), 0.)
+            new BoardStateViewModel(new Bitboard(Fen.STARTING_POSITION), null, Collections.emptyMap(), 0.)
     );
 
     public BoardViewModel() {

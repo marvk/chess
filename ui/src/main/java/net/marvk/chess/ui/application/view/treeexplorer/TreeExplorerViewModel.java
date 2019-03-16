@@ -4,6 +4,7 @@ import de.saxsys.mvvmfx.ViewModel;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.control.TreeItem;
 import lombok.extern.log4j.Log4j2;
+import net.marvk.chess.core.bitboards.Bitboard;
 import net.marvk.chess.core.board.*;
 import net.marvk.chess.ui.application.view.board.BoardStateViewModel;
 
@@ -68,7 +69,7 @@ public class TreeExplorerViewModel implements ViewModel {
     }
 
     public void set(final Fen parse, final int depth) {
-        final SimpleBoard simpleBoard = new SimpleBoard(parse);
+        final Board simpleBoard = new Bitboard(parse);
         final AlphaBetaPlayerExplicit alphaBetaPlayer = new AlphaBetaPlayerExplicit(Color.getColorFromFen(parse.getActiveColor()), new SimpleHeuristic(), depth);
         final Move play = alphaBetaPlayer.play(new MoveResult(simpleBoard, Move.NULL_MOVE));
 

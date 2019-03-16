@@ -3,6 +3,8 @@ package net.marvk.chess.core.bitboards;
 import net.marvk.chess.core.board.*;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Bitboard implements Board {
     private static final Square[] SQUARES;
@@ -111,7 +113,11 @@ public class Bitboard implements Board {
             }
         });
 
-        //TODO load en passant
+        final Square squareFromFen = Square.getSquareFromFen(fen.getEnPassantTargetSquare());
+
+        if (squareFromFen != null) {
+            enPassant = squareFromFen.getOccupiedBitMask();
+        }
 
         loadFen(fen);
     }
@@ -235,55 +241,64 @@ public class Bitboard implements Board {
 
                     if (!board.isInCheck(color, opponent)) {
                         result.add(makeMoveResult(board, move));
+                    }
 
-                        final long doubleMoveTarget;
-                        final long doubleMoveSourceRank;
+                    final long doubleMoveTarget;
+                    final long doubleMoveSourceRank;
+
+                    if (color == Color.WHITE) {
+                        doubleMoveTarget = singleMoveTarget << 8;
+                        doubleMoveSourceRank = RANK_TWO_SQUARES;
+                    } else {
+                        doubleMoveTarget = singleMoveTarget >> 8;
+                        doubleMoveSourceRank = RANK_SEVEN_SQUARES;
+                    }
+
+                    if ((source & doubleMoveSourceRank) != 0L && (doubleMoveTarget & occupancy) == 0L) {
+                        //is in starting rank and free double move target square
+
+                        final Move doubleMove = makeMove(source, doubleMoveTarget, piece);
+
+                        final Bitboard doubleMoveBoard = new Bitboard(this);
+
+                        final PlayerBoard doubleMoveSelf;
+                        final PlayerBoard doubleMoveOpponent;
 
                         if (color == Color.WHITE) {
-                            doubleMoveTarget = singleMoveTarget << 8;
-                            doubleMoveSourceRank = RANK_TWO_SQUARES;
+                            doubleMoveSelf = doubleMoveBoard.white;
+                            doubleMoveOpponent = doubleMoveBoard.black;
                         } else {
-                            doubleMoveTarget = singleMoveTarget >> 8;
-                            doubleMoveSourceRank = RANK_SEVEN_SQUARES;
+                            doubleMoveSelf = doubleMoveBoard.black;
+                            doubleMoveOpponent = doubleMoveBoard.white;
                         }
 
-                        if ((source & doubleMoveSourceRank) != 0L && (doubleMoveTarget & occupancy) == 0L) {
-                            //is in starting rank and free double move target square
+                        doubleMoveSelf.pawns &= ~source;
+                        doubleMoveSelf.pawns |= doubleMoveTarget;
 
-                            final Move doubleMove = makeMove(source, doubleMoveTarget, piece);
+                        doubleMoveBoard.enPassant = singleMoveTarget;
 
-                            final Bitboard doubleMoveBoard = new Bitboard(this);
-
-                            final PlayerBoard doubleMoveSelf;
-
-                            if (color == Color.WHITE) {
-                                doubleMoveSelf = doubleMoveBoard.white;
-                            } else {
-                                doubleMoveSelf = doubleMoveBoard.black;
-                            }
-
-                            doubleMoveSelf.pawns &= ~source;
-                            doubleMoveSelf.pawns |= doubleMoveTarget;
-
-                            doubleMoveBoard.enPassant = singleMoveTarget;
-
+                        if (!doubleMoveBoard.isInCheck(color, doubleMoveOpponent)) {
                             result.add(makeMoveResult(doubleMoveBoard, doubleMove));
                         }
                     }
                 } else {
-                    if (color == Color.WHITE) {
-                        pawnPromotion(result, source, singleMoveTarget, piece, ColoredPiece.WHITE_KNIGHT);
-                        pawnPromotion(result, source, singleMoveTarget, piece, ColoredPiece.WHITE_BISHOP);
-                        pawnPromotion(result, source, singleMoveTarget, piece, ColoredPiece.WHITE_KNIGHT);
-                        pawnPromotion(result, source, singleMoveTarget, piece, ColoredPiece.WHITE_QUEEN);
-                    } else {
-                        pawnPromotion(result, source, singleMoveTarget, piece, ColoredPiece.BLACK_KNIGHT);
-                        pawnPromotion(result, source, singleMoveTarget, piece, ColoredPiece.BLACK_BISHOP);
-                        pawnPromotion(result, source, singleMoveTarget, piece, ColoredPiece.BLACK_KNIGHT);
-                        pawnPromotion(result, source, singleMoveTarget, piece, ColoredPiece.BLACK_QUEEN);
-                    }
+                    pawnPromotions(result, color, source, singleMoveTarget, piece);
                 }
             }
+        }
+    }
+
+    private void pawnPromotions(final List<MoveResult> result, final Color color, final long source, final long target, final ColoredPiece piece) {
+        if (color == Color.WHITE) {
+            pawnPromotion(result, source, target, piece, ColoredPiece.WHITE_KNIGHT);
+            pawnPromotion(result, source, target, piece, ColoredPiece.WHITE_BISHOP);
+            pawnPromotion(result, source, target, piece, ColoredPiece.WHITE_ROOK);
+            pawnPromotion(result, source, target, piece, ColoredPiece.WHITE_QUEEN);
+        } else {
+            pawnPromotion(result, source, target, piece, ColoredPiece.BLACK_KNIGHT);
+            pawnPromotion(result, source, target, piece, ColoredPiece.BLACK_BISHOP);
+            pawnPromotion(result, source, target, piece, ColoredPiece.BLACK_ROOK);
+            pawnPromotion(result, source, target, piece, ColoredPiece.BLACK_QUEEN);
         }
     }
 
@@ -293,11 +308,23 @@ public class Bitboard implements Board {
         final Bitboard board = new Bitboard(this);
 
         final PlayerBoard self;
+        final PlayerBoard opponent;
 
         if (piece.getColor() == Color.WHITE) {
             self = board.white;
+            opponent = board.black;
+
+            if ((target & RANK_EIGHT_SQUARES) != 0L) {
+                opponent.unsetAll(target);
+            }
+
         } else {
             self = board.black;
+            opponent = board.white;
+
+            if ((target & RANK_ONE_SQUARES) != 0L) {
+                opponent.unsetAll(target);
+            }
         }
 
         self.pawns &= ~source;
@@ -312,7 +339,9 @@ public class Bitboard implements Board {
             self.queens |= target;
         }
 
-        result.add(makeMoveResult(board, move));
+        if (!board.isInCheck(promotionPiece.getColor(), opponent)) {
+            result.add(makeMoveResult(board, move));
+        }
     }
 
     private void pawnAttacks(
@@ -383,6 +412,16 @@ public class Bitboard implements Board {
         while (remainingAttacks != 0L) {
             final long attack = Long.highestOneBit(remainingAttacks);
             remainingAttacks &= ~attack;
+
+            if (piece == Piece.PAWN) {
+                if (color == Color.WHITE && (attack & RANK_EIGHT_SQUARES) != 0L) {
+                    pawnPromotions(result, color, source, attack, ColoredPiece.WHITE_PAWN);
+                    continue;
+                } else if (color == Color.BLACK && (attack & RANK_ONE_SQUARES) != 0L) {
+                    pawnPromotions(result, color, source, attack, ColoredPiece.BLACK_PAWN);
+                    continue;
+                }
+            }
 
             final Bitboard nextBoard = new Bitboard(this);
 
@@ -584,10 +623,10 @@ public class Bitboard implements Board {
     public BoardState getState() {
         return new BoardState(
                 turn,
-                false,
-                false,
-                false,
-                false,
+                white.kingSideCastle,
+                white.queenSideCastle,
+                black.kingSideCastle,
+                black.queenSideCastle,
                 enPassant == 0L ? null : SQUARES[Long.numberOfTrailingZeros(enPassant)],
                 halfmoveClock,
                 fullmoveClock
@@ -601,39 +640,13 @@ public class Bitboard implements Board {
 
     @Override
     public double computeScore(final Map<Piece, Double> scoreMap, final Color color) {
-        return 0;
-    }
-
-    @Override
-    public boolean isInCheck(final Color color) {
-        return false;
-    }
-
-    @Override
-    public boolean isInCheck(final Color color, final Square square) {
-        return false;
-    }
-
-    private boolean isInCheck(final Color color, final PlayerBoard opponent) {
-        long selfKings;
-        final long occupancy = white.occupancy() | black.occupancy();
+        Objects.requireNonNull(color);
 
         if (color == Color.WHITE) {
-            selfKings = white.kings;
+            return white.score();
         } else {
-            selfKings = black.kings;
+            return black.score();
         }
-
-        while (selfKings != 0L) {
-            final long king = Long.highestOneBit(selfKings);
-            selfKings &= ~king;
-
-            if (isInCheck(color, king, opponent, occupancy)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private void loadFen(final Fen fen) {
@@ -698,6 +711,38 @@ public class Bitboard implements Board {
         }
     }
 
+    @Override
+    public boolean isInCheck(final Color color) {
+        return false;
+    }
+
+    @Override
+    public boolean isInCheck(final Color color, final Square square) {
+        return false;
+    }
+
+    private boolean isInCheck(final Color color, final PlayerBoard opponent) {
+        long selfKings;
+        final long occupancy = white.occupancy() | black.occupancy();
+
+        if (color == Color.WHITE) {
+            selfKings = white.kings;
+        } else {
+            selfKings = black.kings;
+        }
+
+        while (selfKings != 0L) {
+            final long king = Long.highestOneBit(selfKings);
+            selfKings &= ~king;
+
+            if (isInCheck(color, king, opponent, occupancy)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static boolean isInCheck(final Color color, final long square, final PlayerBoard opponent, final long occupancy) {
         final int index = Long.numberOfTrailingZeros(square);
 
@@ -722,9 +767,9 @@ public class Bitboard implements Board {
         final long pawnAttacks;
 
         if (color == Color.WHITE && (square & RANK_EIGHT_SQUARES) == 0) {
-            pawnAttacks = square << 7L | square << 9L;
+            pawnAttacks = WHITE_PAWN_ATTACKS[index];
         } else if (color == Color.BLACK && (square & RANK_ONE_SQUARES) == 0) {
-            pawnAttacks = square >> 7L | square << 9L;
+            pawnAttacks = BLACK_PAWN_ATTACKS[index];
         } else {
             pawnAttacks = 0L;
         }
@@ -752,6 +797,64 @@ public class Bitboard implements Board {
 
     public boolean enPassantMove() {
         return enPassantMove;
+    }
+
+    public String fen() {
+        final StringBuilder stringBuilder = new StringBuilder("................................................................");
+
+        for (final Square square : SQUARES) {
+            final ColoredPiece piece = getPiece(square);
+
+            if (piece == null) {
+                continue;
+            }
+
+            final int index = (8 - square.getRank().getIndex() - 1) * 8 + square.getFile().getIndex();
+
+            stringBuilder.setCharAt(index, piece.getSan());
+        }
+
+        String result = stringBuilder.toString()
+                                     .replaceAll("(?<=\\G.{8})", "/")
+                                     .replaceFirst("/$", "");
+
+        while (true) {
+            final Pattern compile = Pattern.compile("^[^.]*(\\.+).*$");
+
+            final Matcher matcher = compile.matcher(result);
+
+            if (!matcher.matches()) {
+                final StringBuilder castle = new StringBuilder();
+
+                if (white.kingSideCastle) {
+                    castle.append("K");
+                }
+
+                if (white.queenSideCastle) {
+                    castle.append("Q");
+                }
+
+                if (black.kingSideCastle) {
+                    castle.append("k");
+                }
+
+                if (black.queenSideCastle) {
+                    castle.append("q");
+                }
+
+                if (castle.length() == 0) {
+                    castle.append("-");
+                }
+
+                final String enPassantString = enPassant == 0L ? "-" : SQUARES[Long.numberOfTrailingZeros(enPassant)].getFen();
+
+                return result + " " + turn.getFen() + " " + castle.toString() + " " + enPassantString + " " + halfmoveClock + " " + fullmoveClock;
+            }
+
+            final String group = matcher.group(1);
+
+            result = result.replaceFirst(Pattern.quote(group), Integer.toString(group.length()));
+        }
     }
 
     private static class PlayerBoard {
@@ -816,6 +919,14 @@ public class Bitboard implements Board {
             bishops &= notL;
             knights &= notL;
             pawns &= notL;
+        }
+
+        public int score() {
+            return Long.bitCount(queens) * 9
+                    + Long.bitCount(rooks) * 5
+                    + Long.bitCount(bishops) * 3
+                    + Long.bitCount(knights) * 3
+                    + Long.bitCount(pawns);
         }
     }
 }

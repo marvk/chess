@@ -66,11 +66,11 @@ public class Fen {
     }
 
     public static Fen parse(final String input) {
-        return new Fen(input);
+        return new Fen(input.trim());
     }
 
     public static boolean isValid(final String input) {
-        final Matcher matcher = FEN_PATTERN.matcher(input);
+        final Matcher matcher = FEN_PATTERN.matcher(input.trim());
 
         if (!matcher.matches()) {
             return false;
