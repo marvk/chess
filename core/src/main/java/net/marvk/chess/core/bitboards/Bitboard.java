@@ -91,9 +91,91 @@ public class Bitboard implements Board {
         halfmoveClock = Integer.parseInt(fen.getHalfmoveClock());
         fullmoveClock = Integer.parseInt(fen.getFullmoveClock());
 
-        //TODO load en passant and castle
+        fen.getCastlingAvailability().chars().forEach(e -> {
+            if (e == 'K') {
+                white.kingSideCastle = true;
+            } else if (e == 'Q') {
+                white.queenSideCastle = true;
+            } else if (e == 'k') {
+                black.kingSideCastle = true;
+            } else if (e == 'q') {
+                black.queenSideCastle = true;
+            }
+        });
+
+        //TODO load en passant
 
         loadFen(fen);
+    }
+
+    private static final long WHITE_QUEEN_SIDE_CASTLE_OCCUPANCY = bitwiseOr(Square.B1, Square.C1, Square.D1);
+    private static final long WHITE_KING_SIDE_CASTLE_OCCUPANCY = bitwiseOr(Square.F1, Square.G1);
+    private static final long BLACK_QUEEN_SIDE_CASTLE_OCCUPANCY = bitwiseOr(Square.B8, Square.C8, Square.D8);
+    private static final long BLACK_KING_SIDE_CASTLE_OCCUPANCY = bitwiseOr(Square.F8, Square.G8);
+
+    private static long bitwiseOr(final Square... squares) {
+        return Arrays.stream(squares).mapToLong(Square::getOccupiedBitMask).reduce(0L, (l1, l2) -> l1 | l2);
+    }
+
+    private void castleMoves(final List<MoveResult> result, final PlayerBoard self, final Color color, final long occupancy) {
+        if (color == Color.WHITE && !isInCheck(color, Square.E1.getOccupiedBitMask(), black, occupancy)) {
+            if (self.queenSideCastle
+                    && (WHITE_QUEEN_SIDE_CASTLE_OCCUPANCY & occupancy) == 0L
+                    && !isInCheck(color, Square.C1.getOccupiedBitMask(), black, occupancy)
+                    && !isInCheck(color, Square.D1.getOccupiedBitMask(), black, occupancy)
+            ) {
+                result.add(makeCastleMove(Square.A1, Square.E1, Square.D1, Square.C1, ColoredPiece.WHITE_KING));
+            }
+
+            if (self.kingSideCastle
+                    && (WHITE_KING_SIDE_CASTLE_OCCUPANCY & occupancy) == 0L
+                    && !isInCheck(color, Square.F1.getOccupiedBitMask(), black, occupancy)
+                    && !isInCheck(color, Square.G1.getOccupiedBitMask(), black, occupancy)
+            ) {
+                result.add(makeCastleMove(Square.H1, Square.E1, Square.F1, Square.G1, ColoredPiece.WHITE_KING));
+            }
+        } else if (!isInCheck(color, Square.E8.getOccupiedBitMask(), white, occupancy)) {
+            if (self.queenSideCastle
+                    && (BLACK_QUEEN_SIDE_CASTLE_OCCUPANCY & occupancy) == 0L
+                    && !isInCheck(color, Square.C8.getOccupiedBitMask(), white, occupancy)
+                    && !isInCheck(color, Square.D8.getOccupiedBitMask(), white, occupancy)
+            ) {
+                result.add(makeCastleMove(Square.A8, Square.E8, Square.D8, Square.C8, ColoredPiece.BLACK_KING));
+            }
+
+            if (self.kingSideCastle
+                    && (BLACK_KING_SIDE_CASTLE_OCCUPANCY & occupancy) == 0L
+                    && !isInCheck(color, Square.F8.getOccupiedBitMask(), white, occupancy)
+                    && !isInCheck(color, Square.G8.getOccupiedBitMask(), white, occupancy)
+            ) {
+                result.add(makeCastleMove(Square.H8, Square.E8, Square.F8, Square.G8, ColoredPiece.BLACK_KING));
+            }
+        }
+    }
+
+    private MoveResult makeCastleMove(final Square rookSource, final Square kingSource, final Square rookTarget, final Square kingTarget, final ColoredPiece piece) {
+        final Bitboard board = new Bitboard(this);
+
+        final Move simple = Move.simple(kingSource, kingTarget, piece);
+
+        final PlayerBoard newSelf;
+
+        if (piece.getColor() == Color.WHITE) {
+            newSelf = board.white;
+        } else {
+            newSelf = board.black;
+        }
+
+        newSelf.rooks &= ~rookSource.getOccupiedBitMask();
+        newSelf.kings &= ~kingSource.getOccupiedBitMask();
+
+        newSelf.rooks |= rookTarget.getOccupiedBitMask();
+        newSelf.kings |= kingTarget.getOccupiedBitMask();
+
+        newSelf.queenSideCastle = false;
+        newSelf.kingSideCastle = false;
+
+        return makeMoveResult(board, simple);
     }
 
     private void pawnMoves(
@@ -144,7 +226,7 @@ public class Bitboard implements Board {
                     self.pawns |= singleMoveTarget;
 
                     if (!board.isInCheck(color, opponent)) {
-                        result.add(new MoveResult(board, move));
+                        result.add(makeMoveResult(board, move));
 
                         final long doubleMoveTarget;
                         final long doubleMoveSourceRank;
@@ -177,14 +259,52 @@ public class Bitboard implements Board {
 
                             doubleMoveBoard.enPassant = singleMoveTarget;
 
-                            result.add(new MoveResult(doubleMoveBoard, doubleMove));
+                            result.add(makeMoveResult(doubleMoveBoard, doubleMove));
                         }
                     }
                 } else {
-                    //promotion moves
+                    if (color == Color.WHITE) {
+                        pawnPromotion(result, source, singleMoveTarget, piece, ColoredPiece.WHITE_KNIGHT);
+                        pawnPromotion(result, source, singleMoveTarget, piece, ColoredPiece.WHITE_BISHOP);
+                        pawnPromotion(result, source, singleMoveTarget, piece, ColoredPiece.WHITE_KNIGHT);
+                        pawnPromotion(result, source, singleMoveTarget, piece, ColoredPiece.WHITE_QUEEN);
+                    } else {
+                        pawnPromotion(result, source, singleMoveTarget, piece, ColoredPiece.BLACK_KNIGHT);
+                        pawnPromotion(result, source, singleMoveTarget, piece, ColoredPiece.BLACK_BISHOP);
+                        pawnPromotion(result, source, singleMoveTarget, piece, ColoredPiece.BLACK_KNIGHT);
+                        pawnPromotion(result, source, singleMoveTarget, piece, ColoredPiece.BLACK_QUEEN);
+                    }
                 }
             }
         }
+    }
+
+    private void pawnPromotion(final List<MoveResult> result, final long source, final long target, final ColoredPiece piece, final ColoredPiece promotionPiece) {
+        final Move move = Move.promotion(SQUARES[Long.numberOfTrailingZeros(source)], SQUARES[Long.numberOfTrailingZeros(target)], piece, promotionPiece);
+
+        final Bitboard board = new Bitboard(this);
+
+        final PlayerBoard self;
+
+        if (piece.getColor() == Color.WHITE) {
+            self = board.white;
+        } else {
+            self = board.black;
+        }
+
+        self.pawns &= ~source;
+
+        if (promotionPiece.getPiece() == Piece.KNIGHT) {
+            self.knights |= target;
+        } else if (promotionPiece.getPiece() == Piece.BISHOP) {
+            self.bishops |= target;
+        } else if (promotionPiece.getPiece() == Piece.ROOK) {
+            self.rooks |= target;
+        } else if (promotionPiece.getPiece() == Piece.QUEEN) {
+            self.queens |= target;
+        }
+
+        result.add(makeMoveResult(board, move));
     }
 
     private void pawnAttacks(
@@ -258,110 +378,84 @@ public class Bitboard implements Board {
 
             final Bitboard nextBoard = new Bitboard(this);
 
-            final PlayerBoard self;
-            final PlayerBoard opponent;
+            final PlayerBoard nextSelf;
+            final PlayerBoard nextOpponent;
 
             if (color == Color.WHITE) {
-                self = nextBoard.white;
-                opponent = nextBoard.black;
+                nextSelf = nextBoard.white;
+                nextOpponent = nextBoard.black;
             } else {
-                self = nextBoard.black;
-                opponent = nextBoard.white;
+                nextSelf = nextBoard.black;
+                nextOpponent = nextBoard.white;
             }
 
-            self.unsetAll(source);
-            opponent.unsetAll(attack);
+            nextSelf.unsetAll(source);
+            nextOpponent.unsetAll(attack);
 
             if (piece == Piece.QUEEN) {
-                self.queens |= attack;
+                nextSelf.queens |= attack;
             } else if (piece == Piece.ROOK) {
-                self.rooks |= attack;
+                nextSelf.rooks |= attack;
+
+                if (color == Color.WHITE) {
+                    if (source == Square.A1.getOccupiedBitMask()) {
+                        nextSelf.queenSideCastle = false;
+                    } else if (source == Square.H1.getOccupiedBitMask()) {
+                        nextSelf.kingSideCastle = false;
+                    }
+                } else {
+                    if (source == Square.A8.getOccupiedBitMask()) {
+                        nextSelf.queenSideCastle = false;
+                    } else if (source == Square.H8.getOccupiedBitMask()) {
+                        nextSelf.kingSideCastle = false;
+                    }
+                }
             } else if (piece == Piece.BISHOP) {
-                self.bishops |= attack;
+                nextSelf.bishops |= attack;
             } else if (piece == Piece.KNIGHT) {
-                self.knights |= attack;
+                nextSelf.knights |= attack;
             } else if (piece == Piece.KING) {
-                self.kings |= attack;
+                nextSelf.kings |= attack;
+
+                nextSelf.kingSideCastle = false;
+                nextSelf.queenSideCastle = false;
             } else if (piece == Piece.PAWN) {
-                self.pawns |= attack;
+                nextSelf.pawns |= attack;
 
                 if (attack == enPassant) {
                     if (color == Color.WHITE) {
-                        opponent.pawns &= ~(enPassant >> 8L);
+                        nextOpponent.pawns &= ~(enPassant >> 8L);
                     } else {
-                        opponent.pawns &= ~(enPassant << 8L);
+                        nextOpponent.pawns &= ~(enPassant << 8L);
                     }
                 }
             } else {
                 throw new IllegalStateException();
             }
 
-            if (!nextBoard.isInCheck(color, opponent)) {
-                result.add(new MoveResult(nextBoard, makeMove(source, attack, piece.ofColor(color))));
+            if (!nextBoard.isInCheck(color, nextOpponent)) {
+                final Move move = makeMove(source, attack, piece.ofColor(color));
+                result.add(makeMoveResult(nextBoard, move));
             }
         }
     }
 
-    private void loadFen(final Fen fen) {
-        final String[] split = fen.getPiecePlacement().split("/");
-
-        for (int i = 0; i < split.length; i++) {
-            final String line = split[8 - i - 1];
-
-            for (int j = 0, lineIndex = 0; j < line.length(); j++) {
-                final char c = line.charAt(j);
-
-                if (Character.isDigit(c)) {
-                    lineIndex += c - '0';
-                    continue;
-                }
-
-                final int index = i * 8 + lineIndex;
-
-                final long shift = 1L << index;
-
-                switch (c) {
-                    case 'k':
-                        black.kings |= shift;
-                        break;
-                    case 'K':
-                        white.kings |= shift;
-                        break;
-                    case 'q':
-                        black.queens |= shift;
-                        break;
-                    case 'Q':
-                        white.queens |= shift;
-                        break;
-                    case 'r':
-                        black.rooks |= shift;
-                        break;
-                    case 'R':
-                        white.rooks |= shift;
-                        break;
-                    case 'b':
-                        black.bishops |= shift;
-                        break;
-                    case 'B':
-                        white.bishops |= shift;
-                        break;
-                    case 'n':
-                        black.knights |= shift;
-                        break;
-                    case 'N':
-                        white.knights |= shift;
-                        break;
-                    case 'p':
-                        black.pawns |= shift;
-                        break;
-                    case 'P':
-                        white.pawns |= shift;
-                        break;
-                }
-
-                lineIndex++;
+    private MoveResult makeMoveResult(final Bitboard nextBoard, final Move move) {
+        if (move.getColoredPiece().getColor() == Color.BLACK) {
+            if (move.getTarget() == Square.A1) {
+                nextBoard.white.queenSideCastle = false;
+            } else if (move.getTarget() == Square.H1) {
+                nextBoard.white.kingSideCastle = false;
+            }
+        } else {
+            if (move.getTarget() == Square.A8) {
+                nextBoard.black.queenSideCastle = false;
+            } else if (move.getTarget() == Square.H8) {
+                nextBoard.black.kingSideCastle = false;
             }
         }
+
+        return new MoveResult(nextBoard, move);
     }
 
     @Override
@@ -461,6 +555,7 @@ public class Bitboard implements Board {
         singleAttacks(result, self.kings, KING_ATTACKS, selfOccupancy, color, Piece.KING);
         pawnAttacks(result, self.pawns, selfOccupancy, opponentOccupancy, color);
         pawnMoves(result, self.pawns, occupancy, color);
+        castleMoves(result, self, color, occupancy);
 
         return result;
     }
@@ -504,6 +599,11 @@ public class Bitboard implements Board {
         return false;
     }
 
+    @Override
+    public boolean isInCheck(final Color color, final Square square) {
+        return false;
+    }
+
     private boolean isInCheck(final Color color, final PlayerBoard opponent) {
         long selfKings;
         final long occupancy = white.occupancy() | black.occupancy();
@@ -518,16 +618,7 @@ public class Bitboard implements Board {
             final long king = Long.highestOneBit(selfKings);
             selfKings &= ~king;
 
-            final int index = Long.numberOfTrailingZeros(king);
-
-            final long rookAttacks = MagicBitboard.ROOK.attacks(occupancy, index);
-            final long bishopAttacks = MagicBitboard.BISHOP.attacks(occupancy, index);
-
-            if ((rookAttacks & (opponent.rooks | opponent.queens)) != 0L) {
-                return true;
-            }
-
-            if ((bishopAttacks & (opponent.bishops | opponent.queens)) != 0L) {
+            if (isInCheck(color, king, opponent, occupancy)) {
                 return true;
             }
         }
@@ -535,8 +626,109 @@ public class Bitboard implements Board {
         return false;
     }
 
-    @Override
-    public boolean isInCheck(final Color color, final Square square) {
+    private void loadFen(final Fen fen) {
+        final String[] split = fen.getPiecePlacement().split("/");
+
+        for (int i = 0; i < split.length; i++) {
+            final String line = split[8 - i - 1];
+
+            for (int j = 0, lineIndex = 0; j < line.length(); j++) {
+                final char c = line.charAt(j);
+
+                if (Character.isDigit(c)) {
+                    lineIndex += c - '0';
+                    continue;
+                }
+
+                final int index = i * 8 + lineIndex;
+
+                final long shift = 1L << index;
+
+                switch (c) {
+                    case 'k':
+                        black.kings |= shift;
+                        break;
+                    case 'K':
+                        white.kings |= shift;
+                        break;
+                    case 'q':
+                        black.queens |= shift;
+                        break;
+                    case 'Q':
+                        white.queens |= shift;
+                        break;
+                    case 'r':
+                        black.rooks |= shift;
+                        break;
+                    case 'R':
+                        white.rooks |= shift;
+                        break;
+                    case 'b':
+                        black.bishops |= shift;
+                        break;
+                    case 'B':
+                        white.bishops |= shift;
+                        break;
+                    case 'n':
+                        black.knights |= shift;
+                        break;
+                    case 'N':
+                        white.knights |= shift;
+                        break;
+                    case 'p':
+                        black.pawns |= shift;
+                        break;
+                    case 'P':
+                        white.pawns |= shift;
+                        break;
+                }
+
+                lineIndex++;
+            }
+        }
+    }
+
+    private static boolean isInCheck(final Color color, final long square, final PlayerBoard opponent, final long occupancy) {
+        final int index = Long.numberOfTrailingZeros(square);
+
+        final long rookAttacks = MagicBitboard.ROOK.attacks(occupancy, index);
+
+        if ((rookAttacks & (opponent.rooks | opponent.queens)) != 0L) {
+            return true;
+        }
+
+        final long bishopAttacks = MagicBitboard.BISHOP.attacks(occupancy, index);
+
+        if ((bishopAttacks & (opponent.bishops | opponent.queens)) != 0L) {
+            return true;
+        }
+
+        final long knightAttacks = KNIGHT_ATTACKS[index];
+
+        if ((knightAttacks & opponent.knights) != 0L) {
+            return true;
+        }
+
+        final long pawnAttacks;
+
+        if (color == Color.WHITE && (square & RANK_EIGHT_SQUARES) == 0) {
+            pawnAttacks = square << 7L | square << 9L;
+        } else if (color == Color.BLACK && (square & RANK_ONE_SQUARES) == 0) {
+            pawnAttacks = square >> 7L | square << 9L;
+        } else {
+            pawnAttacks = 0L;
+        }
+
+        if ((pawnAttacks & opponent.pawns) != 0L) {
+            return true;
+        }
+
+        final long kingAttacks = KING_ATTACKS[index];
+
+        if ((kingAttacks & opponent.kings) != 0L) {
+            return true;
+        }
+
         return false;
     }
 
