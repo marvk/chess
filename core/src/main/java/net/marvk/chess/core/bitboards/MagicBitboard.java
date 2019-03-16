@@ -255,7 +255,7 @@ public class MagicBitboard implements Board {
 
         final long occupancy = selfOccupancy | opponentOccupancy;
 
-        MagicBitboards.printBoardString(occupancy);
+        BitboardUtil.printBoardString(occupancy);
 
         final List<List<MoveResult>> attacks = List.of(
                 attacks(Bitboard.ROOK, self.queens, occupancy, selfOccupancy, color, Piece.QUEEN),
@@ -363,17 +363,17 @@ public class MagicBitboard implements Board {
 
             stringJoiner.add("***********************");
             stringJoiner.add("KINGS:");
-            stringJoiner.add(MagicBitboards.toBoardString(kings));
+            stringJoiner.add(BitboardUtil.toBoardString(kings));
             stringJoiner.add("QUEENS:");
-            stringJoiner.add(MagicBitboards.toBoardString(queens));
+            stringJoiner.add(BitboardUtil.toBoardString(queens));
             stringJoiner.add("ROOKS:");
-            stringJoiner.add(MagicBitboards.toBoardString(rooks));
+            stringJoiner.add(BitboardUtil.toBoardString(rooks));
             stringJoiner.add("BISHOPS:");
-            stringJoiner.add(MagicBitboards.toBoardString(bishops));
+            stringJoiner.add(BitboardUtil.toBoardString(bishops));
             stringJoiner.add("KNIGHTS:");
-            stringJoiner.add(MagicBitboards.toBoardString(knights));
+            stringJoiner.add(BitboardUtil.toBoardString(knights));
             stringJoiner.add("PAWNS:");
-            stringJoiner.add(MagicBitboards.toBoardString(pawns));
+            stringJoiner.add(BitboardUtil.toBoardString(pawns));
             stringJoiner.add("***********************");
 
             return stringJoiner.toString();

@@ -37,7 +37,7 @@ public final class Configuration {
         this.relevantSquares = relevantSquares(square, directions);
         this.numRelevantSquares = relevantSquares.size();
 
-        this.mask = MagicBitboards.setAllBits(0L, relevantSquares);
+        this.mask = BitboardUtil.setAllBits(0L, relevantSquares);
 
         this.numPossibleConfigurations = (int) Math.pow(2, numRelevantSquares);
         this.possibleConfigurations = possibleConfigurations();
@@ -70,13 +70,13 @@ public final class Configuration {
 
             while (current != null && (configuration & current.getOccupiedBitMask()) == 0L) {
 
-                result = MagicBitboards.setBit(result, current);
+                result = BitboardUtil.setBit(result, current);
 
                 current = current.translate(direction);
             }
 
             if (current != null) {
-                result = MagicBitboards.setBit(result, current);
+                result = BitboardUtil.setBit(result, current);
             }
         }
 
@@ -87,13 +87,13 @@ public final class Configuration {
         final long[] result = new long[numPossibleConfigurations];
 
         for (int i = 0; i < numPossibleConfigurations; i++) {
-            final String s = MagicBitboards.toPaddedBinaryString(i, numRelevantSquares);
+            final String s = BitboardUtil.toPaddedBinaryString(i, numRelevantSquares);
 
             long current = 0L;
 
             for (int j = 0; j < numRelevantSquares; j++) {
                 if (s.charAt(j) == '1') {
-                    current = MagicBitboards.setBit(current, relevantSquares.get(j));
+                    current = BitboardUtil.setBit(current, relevantSquares.get(j));
                 }
             }
 

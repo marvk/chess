@@ -5,11 +5,11 @@ import net.marvk.chess.core.board.Square;
 import java.util.Collection;
 import java.util.StringJoiner;
 
-public final class MagicBitboards {
+public final class BitboardUtil {
     private static final int SIDE_LENGTH = 8;
 
-    private MagicBitboards() {
-        throw new AssertionError("No instances of utility class " + MagicBitboards.class);
+    private BitboardUtil() {
+        throw new AssertionError("No instances of utility class " + BitboardUtil.class);
     }
 
     public static String toPaddedBinaryString(final long l, final int pad) {
