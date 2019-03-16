@@ -7,12 +7,25 @@ import java.util.stream.Collectors;
 
 public class MagicBitboard implements Board {
     private static final Square[] SQUARES;
+    private static final long[] KNIGHT_ATTACKS;
 
     static {
         SQUARES = new Square[64];
 
         for (final Square square : Square.values()) {
             SQUARES[square.getBitboardIndex()] = square;
+        }
+
+        KNIGHT_ATTACKS = new long[64];
+
+        for (final Square square : SQUARES) {
+            KNIGHT_ATTACKS[square.getBitboardIndex()] =
+                    Direction.KNIGHT_DIRECTIONS.stream()
+                                               .map(square::translate)
+                                               .filter(Objects::nonNull)
+                                               .mapToInt(Square::getBitboardIndex)
+                                               .mapToLong(i -> 1L << i)
+                                               .reduce(0L, (l1, l2) -> l1 | l2);
         }
     }
 
