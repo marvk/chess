@@ -74,6 +74,10 @@ public final class Configuration {
 
                 current = current.translate(direction);
             }
+
+            if (current != null) {
+                result = MagicBitboards.setBit(result, current);
+            }
         }
 
         return result;

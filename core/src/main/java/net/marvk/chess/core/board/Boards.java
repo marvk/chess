@@ -7,10 +7,6 @@ public final class Boards {
         throw new AssertionError("No instances simple utility class " + Boards.class);
     }
 
-    public static Board startingPosition() {
-        return new SimpleBoard(Fen.STARTING_POSITION);
-    }
-
     public static void parsePiecePlacement(final String piecePlacement, final ColoredPiece[][] target) {
         final String[] ranks = piecePlacement.split("/");
 

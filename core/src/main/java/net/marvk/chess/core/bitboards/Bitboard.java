@@ -2,8 +2,6 @@ package net.marvk.chess.core.bitboards;
 
 import net.marvk.chess.core.board.Square;
 
-import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -105,6 +103,10 @@ public final class Bitboard {
 
     public long attacks(final long occupancy, final Square square) {
         return attacks[square.getBitboardIndex()][hash(occupancy, square.getBitboardIndex())];
+    }
+
+    public long attacks(final long occupancy, final int squareIndex) {
+        return attacks[squareIndex][hash(occupancy, squareIndex)];
     }
 
     private int hash(final long l, final int squareIndex) {

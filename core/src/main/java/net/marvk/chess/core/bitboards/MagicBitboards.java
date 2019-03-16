@@ -42,6 +42,10 @@ public final class MagicBitboards {
         return sb.toString();
     }
 
+    public static void printBoardString(final long l) {
+        System.out.println(toBoardString(l));
+    }
+
     public static long setBit(final long board, final int index) {
         return board | (1L << index);
     }
