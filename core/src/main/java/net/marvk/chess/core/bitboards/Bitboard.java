@@ -103,8 +103,8 @@ public final class Bitboard {
         }
     }
 
-    public long attacks(final long opponentOccupancy, final Square square) {
-        return attacks[square.getBitboardIndex()][hash(opponentOccupancy, square.getBitboardIndex())];
+    public long attacks(final long occupancy, final Square square) {
+        return attacks[square.getBitboardIndex()][hash(occupancy, square.getBitboardIndex())];
     }
 
     private int hash(final long l, final int squareIndex) {
