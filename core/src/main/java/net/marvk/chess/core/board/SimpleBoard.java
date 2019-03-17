@@ -50,7 +50,6 @@ public class SimpleBoard implements Board {
         return new DefaultMoveStrategy(this, color).generate();
     }
 
-    @Override
     public MoveResult makeSimpleMove(final Move move) {
         return makeComplexMove(
                 move,
@@ -59,7 +58,6 @@ public class SimpleBoard implements Board {
         );
     }
 
-    @Override
     public MoveResult makeComplexMove(final Move move, final SquareColoredPiecePair... swaps) {
         final BoardState.BoardStateBuilder nextState = boardState.nextBuilder();
 

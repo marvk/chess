@@ -25,10 +25,6 @@ public interface Board {
 
     List<MoveResult> getValidMovesForColor(Color color);
 
-    MoveResult makeSimpleMove(final Move move);
-
-    MoveResult makeComplexMove(final Move move, final SquareColoredPiecePair... pairs);
-
     Optional<GameResult> findGameResult();
 
     double computeScore(final Map<Piece, Double> scoreMap, final Color color);
