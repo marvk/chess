@@ -81,7 +81,7 @@ class GameThread implements Runnable, UIChannel {
     public void acceptGameState(final GameState gameState) {
         final Board board = UciMove.getBoard(gameState.getMoves());
 
-        if (board.getState().getActivePlayer() != myColor) {
+        if (board.getActivePlayer() != myColor) {
             log.debug("Not calculating move for opponent");
             return;
         }

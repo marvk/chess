@@ -33,14 +33,6 @@ public class SimpleBoard implements Board {
         return ColoredPiece.getPieceFromSan(board.charAt(index(file, rank)));
     }
 
-    @Override
-    public ColoredPiece[][] getBoard() {
-        throw new UnsupportedOperationException();
-//        return IntStream.range(0, LENGTH)
-//                        .mapToObj(i -> Arrays.copyOf(board[i], LENGTH))
-//                        .toArray(ColoredPiece[][]::new);
-    }
-
     private List<MoveResult> validMoves;
 
     @Override
@@ -131,11 +123,6 @@ public class SimpleBoard implements Board {
         }
 
         return new MoveResult(new SimpleBoard(boardBuilder.toString(), nextState.build()), move);
-    }
-
-    @Override
-    public BoardState getState() {
-        return boardState;
     }
 
     @Override
@@ -316,5 +303,39 @@ public class SimpleBoard implements Board {
         int result = board != null ? board.hashCode() : 0;
         result = 31 * result + (boardState != null ? boardState.hashCode() : 0);
         return result;
+    }
+
+    @Override
+    public int getHalfmoveClock() {
+        return boardState.getHalfmoveClock();
+    }
+
+    @Override
+    public int getFullmoveClock() {
+        return boardState.getFullmoveClock();
+    }
+
+    @Override
+    public Color getActivePlayer() {
+        return boardState.getActivePlayer();
+    }
+
+    @Override
+    public boolean canCastleKingSide(final Color color) {
+        Objects.requireNonNull(color);
+
+        return color == Color.WHITE ? boardState.canWhiteCastleKing() : boardState.canBlackCastleKing();
+    }
+
+    @Override
+    public boolean canCastleQueenSide(final Color color) {
+        Objects.requireNonNull(color);
+
+        return color == Color.WHITE ? boardState.canWhiteCastleQueen() : boardState.canBlackCastleQueen();
+    }
+
+    @Override
+    public Square getEnPassant() {
+        return boardState.getEnPassantTargetSquare();
     }
 }

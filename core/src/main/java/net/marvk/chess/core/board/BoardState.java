@@ -5,7 +5,7 @@ import lombok.ToString;
 
 @ToString
 @EqualsAndHashCode
-public class BoardState {
+class BoardState {
     private final Color activePlayer;
 
     private final boolean whiteCastleKing;

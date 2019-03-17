@@ -90,7 +90,7 @@ public class AlphaBetaPlayer extends Player implements LastEvaluationGettable {
 
         final List<MoveResult> validMoves = current.getBoard().getValidMoves();
 
-        final boolean maximise = current.getBoard().getState().getActivePlayer() == getColor();
+        final boolean maximise = current.getBoard().getActivePlayer() == getColor();
 
         int value = maximise ? Integer.MIN_VALUE : Integer.MAX_VALUE;
 

@@ -21,7 +21,7 @@ public class SimpleHeuristic implements Heuristic {
                 return 0;
             }
 
-            final int timePenalty = board.getState().getFullmoveClock();
+            final int timePenalty = board.getFullmoveClock();
 
             return winner == self ? Integer.MAX_VALUE - timePenalty : Integer.MIN_VALUE;
         }

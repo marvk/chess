@@ -68,7 +68,7 @@ public class Game {
             validMoves = board.getValidMoves();
         }
 
-        log.info(board.getState().getHalfmoveClock());
+        log.info(board.getHalfmoveClock());
 
         return Optional.of(lastMove);
     }
@@ -100,7 +100,7 @@ public class Game {
     }
 
     public Color getTurn() {
-        return board.getState().getActivePlayer();
+        return board.getActivePlayer();
     }
 
     public List<MoveResult> getHistory() {

@@ -156,7 +156,7 @@ public class DefaultMoveStrategy {
         final Direction westAttackDirection = isWhite ? Direction.NORTH_WEST : Direction.SOUTH_WEST;
         final Direction eastAttackDirection = isWhite ? Direction.NORTH_EAST : Direction.SOUTH_EAST;
 
-        final Square enPassantTargetSquare = board.getState().getEnPassantTargetSquare();
+        final Square enPassantTargetSquare = board.getEnPassant();
 
         final Square next = square.translate(forward);
 
@@ -228,7 +228,7 @@ public class DefaultMoveStrategy {
         if (color == Color.WHITE) {
             if (
                     direction == Direction.WEST
-                            && board.getState().canWhiteCastleQueen()
+                            && board.canCastleQueenSide(Color.WHITE)
                             && validCastle(source, Square.A1, Direction.WEST, board, color)
             ) {
                 addMove(board.makeComplexMove(Move.castling(source, Square.C1, coloredPiece),
@@ -239,7 +239,7 @@ public class DefaultMoveStrategy {
                 ));
             } else if (
                     direction == Direction.EAST
-                            && board.getState().canWhiteCastleKing()
+                            && board.canCastleKingSide(Color.WHITE)
                             && validCastle(source, Square.H1, Direction.EAST, board, color)
             ) {
                 addMove(board.makeComplexMove(Move.castling(source, Square.G1, coloredPiece),
@@ -252,7 +252,7 @@ public class DefaultMoveStrategy {
         } else {
             if (
                     direction == Direction.WEST
-                            && board.getState().canBlackCastleQueen()
+                            && board.canCastleQueenSide(Color.BLACK)
                             && validCastle(source, Square.A8, Direction.WEST, board, color)
             ) {
                 addMove(board.makeComplexMove(Move.castling(source, Square.C8, coloredPiece),
@@ -263,7 +263,7 @@ public class DefaultMoveStrategy {
                 ));
             } else if (
                     direction == Direction.EAST
-                            && board.getState().canBlackCastleKing()
+                            && board.canCastleKingSide(Color.BLACK)
                             && validCastle(source, Square.H8, Direction.EAST, board, color)
             ) {
                 addMove(board.makeComplexMove(Move.castling(source, Square.G8, coloredPiece),

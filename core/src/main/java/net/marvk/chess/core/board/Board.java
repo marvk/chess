@@ -19,10 +19,8 @@ public interface Board {
 
     ColoredPiece getPiece(int file, int rank);
 
-    ColoredPiece[][] getBoard();
-
     default List<MoveResult> getValidMoves() {
-        return getValidMovesForColor(getState().getActivePlayer());
+        return getValidMovesForColor(getActivePlayer());
     }
 
     List<MoveResult> getValidMovesForColor(Color color);
@@ -31,14 +29,12 @@ public interface Board {
 
     MoveResult makeComplexMove(final Move move, final SquareColoredPiecePair... pairs);
 
-    BoardState getState();
-
     Optional<GameResult> findGameResult();
 
     double computeScore(final Map<Piece, Double> scoreMap, final Color color);
 
     default boolean isInCheck() {
-        return isInCheck(getState().getActivePlayer());
+        return isInCheck(getActivePlayer());
     }
 
     int computeScore(Color color);
@@ -50,4 +46,16 @@ public interface Board {
     boolean isInCheck(Color color);
 
     boolean isInCheck(Color color, Square square);
+
+    int getHalfmoveClock();
+
+    int getFullmoveClock();
+
+    Color getActivePlayer();
+
+    boolean canCastleKingSide(final Color color);
+
+    boolean canCastleQueenSide(final Color color);
+
+    Square getEnPassant();
 }

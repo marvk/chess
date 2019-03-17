@@ -127,6 +127,40 @@ public class Bitboard implements Board {
         setScores();
     }
 
+    @Override
+    public int getHalfmoveClock() {
+        return halfmoveClock;
+    }
+
+    @Override
+    public int getFullmoveClock() {
+        return fullmoveClock;
+    }
+
+    @Override
+    public Color getActivePlayer() {
+        return turn;
+    }
+
+    @Override
+    public boolean canCastleKingSide(final Color color) {
+        Objects.requireNonNull(color);
+
+        return color == Color.WHITE ? white.kingSideCastle : black.kingSideCastle;
+    }
+
+    @Override
+    public boolean canCastleQueenSide(final Color color) {
+        Objects.requireNonNull(color);
+
+        return color == Color.WHITE ? white.queenSideCastle : black.queenSideCastle;
+    }
+
+    @Override
+    public Square getEnPassant() {
+        return enPassant == 0L ? null : SQUARES[Long.numberOfTrailingZeros(enPassant)];
+    }
+
     /**
      * Call this method after constructing the board to precalculate the scores
      */
@@ -594,12 +628,7 @@ public class Bitboard implements Board {
 
     @Override
     public ColoredPiece getPiece(final int file, final int rank) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public ColoredPiece[][] getBoard() {
-        throw new UnsupportedOperationException();
+        return getPiece(Square.get(file, rank));
     }
 
     @Override
@@ -662,20 +691,6 @@ public class Bitboard implements Board {
     @Override
     public MoveResult makeComplexMove(final Move move, final SquareColoredPiecePair... pairs) {
         throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public BoardState getState() {
-        return new BoardState(
-                turn,
-                white.kingSideCastle,
-                white.queenSideCastle,
-                black.kingSideCastle,
-                black.queenSideCastle,
-                enPassant == 0L ? null : SQUARES[Long.numberOfTrailingZeros(enPassant)],
-                halfmoveClock,
-                fullmoveClock
-        );
     }
 
     @Override
@@ -842,66 +857,7 @@ public class Bitboard implements Board {
         return Move.simple(SQUARES[Long.numberOfTrailingZeros(source)], SQUARES[Long.numberOfTrailingZeros(target)], piece);
     }
 
-    public String fen() {
-        final StringBuilder stringBuilder = new StringBuilder("................................................................");
-
-        for (final Square square : SQUARES) {
-            final ColoredPiece piece = getPiece(square);
-
-            if (piece == null) {
-                continue;
-            }
-
-            final int index = (8 - square.getRank().getIndex() - 1) * 8 + square.getFile().getIndex();
-
-            stringBuilder.setCharAt(index, piece.getSan());
-        }
-
-        String result = stringBuilder.toString()
-                                     .replaceAll("(?<=\\G.{8})", "/")
-                                     .replaceFirst("/$", "");
-
-        while (true) {
-            final Pattern compile = Pattern.compile("^[^.]*(\\.+).*$");
-
-            final Matcher matcher = compile.matcher(result);
-
-            if (!matcher.matches()) {
-                final StringBuilder castle = new StringBuilder();
-
-                if (white.kingSideCastle) {
-                    castle.append("K");
-                }
-
-                if (white.queenSideCastle) {
-                    castle.append("Q");
-                }
-
-                if (black.kingSideCastle) {
-                    castle.append("k");
-                }
-
-                if (black.queenSideCastle) {
-                    castle.append("q");
-                }
-
-                if (castle.length() == 0) {
-                    castle.append("-");
-                }
-
-                final String enPassantString = enPassant == 0L ? "-" : SQUARES[Long.numberOfTrailingZeros(enPassant)].getFen();
-
-                return result + " " + turn.getFen() + " " + castle.toString() + " " + enPassantString + " " + halfmoveClock + " " + fullmoveClock;
-            }
-
-            final String group = matcher.group(1);
-
-            result = result.replaceFirst(Pattern.quote(group), Integer.toString(group.length()));
-        }
-    }
-
     private static class PlayerBoard {
-
         private long kings;
         private long queens;
         private long rooks;
@@ -970,6 +926,64 @@ public class Bitboard implements Board {
                     + Long.bitCount(bishops) * 3
                     + Long.bitCount(knights) * 3
                     + Long.bitCount(pawns);
+        }
+    }
+
+    public String fen() {
+        final StringBuilder stringBuilder = new StringBuilder("................................................................");
+
+        for (final Square square : SQUARES) {
+            final ColoredPiece piece = getPiece(square);
+
+            if (piece == null) {
+                continue;
+            }
+
+            final int index = (8 - square.getRank().getIndex() - 1) * 8 + square.getFile().getIndex();
+
+            stringBuilder.setCharAt(index, piece.getSan());
+        }
+
+        String result = stringBuilder.toString()
+                                     .replaceAll("(?<=\\G.{8})", "/")
+                                     .replaceFirst("/$", "");
+
+        while (true) {
+            final Pattern compile = Pattern.compile("^[^.]*(\\.+).*$");
+
+            final Matcher matcher = compile.matcher(result);
+
+            if (!matcher.matches()) {
+                final StringBuilder castle = new StringBuilder();
+
+                if (white.kingSideCastle) {
+                    castle.append("K");
+                }
+
+                if (white.queenSideCastle) {
+                    castle.append("Q");
+                }
+
+                if (black.kingSideCastle) {
+                    castle.append("k");
+                }
+
+                if (black.queenSideCastle) {
+                    castle.append("q");
+                }
+
+                if (castle.length() == 0) {
+                    castle.append("-");
+                }
+
+                final String enPassantString = enPassant == 0L ? "-" : SQUARES[Long.numberOfTrailingZeros(enPassant)].getFen();
+
+                return result + " " + turn.getFen() + " " + castle.toString() + " " + enPassantString + " " + halfmoveClock + " " + fullmoveClock;
+            }
+
+            final String group = matcher.group(1);
+
+            result = result.replaceFirst(Pattern.quote(group), Integer.toString(group.length()));
         }
     }
 

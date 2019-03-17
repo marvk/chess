@@ -77,7 +77,7 @@ public class KairukuEngine extends UciEngine {
 
     @Override
     public void go(final Go go) {
-        final Color color = board.getState().getActivePlayer();
+        final Color color = board.getActivePlayer();
 
         final Integer time = color == Color.WHITE ? go.getWhiteTime() : go.getBlackTime();
 
