@@ -135,7 +135,8 @@ public class KairukuEngine extends UciEngine {
                         .nps(((long) lastNps))
                         .score(new Score(lastRoot.getValue(), null, null))
                         .depth(ply)
-                        .time(((int) lastDuration.getSeconds()))
+                        .nodes(((long) lastCount))
+                        .time(((int) lastDuration.toMillis()))
                         .generate();
 
             uiChannel.info(info);
@@ -176,10 +177,13 @@ public class KairukuEngine extends UciEngine {
     private int totalCount;
     private Duration lastDuration;
     private int lastNps;
+    private int lastMax;
+    private Board lastBest;
 
     private Move play(final MoveResult previousMove) {
         final Node root = new Node(previousMove);
 
+        lastMax = Integer.MIN_VALUE;
         lastCount = 0;
         lastRoot = root;
         lastDuration = Stopwatch.time(root::startExploration);
@@ -212,6 +216,8 @@ public class KairukuEngine extends UciEngine {
                                          .getMove();
 
         log.info(infoString(previousMove.getBoard(), averageNodesPerSecond, value, result));
+//
+//        System.out.println(lastBest);
 
         return result;
     }
@@ -273,6 +279,11 @@ public class KairukuEngine extends UciEngine {
 
             if (depth == 0 || currentState.getBoard().findGameResult().isPresent()) {
                 value = heuristic.evaluate(currentState.getBoard(), color);
+
+                if (value > lastMax) {
+                    lastBest = currentState.getBoard();
+                }
+
                 return value;
             }
 

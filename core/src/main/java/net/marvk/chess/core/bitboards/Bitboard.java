@@ -153,6 +153,7 @@ public class Bitboard implements Board {
     private static int[] mirror(final int[] inputArray) {
         return IntStream.range(0, 8)
                         .flatMap(i -> IntStream.range(0, 8).map(j -> inputArray[8 * (8 - i - 1) + j]))
+                        .map(i -> -i)
                         .toArray();
     }
 
@@ -956,9 +957,9 @@ public class Bitboard implements Board {
         }
 
         if (color == Color.WHITE) {
-            return sum;
-        } else {
             return -sum;
+        } else {
+            return sum;
         }
     }
 
