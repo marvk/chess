@@ -623,15 +623,15 @@ public class Bitboard implements Board {
         pawnMoves(result, self.pawns, occupancy, color);
         castleMoves(result, self, color, occupancy);
 
-//        if (result.isEmpty()) {
-//            if (false/*isInCheck(turn, opponent)*/) {
-//                endCondition = EndCondition.CHECKMATE;
-//            } else {
-//                endCondition = EndCondition.DRAW_BY_STALEMATE;
-//            }
-//        } else if (halfmoveClock >= 50) {
-//            endCondition = EndCondition.DRAW_BY_FIFTY_MOVE_RULE;
-//        }
+        if (result.isEmpty()) {
+            if (isInCheck(turn, opponent)) {
+                endCondition = EndCondition.CHECKMATE;
+            } else {
+                endCondition = EndCondition.DRAW_BY_STALEMATE;
+            }
+        } else if (halfmoveClock >= 50) {
+            endCondition = EndCondition.DRAW_BY_FIFTY_MOVE_RULE;
+        }
 
         gameResult = endCondition == null
                 ? Optional.empty()
