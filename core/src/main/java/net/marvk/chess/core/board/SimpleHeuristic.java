@@ -1,11 +1,10 @@
 package net.marvk.chess.core.board;
 
+import net.marvk.chess.core.bitboards.Bitboard;
+
 import java.util.Optional;
-import java.util.Random;
 
 public class SimpleHeuristic implements Heuristic {
-    private static final Random RANDOM = new Random();
-    private static final int NOISE_BOUND = 0;
 
     @Override
     public int evaluate(final Board board, final Color self) {
@@ -26,14 +25,10 @@ public class SimpleHeuristic implements Heuristic {
             return winner == self ? Integer.MAX_VALUE - timePenalty : Integer.MIN_VALUE;
         }
 
-        final int noise;
+        final int pieceSquareValue = ((Bitboard) board).pieceSquareValue(self);
 
-        if (NOISE_BOUND > 0) {
-            noise = RANDOM.nextInt(NOISE_BOUND) - NOISE_BOUND / 2;
-        } else {
-            noise = 0;
-        }
+        final int result = mySum - theirSum + pieceSquareValue;
 
-        return ((mySum - theirSum) * 1024) + noise;
+        return result;
     }
 }

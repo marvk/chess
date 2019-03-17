@@ -105,7 +105,7 @@ class Piece extends Pane {
                 final Double score = state.getValues().get(targetSquare.get());
 
                 value = score != null
-                        ? DECIMAL_FORMAT.format(score / 1024.)
+                        ? DECIMAL_FORMAT.format(score / 100.)
                         : "null";
             } else {
                 value = "";

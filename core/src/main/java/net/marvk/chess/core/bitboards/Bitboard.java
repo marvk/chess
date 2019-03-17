@@ -5,6 +5,7 @@ import net.marvk.chess.core.board.*;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.IntStream;
 
 public class Bitboard implements Board {
     // region Constants
@@ -52,6 +53,107 @@ public class Bitboard implements Board {
         for (final Square square : SQUARES) {
             BLACK_PAWN_ATTACKS[square.getBitboardIndex()] = staticAttacks(List.of(Direction.SOUTH_WEST, Direction.SOUTH_EAST), square);
         }
+    }
+
+    private static final int[] BLACK_KING_TABLE_LATE = {
+            -50, -40, -30, -20, -20, -30, -40, -50,
+            -30, -20, -10, 0, 0, -10, -20, -30,
+            -30, -10, 20, 30, 30, 20, -10, -30,
+            -30, -10, 30, 40, 40, 30, -10, -30,
+            -30, -10, 30, 40, 40, 30, -10, -30,
+            -30, -10, 20, 30, 30, 20, -10, -30,
+            -30, -30, 0, 0, 0, 0, -30, -30,
+            -50, -30, -30, -30, -30, -30, -30, -50,
+    };
+
+    private static final int[] BLACK_KING_TABLE_EARLY = {
+            -30, -40, -40, -50, -50, -40, -40, -30,
+            -30, -40, -40, -50, -50, -40, -40, -30,
+            -30, -40, -40, -50, -50, -40, -40, -30,
+            -30, -40, -40, -50, -50, -40, -40, -30,
+            -20, -30, -30, -40, -40, -30, -30, -20,
+            -10, -20, -20, -20, -20, -20, -20, -10,
+            20, 20, 0, 0, 0, 0, 20, 20,
+            20, 30, 10, 0, 0, 10, 30, 20,
+    };
+
+    private static final int[] BLACK_QUEEN_TABLE = {
+            -20, -10, -10, -5, -5, -10, -10, -20,
+            -10, 0, 0, 0, 0, 0, 0, -10,
+            -10, 0, 5, 5, 5, 5, 0, -10,
+            -5, 0, 5, 5, 5, 5, 0, -5,
+            0, 0, 5, 5, 5, 5, 0, -5,
+            -10, 5, 5, 5, 5, 5, 0, -10,
+            -10, 0, 5, 0, 0, 0, 0, -10,
+            -20, -10, -10, -5, -5, -10, -10, -20,
+    };
+
+    private static final int[] BLACK_ROOK_TABLE = {
+            0, 0, 0, 0, 0, 0, 0, 0,
+            5, 10, 10, 10, 10, 10, 10, 5,
+            -5, 0, 0, 0, 0, 0, 0, -5,
+            -5, 0, 0, 0, 0, 0, 0, -5,
+            -5, 0, 0, 0, 0, 0, 0, -5,
+            -5, 0, 0, 0, 0, 0, 0, -5,
+            -5, 0, 0, 0, 0, 0, 0, -5,
+            0, 0, 0, 5, 5, 0, 0, 0,
+    };
+
+    private static final int[] BLACK_BISHOP_TABLE = {
+            -20, -10, -10, -10, -10, -10, -10, -20,
+            -10, 0, 0, 0, 0, 0, 0, -10,
+            -10, 0, 5, 10, 10, 5, 0, -10,
+            -10, 5, 5, 10, 10, 5, 5, -10,
+            -10, 0, 10, 10, 10, 10, 0, -10,
+            -10, 10, 10, 10, 10, 10, 10, -10,
+            -10, 5, 0, 0, 0, 0, 5, -10,
+            -20, -10, -10, -10, -10, -10, -10, -20,
+    };
+
+    private static final int[] BLACK_KNIGHT_TABLE = {
+            -50, -40, -30, -30, -30, -30, -40, -50,
+            -40, -20, 0, 0, 0, 0, -20, -40,
+            -30, 0, 10, 15, 15, 10, 0, -30,
+            -30, 5, 15, 20, 20, 15, 5, -30,
+            -30, 0, 15, 20, 20, 15, 0, -30,
+            -30, 5, 10, 15, 15, 10, 5, -30,
+            -40, -20, 0, 5, 5, 0, -20, -40,
+            -50, -40, -30, -30, -30, -30, -40, -50,
+    };
+
+    private static final int[] BLACK_PAWN_TABLE = {
+            0, 0, 0, 0, 0, 0, 0, 0,
+            50, 50, 50, 50, 50, 50, 50, 50,
+            10, 10, 20, 30, 30, 20, 10, 10,
+            5, 5, 10, 25, 25, 10, 5, 5,
+            0, 0, 0, 20, 20, 0, 0, 0,
+            5, -5, -10, 0, 0, -10, -5, 5,
+            5, 10, 10, -20, -20, 10, 10, 5,
+            0, 0, 0, 0, 0, 0, 0, 0,
+    };
+
+    private static final int[] WHITE_KING_TABLE_LATE;
+    private static final int[] WHITE_KING_TABLE_EARLY;
+    private static final int[] WHITE_QUEEN_TABLE;
+    private static final int[] WHITE_ROOK_TABLE;
+    private static final int[] WHITE_BISHOP_TABLE;
+    private static final int[] WHITE_KNIGHT_TABLE;
+    private static final int[] WHITE_PAWN_TABLE;
+
+    static {
+        WHITE_KING_TABLE_LATE = mirror(BLACK_KING_TABLE_LATE);
+        WHITE_KING_TABLE_EARLY = mirror(BLACK_KING_TABLE_EARLY);
+        WHITE_QUEEN_TABLE = mirror(BLACK_QUEEN_TABLE);
+        WHITE_ROOK_TABLE = mirror(BLACK_ROOK_TABLE);
+        WHITE_BISHOP_TABLE = mirror(BLACK_BISHOP_TABLE);
+        WHITE_KNIGHT_TABLE = mirror(BLACK_KNIGHT_TABLE);
+        WHITE_PAWN_TABLE = mirror(BLACK_PAWN_TABLE);
+    }
+
+    private static int[] mirror(final int[] inputArray) {
+        return IntStream.range(0, 8)
+                        .flatMap(i -> IntStream.range(0, 8).map(j -> inputArray[8 * (8 - i - 1) + j]))
+                        .toArray();
     }
 
     private static final long WHITE_QUEEN_SIDE_CASTLE_OCCUPANCY = bitwiseOr(Square.B1, Square.C1, Square.D1);
@@ -747,6 +849,10 @@ public class Bitboard implements Board {
 
     @Override
     public ColoredPiece getPiece(final Square square) {
+        return getPiece(square.getOccupiedBitMask());
+    }
+
+    private ColoredPiece getPiece(final long square) {
         if (isOccupied(white.kings, square)) {
             return ColoredPiece.WHITE_KING;
         }
@@ -798,8 +904,8 @@ public class Bitboard implements Board {
         return null;
     }
 
-    private static boolean isOccupied(final long board, final Square square) {
-        return (board & (1L << square.getBitboardIndex())) != 0L;
+    private static boolean isOccupied(final long board, final long square) {
+        return (board & square) != 0L;
     }
 
     @Override
@@ -827,6 +933,69 @@ public class Bitboard implements Board {
         Objects.requireNonNull(color);
 
         return color == Color.WHITE ? whiteScore : blackScore;
+    }
+
+    public int pieceSquareValue(final Color color) {
+        long occupancy = white.occupancy() | black.occupancy();
+
+        boolean lateGame = (white.queens | black.queens) == 0L;
+
+        int sum = 0;
+
+        while (occupancy != 0L) {
+            final long current = Long.highestOneBit(occupancy);
+            occupancy &= ~current;
+
+            final int square = Long.numberOfTrailingZeros(current);
+
+            final ColoredPiece piece = getPiece(current);
+
+            final int score = getScore(piece, square, lateGame);
+
+            sum += score;
+        }
+
+        if (color == Color.WHITE) {
+            return sum;
+        } else {
+            return -sum;
+        }
+    }
+
+    private int getScore(final ColoredPiece piece, final int square, final boolean lateGame) {
+        if (piece.getColor() == Color.WHITE) {
+            switch (piece.getPiece()) {
+                case KING:
+                    return lateGame ? WHITE_KING_TABLE_LATE[square] : WHITE_KING_TABLE_EARLY[square];
+                case QUEEN:
+                    return WHITE_QUEEN_TABLE[square];
+                case ROOK:
+                    return WHITE_ROOK_TABLE[square];
+                case BISHOP:
+                    return WHITE_BISHOP_TABLE[square];
+                case KNIGHT:
+                    return WHITE_KNIGHT_TABLE[square];
+                case PAWN:
+                    return WHITE_PAWN_TABLE[square];
+            }
+        } else {
+            switch (piece.getPiece()) {
+                case KING:
+                    return lateGame ? BLACK_KING_TABLE_LATE[square] : BLACK_KING_TABLE_EARLY[square];
+                case QUEEN:
+                    return BLACK_QUEEN_TABLE[square];
+                case ROOK:
+                    return BLACK_ROOK_TABLE[square];
+                case BISHOP:
+                    return BLACK_BISHOP_TABLE[square];
+                case KNIGHT:
+                    return BLACK_KNIGHT_TABLE[square];
+                case PAWN:
+                    return BLACK_PAWN_TABLE[square];
+            }
+        }
+
+        return 0;
     }
 
     // endregion
@@ -1010,7 +1179,7 @@ public class Bitboard implements Board {
                 final ColoredPiece piece = getPiece(Square.get(j, i));
                 squareJoiner.add(piece == null ? " " : Character.toString(piece.getSan()));
             }
-            lineJoiner.add("║ " + (i+1) + " ║ " + squareJoiner.toString() + " ║");
+            lineJoiner.add("║ " + (i + 1) + " ║ " + squareJoiner.toString() + " ║");
         }
 
         resultJoiner.add(lineJoiner.toString());
@@ -1042,7 +1211,7 @@ public class Bitboard implements Board {
 
     // endregion
 
-    private static class PlayerBoard {
+    static class PlayerBoard {
         private long kings;
         private long queens;
         private long rooks;
@@ -1106,11 +1275,11 @@ public class Bitboard implements Board {
         }
 
         public int score() {
-            return Long.bitCount(queens) * 9
-                    + Long.bitCount(rooks) * 5
-                    + Long.bitCount(bishops) * 3
-                    + Long.bitCount(knights) * 3
-                    + Long.bitCount(pawns);
+            return Long.bitCount(queens) * 900
+                    + Long.bitCount(rooks) * 500
+                    + Long.bitCount(bishops) * 330
+                    + Long.bitCount(knights) * 320
+                    + Long.bitCount(pawns) * 100;
         }
     }
 }
