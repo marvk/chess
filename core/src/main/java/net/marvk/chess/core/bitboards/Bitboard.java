@@ -1000,9 +1000,9 @@ public class Bitboard implements Board {
     public String toString() {
         final StringJoiner resultJoiner = new StringJoiner("\n");
 
-        resultJoiner.add("╔═══╤═══╤═══╤═══╤═══╤═══╤═══╤═══╗");
+        resultJoiner.add("╔═══╦═══╤═══╤═══╤═══╤═══╤═══╤═══╤═══╗");
 
-        final StringJoiner lineJoiner = new StringJoiner("\n╟───┼───┼───┼───┼───┼───┼───┼───╢\n");
+        final StringJoiner lineJoiner = new StringJoiner("\n║   ╟───┼───┼───┼───┼───┼───┼───┼───╢\n");
 
         for (int i = 8 - 1; i >= 0; i--) {
             final StringJoiner squareJoiner = new StringJoiner(" │ ");
@@ -1010,24 +1010,29 @@ public class Bitboard implements Board {
                 final ColoredPiece piece = getPiece(Square.get(j, i));
                 squareJoiner.add(piece == null ? " " : Character.toString(piece.getSan()));
             }
-            lineJoiner.add("║ " + squareJoiner.toString() + " ║");
+            lineJoiner.add("║ " + (i+1) + " ║ " + squareJoiner.toString() + " ║");
         }
 
         resultJoiner.add(lineJoiner.toString());
-
-        resultJoiner.add("╠═══╧═══╧═══╧═══╧═══╧═══╧═══╧═══╣");
+        resultJoiner.add("║   ╚═══╧═══╧═══╧═══╧═══╧═══╧═══╧═══╣");
+        resultJoiner.add("║     A   B   C   D   E   F   G   H ║");
+        resultJoiner.add("╠═══════════════════════════════════╣");
         addLine(resultJoiner, "turn", turn.toString());
         addLine(resultJoiner, "halfmove clock", Integer.toString(halfmoveClock));
         addLine(resultJoiner, "fullmove clock", Integer.toString(fullmoveClock));
         addLine(resultJoiner, "castle", Fen.parse(fen()).getCastlingAvailability());
         addLine(resultJoiner, "enPassant", enPassant == 0L ? "-" : SQUARES[Long.numberOfTrailingZeros(enPassant)].toString());
-        resultJoiner.add("╚═══════════════════════════════╝");
+        resultJoiner.add("╚═══════════════════════════════════╝");
 
         return resultJoiner.toString();
     }
 
+    public static void main(String[] args) {
+        System.out.println(new Bitboard(Fen.STARTING_POSITION).toString());
+    }
+
     private static void addLine(final StringJoiner resultJoiner, final String name, final String value) {
-        final String enPassantString = name + padLeft(value, 29 - name.length());
+        final String enPassantString = name + padLeft(value, 33 - name.length());
         resultJoiner.add("║ " + enPassantString + " ║");
     }
 
