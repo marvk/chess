@@ -133,7 +133,7 @@ public class KairukuEngine extends UciEngine {
             final Info info =
                     Info.builder()
                         .nps(((long) lastNps))
-                        .score(new Score(lastRoot.getValue() * 100 / 1024, null, null))
+                        .score(new Score(lastRoot.getValue(), null, null))
                         .depth(ply)
                         .time(((int) lastDuration.getSeconds()))
                         .generate();
@@ -201,7 +201,7 @@ public class KairukuEngine extends UciEngine {
         } else if (max < Integer.MIN_VALUE + 100_000) {
             value = "LOSE";
         } else {
-            value = Double.toString((100. * max) / 1024);
+            value = Double.toString(max);
         }
 
         final Move result = root.children.stream()
