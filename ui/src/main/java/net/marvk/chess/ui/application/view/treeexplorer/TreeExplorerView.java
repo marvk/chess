@@ -82,7 +82,7 @@ public class TreeExplorerView implements FxmlView<net.marvk.chess.ui.application
 
             if (lastMove.equals(Move.NULL_MOVE)) {
                 final Board newBoard = viewModel.getNewBoard();
-                final net.marvk.chess.core.board.Color color = newBoard.getState().getActivePlayer();
+                final net.marvk.chess.core.board.Color color = newBoard.getActivePlayer();
                 return color + " -> [" + (new SimpleHeuristic().evaluate(newBoard, color) / 1024.0) + "]";
             }
 

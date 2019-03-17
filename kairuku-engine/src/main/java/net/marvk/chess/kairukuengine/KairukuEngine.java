@@ -92,12 +92,19 @@ public class KairukuEngine extends UciEngine {
 
     @Override
     public void go(final Go go) {
+        if (board == null) {
+            log.warn("not going, no position loaded");
+            return;
+        }
+
         color = board.getActivePlayer();
 
         final Integer time = color == Color.WHITE ? go.getWhiteTime() : go.getBlackTime();
 
-        if (time == null) {
-            ply = 7;
+        if (go.getDepth() != null) {
+            ply = go.getDepth();
+        } else if (time == null) {
+            ply = 5;
         } else if (time < 200) {
             ply = 3;
         } else if (time < 5_000) {
@@ -107,7 +114,7 @@ public class KairukuEngine extends UciEngine {
         } else if (time < 120_000) {
             ply = 6;
         } else {
-            ply = 7;
+            ply = 5;
         }
 
         log.info("time is " + time + ", setting " + "ply to " + ply);
