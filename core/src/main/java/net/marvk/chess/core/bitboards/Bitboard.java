@@ -60,6 +60,7 @@ public class Bitboard implements Board {
     private int blackScore;
 
     private int scoreDiff;
+    private Optional<GameResult> gameResult;
 
     private static long getRankSquares(final Rank rank) {
         return Arrays.stream(SQUARES)
@@ -623,7 +624,7 @@ public class Bitboard implements Board {
         castleMoves(result, self, color, occupancy);
 
 //        if (result.isEmpty()) {
-//            if (isInCheck(turn, opponent)) {
+//            if (false/*isInCheck(turn, opponent)*/) {
 //                endCondition = EndCondition.CHECKMATE;
 //            } else {
 //                endCondition = EndCondition.DRAW_BY_STALEMATE;
@@ -631,6 +632,10 @@ public class Bitboard implements Board {
 //        } else if (halfmoveClock >= 50) {
 //            endCondition = EndCondition.DRAW_BY_FIFTY_MOVE_RULE;
 //        }
+
+        gameResult = endCondition == null
+                ? Optional.empty()
+                : Optional.of(new GameResult(endCondition == EndCondition.CHECKMATE ? turn.opposite() : null, endCondition));
 
         return result;
     }
@@ -661,9 +666,7 @@ public class Bitboard implements Board {
 
     @Override
     public Optional<GameResult> findGameResult() {
-        return endCondition == null
-                ? Optional.empty()
-                : Optional.of(new GameResult(endCondition == EndCondition.CHECKMATE ? turn.opposite() : null, endCondition));
+        return gameResult;
     }
 
     @Override

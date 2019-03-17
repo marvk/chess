@@ -103,16 +103,11 @@ public class AlphaBetaPlayerExplicit extends Player implements LastEvaluationGet
         }
 
         private int explore(int alpha, int beta, final boolean maximise, final int depth) {
-            if (depth == 0) {
-                value = heuristic.evaluate(currentState.getBoard(), getColor());
-                return value;
-            }
-
             value = maximise ? Integer.MIN_VALUE : Integer.MAX_VALUE;
 
             final List<MoveResult> validMoves = currentState.getBoard().getValidMoves();
 
-            if (currentState.getBoard().findGameResult().isPresent()) {
+            if (depth == 0 || currentState.getBoard().findGameResult().isPresent()) {
                 value = heuristic.evaluate(currentState.getBoard(), getColor());
                 return value;
             }

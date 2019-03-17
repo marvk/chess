@@ -56,6 +56,8 @@ public class Game {
             return Optional.empty();
         }
 
+        board.getValidMoves();
+
         final Optional<GameResult> gameResult = board.findGameResult();
 
         if (gameResult.isPresent()) {
