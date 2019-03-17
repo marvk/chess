@@ -83,11 +83,13 @@ public class KairukuEngine extends UciEngine {
 
         if (time == null) {
             ply = 7;
-        } else if (time < 1_000) {
-            ply = 4;
+        } else if (time < 200) {
+            ply = 3;
         } else if (time < 5_000) {
-            ply = 5;
+            ply = 4;
         } else if (time < 30_000) {
+            ply = 5;
+        } else if (time < 120_000) {
             ply = 6;
         } else {
             ply = 7;
