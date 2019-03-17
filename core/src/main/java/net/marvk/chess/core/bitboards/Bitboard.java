@@ -14,8 +14,6 @@ public class Bitboard implements Board {
     private static final long[] WHITE_PAWN_ATTACKS;
     private static final long[] BLACK_PAWN_ATTACKS;
 
-    private static int ep = 0;
-
     static {
         SQUARES = new Square[64];
 
@@ -59,6 +57,9 @@ public class Bitboard implements Board {
     private int whiteScore;
     private int blackScore;
 
+    private int whiteNumPieces;
+    private int blackNumPieces;
+
     private int scoreDiff;
     private Optional<GameResult> gameResult;
 
@@ -83,8 +84,8 @@ public class Bitboard implements Board {
     private final Color turn;
     private long enPassant = 0L;
 
-    private final int halfmoveClock;
-    private final int fullmoveClock;
+    private int halfmoveClock;
+    private int fullmoveClock;
 
     private Bitboard(final Bitboard previous) {
         this.white = new PlayerBoard(previous.white);
@@ -132,6 +133,9 @@ public class Bitboard implements Board {
     private void setScores() {
         whiteScore = white.score();
         blackScore = black.score();
+
+        whiteNumPieces = Long.bitCount(white.occupancy());
+        blackNumPieces = Long.bitCount(black.occupancy());
 
         scoreDiff = whiteScore - blackScore;
     }
@@ -483,6 +487,8 @@ public class Bitboard implements Board {
             } else if (piece == Piece.PAWN) {
                 nextSelf.pawns |= attack;
 
+                nextBoard.halfmoveClock = 0;
+
                 if (attack == enPassant) {
                     if (color == Color.WHITE) {
                         nextOpponent.pawns &= ~(enPassant >> 8L);
@@ -516,7 +522,15 @@ public class Bitboard implements Board {
             }
         }
 
+        if (move.getColoredPiece().getPiece() == Piece.PAWN) {
+            nextBoard.halfmoveClock = 0;
+        }
+
         nextBoard.setScores();
+
+        if (nextBoard.whiteScore + nextBoard.blackScore != whiteScore + blackScore) {
+            nextBoard.halfmoveClock = 0;
+        }
 
         return new MoveResult(nextBoard, move);
     }
@@ -957,5 +971,48 @@ public class Bitboard implements Board {
                     + Long.bitCount(knights) * 3
                     + Long.bitCount(pawns);
         }
+    }
+
+    @Override
+    public String toString() {
+        final StringJoiner resultJoiner = new StringJoiner("\n");
+
+        resultJoiner.add("╔═══╤═══╤═══╤═══╤═══╤═══╤═══╤═══╗");
+
+        final StringJoiner lineJoiner = new StringJoiner("\n╟───┼───┼───┼───┼───┼───┼───┼───╢\n");
+
+        for (int i = 8 - 1; i >= 0; i--) {
+            final StringJoiner squareJoiner = new StringJoiner(" │ ");
+            for (int j = 0; j < 8; j++) {
+                final ColoredPiece piece = getPiece(Square.get(j, i));
+                squareJoiner.add(piece == null ? " " : Character.toString(piece.getSan()));
+            }
+            lineJoiner.add("║ " + squareJoiner.toString() + " ║");
+        }
+
+        resultJoiner.add(lineJoiner.toString());
+
+        resultJoiner.add("╠═══╧═══╧═══╧═══╧═══╧═══╧═══╧═══╣");
+        addLine(resultJoiner, "turn", turn.toString());
+        addLine(resultJoiner, "halfmove clock", Integer.toString(halfmoveClock));
+        addLine(resultJoiner, "fullmove clock", Integer.toString(fullmoveClock));
+        addLine(resultJoiner, "castle", Fen.parse(fen()).getCastlingAvailability());
+        addLine(resultJoiner, "enPassant", enPassant == 0L ? "-" : SQUARES[Long.numberOfTrailingZeros(enPassant)].toString());
+        resultJoiner.add("╚═══════════════════════════════╝");
+
+        return resultJoiner.toString();
+    }
+
+    private static void addLine(final StringJoiner resultJoiner, final String name, final String value) {
+        final String enPassantString = name + padLeft(value, 29 - name.length());
+        resultJoiner.add("║ " + enPassantString + " ║");
+    }
+
+    private static String padRight(final String s, final int n) {
+        return String.format("%-" + n + "s", s);
+    }
+
+    private static String padLeft(final String s, final int n) {
+        return String.format("%" + n + "s", s);
     }
 }
