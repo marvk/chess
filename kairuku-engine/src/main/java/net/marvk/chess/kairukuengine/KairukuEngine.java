@@ -104,7 +104,7 @@ public class KairukuEngine extends UciEngine {
         if (go.getDepth() != null) {
             ply = go.getDepth();
         } else if (time == null) {
-            ply = 5;
+            ply = 7;
         } else if (time < 200) {
             ply = 3;
         } else if (time < 5_000) {
@@ -114,7 +114,7 @@ public class KairukuEngine extends UciEngine {
         } else if (time < 120_000) {
             ply = 6;
         } else {
-            ply = 5;
+            ply = 7;
         }
 
         log.info("time is " + time + ", setting " + "ply to " + ply);
