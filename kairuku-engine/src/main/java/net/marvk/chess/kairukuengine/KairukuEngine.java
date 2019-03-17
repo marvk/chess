@@ -9,7 +9,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 @Log4j2
-public class Kairuku extends UciEngine {
+public class KairukuEngine extends UciEngine {
     private static final String PLY_OPTION = "ply";
 
     private final ExecutorService executor;
@@ -18,70 +18,76 @@ public class Kairuku extends UciEngine {
     private int ply;
     private Board board;
 
-    public Kairuku(final UIChannel uiChannel) {
+    public KairukuEngine(final UIChannel uiChannel) {
         super(uiChannel);
 
         this.ply = 7;
         this.executor = Executors.newSingleThreadExecutor();
     }
 
+    @Override
     public void uci() {
         uiChannel.idName("kairuku");
         uiChannel.optionSpin(PLY_OPTION, ply, 1, 7);
     }
 
+    @Override
     public void setDebug(final boolean debug) {
 
     }
 
+    @Override
     public void isReady() {
         uiChannel.readyOk();
     }
 
+    @Override
     public void setOption(final String name, final String value) {
         if (PLY_OPTION.equals(name)) {
             ply = Integer.parseInt(value);
         }
     }
 
+    @Override
     public void registerLater() {
 
     }
 
+    @Override
     public void register(final String name, final String code) {
 
     }
 
+    @Override
     public void uciNewGame() {
         stop();
 
         board = null;
     }
 
+    @Override
     public void positionFromDefault(final UciMove[] moves) {
         board = UciMove.getBoard(moves);
     }
 
+    @Override
     public void position(final String fenString, final UciMove[] moves) {
         board = UciMove.getBoard(moves, Fen.parse(fenString));
     }
 
+    @Override
     public void go(final Go go) {
         final Color color = board.getState().getActivePlayer();
 
-        final Integer time;
-
-        if (color == Color.WHITE) {
-            time = go.getWhiteTime();
-        } else {
-            time = go.getBlackTime();
-        }
+        final Integer time = color == Color.WHITE ? go.getWhiteTime() : go.getBlackTime();
 
         if (time == null) {
             ply = 7;
-        } else if (time < 5000) {
+        } else if (time < 1_000) {
+            ply = 4;
+        } else if (time < 5_000) {
             ply = 5;
-        } else if (time < 30000) {
+        } else if (time < 30_000) {
             ply = 6;
         } else {
             ply = 7;
@@ -112,14 +118,17 @@ public class Kairuku extends UciEngine {
         });
     }
 
+    @Override
     public void stop() {
         calculationFuture.cancel(true);
     }
 
+    @Override
     public void ponderHit() {
 
     }
 
+    @Override
     public void quit() {
         calculationFuture.cancel(true);
     }

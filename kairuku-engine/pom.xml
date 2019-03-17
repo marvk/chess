@@ -48,7 +48,7 @@
                     <archive>
                         <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>net.marvk.chess.kairukuengine.ConsoleApp</mainClass>
+                            <mainClass>net.marvk.chess.kairukuengine.KairukuApp</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

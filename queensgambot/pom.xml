@@ -53,7 +53,7 @@
                     <archive>
                         <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>net.marvk.chess.queensgambot.App</mainClass>
+                            <mainClass>net.marvk.chess.queensgambot.QueensGamBotApp</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

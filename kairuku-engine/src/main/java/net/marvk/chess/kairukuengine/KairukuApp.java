@@ -6,13 +6,13 @@ import net.marvk.chess.uci4j.ConsoleUIChannel;
 import net.marvk.chess.uci4j.UciEngine;
 
 @Log4j2
-public final class ConsoleApp {
-    private ConsoleApp() {
-        throw new AssertionError("No instances of main class " + ConsoleApp.class);
+public final class KairukuApp {
+    private KairukuApp() {
+        throw new AssertionError("No instances of main class " + KairukuApp.class);
     }
 
     public static void main(final String[] args) {
-        final UciEngine engine = new Kairuku(new ConsoleUIChannel(s -> {
+        final UciEngine engine = new KairukuEngine(new ConsoleUIChannel(s -> {
             log.info(s);
             System.out.println(s);
         }));
