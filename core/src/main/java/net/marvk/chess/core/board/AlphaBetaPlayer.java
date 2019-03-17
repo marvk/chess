@@ -15,6 +15,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 @Log4j2
+@Deprecated
 public class AlphaBetaPlayer extends Player implements LastEvaluationGettable {
     private final Heuristic heuristic;
     private final int maxDepth;

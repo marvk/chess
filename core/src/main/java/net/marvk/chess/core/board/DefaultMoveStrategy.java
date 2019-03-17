@@ -1,13 +1,10 @@
 package net.marvk.chess.core.board;
 
-import javafx.beans.property.SimpleBooleanProperty;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static net.marvk.chess.core.board.ColoredPiece.*;
-
+@Deprecated
 public class DefaultMoveStrategy {
     private static final List<Piece> PROMOTION_PIECES = Arrays.asList(Piece.QUEEN, Piece.ROOK, Piece.KNIGHT, Piece.BISHOP);
     private static final Square[] SQUARES = Square.values();
@@ -80,51 +77,51 @@ public class DefaultMoveStrategy {
     }
 
     private void blackKingStrategy(final Square square, final SimpleBoard board) {
-        generalKingStrategy(square, board, BLACK_KING);
+        generalKingStrategy(square, board, ColoredPiece.BLACK_KING);
     }
 
     private void blackQueenStrategy(final Square square, final SimpleBoard board) {
-        generalQueenStrategy(square, board, BLACK_QUEEN);
+        generalQueenStrategy(square, board, ColoredPiece.BLACK_QUEEN);
     }
 
     private void blackRookStrategy(final Square square, final SimpleBoard board) {
-        generalRookStrategy(square, board, BLACK_ROOK);
+        generalRookStrategy(square, board, ColoredPiece.BLACK_ROOK);
     }
 
     private void blackBishopStrategy(final Square square, final SimpleBoard board) {
-        generalBishopStrategy(square, board, BLACK_BISHOP);
+        generalBishopStrategy(square, board, ColoredPiece.BLACK_BISHOP);
     }
 
     private void blackKnightStrategy(final Square square, final SimpleBoard board) {
-        generalKnightStrategy(square, board, BLACK_KNIGHT);
+        generalKnightStrategy(square, board, ColoredPiece.BLACK_KNIGHT);
     }
 
     private void blackPawnStrategy(final Square square, final SimpleBoard board) {
-        generalPawnStrategy(square, board, BLACK_PAWN);
+        generalPawnStrategy(square, board, ColoredPiece.BLACK_PAWN);
     }
 
     private void whiteKingStrategy(final Square square, final SimpleBoard board) {
-        generalKingStrategy(square, board, WHITE_KING);
+        generalKingStrategy(square, board, ColoredPiece.WHITE_KING);
     }
 
     private void whiteQueenStrategy(final Square square, final SimpleBoard board) {
-        generalQueenStrategy(square, board, WHITE_QUEEN);
+        generalQueenStrategy(square, board, ColoredPiece.WHITE_QUEEN);
     }
 
     private void whiteRookStrategy(final Square square, final SimpleBoard board) {
-        generalRookStrategy(square, board, WHITE_ROOK);
+        generalRookStrategy(square, board, ColoredPiece.WHITE_ROOK);
     }
 
     private void whiteBishopStrategy(final Square square, final SimpleBoard board) {
-        generalBishopStrategy(square, board, WHITE_BISHOP);
+        generalBishopStrategy(square, board, ColoredPiece.WHITE_BISHOP);
     }
 
     private void whiteKnightStrategy(final Square square, final SimpleBoard board) {
-        generalKnightStrategy(square, board, WHITE_KNIGHT);
+        generalKnightStrategy(square, board, ColoredPiece.WHITE_KNIGHT);
     }
 
     private void whitePawnStrategy(final Square square, final SimpleBoard board) {
-        generalPawnStrategy(square, board, WHITE_PAWN);
+        generalPawnStrategy(square, board, ColoredPiece.WHITE_PAWN);
     }
 
     private void generalKingStrategy(final Square square, final SimpleBoard board, final ColoredPiece coloredPiece) {
@@ -198,7 +195,7 @@ public class DefaultMoveStrategy {
 
         if (blackPromotion || whitePromotion) {
             PROMOTION_PIECES.stream()
-                            .map(p -> getPiece(coloredPiece.getColor(), p))
+                            .map(p -> ColoredPiece.getPiece(coloredPiece.getColor(), p))
                             .map(promoteTo -> Move.promotion(source, target, coloredPiece, promoteTo))
                             .map(move -> board.makeComplexMove(move,
                                     new SquareColoredPiecePair(source, null),
@@ -236,7 +233,7 @@ public class DefaultMoveStrategy {
                 addMove(board.makeComplexMove(Move.castling(source, Square.C1, coloredPiece),
                         new SquareColoredPiecePair(source, null),
                         new SquareColoredPiecePair(Square.C1, coloredPiece),
-                        new SquareColoredPiecePair(Square.D1, getPiece(color, Piece.ROOK)),
+                        new SquareColoredPiecePair(Square.D1, ColoredPiece.getPiece(color, Piece.ROOK)),
                         new SquareColoredPiecePair(Square.A1, null)
                 ));
             } else if (
@@ -247,7 +244,7 @@ public class DefaultMoveStrategy {
                 addMove(board.makeComplexMove(Move.castling(source, Square.G1, coloredPiece),
                         new SquareColoredPiecePair(source, null),
                         new SquareColoredPiecePair(Square.G1, coloredPiece),
-                        new SquareColoredPiecePair(Square.F1, getPiece(color, Piece.ROOK)),
+                        new SquareColoredPiecePair(Square.F1, ColoredPiece.getPiece(color, Piece.ROOK)),
                         new SquareColoredPiecePair(Square.H1, null)
                 ));
             }
@@ -260,7 +257,7 @@ public class DefaultMoveStrategy {
                 addMove(board.makeComplexMove(Move.castling(source, Square.C8, coloredPiece),
                         new SquareColoredPiecePair(source, null),
                         new SquareColoredPiecePair(Square.C8, coloredPiece),
-                        new SquareColoredPiecePair(Square.D8, getPiece(color, Piece.ROOK)),
+                        new SquareColoredPiecePair(Square.D8, ColoredPiece.getPiece(color, Piece.ROOK)),
                         new SquareColoredPiecePair(Square.A8, null)
                 ));
             } else if (
@@ -271,7 +268,7 @@ public class DefaultMoveStrategy {
                 addMove(board.makeComplexMove(Move.castling(source, Square.G8, coloredPiece),
                         new SquareColoredPiecePair(source, null),
                         new SquareColoredPiecePair(Square.G8, coloredPiece),
-                        new SquareColoredPiecePair(Square.F8, getPiece(color, Piece.ROOK)),
+                        new SquareColoredPiecePair(Square.F8, ColoredPiece.getPiece(color, Piece.ROOK)),
                         new SquareColoredPiecePair(Square.H8, null)
                 ));
             }
