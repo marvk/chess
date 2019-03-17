@@ -987,7 +987,7 @@ public class Bitboard implements Board {
 
                 final String enPassantString = enPassant == 0L ? "-" : SQUARES[Long.numberOfTrailingZeros(enPassant)].getFen();
 
-                return result + " " + turn.getFen() + " " + castle.toString() + " " + enPassantString + " " + halfmoveClock + " " + fullmoveClock;
+                return result + " " + turn.getFen() + " " + castle + " " + enPassantString + " " + halfmoveClock + " " + fullmoveClock;
             }
 
             final String group = matcher.group(1);
@@ -1025,10 +1025,6 @@ public class Bitboard implements Board {
         resultJoiner.add("╚═══════════════════════════════════╝");
 
         return resultJoiner.toString();
-    }
-
-    public static void main(String[] args) {
-        System.out.println(new Bitboard(Fen.STARTING_POSITION).toString());
     }
 
     private static void addLine(final StringJoiner resultJoiner, final String name, final String value) {
