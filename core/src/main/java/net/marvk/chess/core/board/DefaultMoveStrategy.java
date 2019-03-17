@@ -1,5 +1,7 @@
 package net.marvk.chess.core.board;
 
+import javafx.beans.property.SimpleBooleanProperty;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -9,11 +11,11 @@ import static net.marvk.chess.core.board.ColoredPiece.*;
 public class DefaultMoveStrategy {
     private static final List<Piece> PROMOTION_PIECES = Arrays.asList(Piece.QUEEN, Piece.ROOK, Piece.KNIGHT, Piece.BISHOP);
     private static final Square[] SQUARES = Square.values();
-    private final Board board;
+    private final SimpleBoard board;
     private final Color color;
     private List<MoveResult> result;
 
-    public DefaultMoveStrategy(final Board simpleBoard, final Color color) {
+    public DefaultMoveStrategy(final SimpleBoard simpleBoard, final Color color) {
         this.board = simpleBoard;
         this.color = color;
     }
@@ -34,7 +36,7 @@ public class DefaultMoveStrategy {
         return result;
     }
 
-    public void applyStrategy(final Square square, final Board board, final ColoredPiece piece) {
+    public void applyStrategy(final Square square, final SimpleBoard board, final ColoredPiece piece) {
         switch (piece) {
             case WHITE_KING:
                 whiteKingStrategy(square, board);
@@ -77,55 +79,55 @@ public class DefaultMoveStrategy {
         }
     }
 
-    private void blackKingStrategy(final Square square, final Board board) {
+    private void blackKingStrategy(final Square square, final SimpleBoard board) {
         generalKingStrategy(square, board, BLACK_KING);
     }
 
-    private void blackQueenStrategy(final Square square, final Board board) {
+    private void blackQueenStrategy(final Square square, final SimpleBoard board) {
         generalQueenStrategy(square, board, BLACK_QUEEN);
     }
 
-    private void blackRookStrategy(final Square square, final Board board) {
+    private void blackRookStrategy(final Square square, final SimpleBoard board) {
         generalRookStrategy(square, board, BLACK_ROOK);
     }
 
-    private void blackBishopStrategy(final Square square, final Board board) {
+    private void blackBishopStrategy(final Square square, final SimpleBoard board) {
         generalBishopStrategy(square, board, BLACK_BISHOP);
     }
 
-    private void blackKnightStrategy(final Square square, final Board board) {
+    private void blackKnightStrategy(final Square square, final SimpleBoard board) {
         generalKnightStrategy(square, board, BLACK_KNIGHT);
     }
 
-    private void blackPawnStrategy(final Square square, final Board board) {
+    private void blackPawnStrategy(final Square square, final SimpleBoard board) {
         generalPawnStrategy(square, board, BLACK_PAWN);
     }
 
-    private void whiteKingStrategy(final Square square, final Board board) {
+    private void whiteKingStrategy(final Square square, final SimpleBoard board) {
         generalKingStrategy(square, board, WHITE_KING);
     }
 
-    private void whiteQueenStrategy(final Square square, final Board board) {
+    private void whiteQueenStrategy(final Square square, final SimpleBoard board) {
         generalQueenStrategy(square, board, WHITE_QUEEN);
     }
 
-    private void whiteRookStrategy(final Square square, final Board board) {
+    private void whiteRookStrategy(final Square square, final SimpleBoard board) {
         generalRookStrategy(square, board, WHITE_ROOK);
     }
 
-    private void whiteBishopStrategy(final Square square, final Board board) {
+    private void whiteBishopStrategy(final Square square, final SimpleBoard board) {
         generalBishopStrategy(square, board, WHITE_BISHOP);
     }
 
-    private void whiteKnightStrategy(final Square square, final Board board) {
+    private void whiteKnightStrategy(final Square square, final SimpleBoard board) {
         generalKnightStrategy(square, board, WHITE_KNIGHT);
     }
 
-    private void whitePawnStrategy(final Square square, final Board board) {
+    private void whitePawnStrategy(final Square square, final SimpleBoard board) {
         generalPawnStrategy(square, board, WHITE_PAWN);
     }
 
-    private void generalKingStrategy(final Square square, final Board board, final ColoredPiece coloredPiece) {
+    private void generalKingStrategy(final Square square, final SimpleBoard board, final ColoredPiece coloredPiece) {
         generalSingleStepStrategy(square, board, Direction.CARDINAL_DIRECTIONS, coloredPiece);
 
         generateCastleMove(square, board, coloredPiece, Direction.WEST);
@@ -133,23 +135,23 @@ public class DefaultMoveStrategy {
         generateCastleMove(square, board, coloredPiece, Direction.EAST);
     }
 
-    private void generalQueenStrategy(final Square square, final Board board, final ColoredPiece coloredPiece) {
+    private void generalQueenStrategy(final Square square, final SimpleBoard board, final ColoredPiece coloredPiece) {
         generalMultiStepStrategy(square, board, Direction.CARDINAL_DIRECTIONS, coloredPiece);
     }
 
-    private void generalRookStrategy(final Square square, final Board board, final ColoredPiece coloredPiece) {
+    private void generalRookStrategy(final Square square, final SimpleBoard board, final ColoredPiece coloredPiece) {
         generalMultiStepStrategy(square, board, Direction.ORTHOGONAL_DIRECTIONS, coloredPiece);
     }
 
-    private void generalBishopStrategy(final Square square, final Board board, final ColoredPiece coloredPiece) {
+    private void generalBishopStrategy(final Square square, final SimpleBoard board, final ColoredPiece coloredPiece) {
         generalMultiStepStrategy(square, board, Direction.DIAGONAL_DIRECTIONS, coloredPiece);
     }
 
-    private void generalKnightStrategy(final Square square, final Board board, final ColoredPiece coloredPiece) {
+    private void generalKnightStrategy(final Square square, final SimpleBoard board, final ColoredPiece coloredPiece) {
         generalSingleStepStrategy(square, board, Direction.KNIGHT_DIRECTIONS, coloredPiece);
     }
 
-    private void generalPawnStrategy(final Square square, final Board board, final ColoredPiece coloredPiece) {
+    private void generalPawnStrategy(final Square square, final SimpleBoard board, final ColoredPiece coloredPiece) {
         final boolean isWhite = coloredPiece.getColor() == Color.WHITE;
         final Direction forward = isWhite ? Direction.NORTH : Direction.SOUTH;
         final Rank startingRank = isWhite ? Rank.RANK_2 : Rank.RANK_7;
@@ -176,7 +178,7 @@ public class DefaultMoveStrategy {
         generatePawnAttack(square, square.translate(westAttackDirection), Direction.WEST, board, enPassantTargetSquare, coloredPiece);
     }
 
-    private void generatePawnAttack(final Square square, final Square attackSquare, final Direction west, final Board board, final Square enPassantTargetSquare, final ColoredPiece coloredPiece) {
+    private void generatePawnAttack(final Square square, final Square attackSquare, final Direction west, final SimpleBoard board, final Square enPassantTargetSquare, final ColoredPiece coloredPiece) {
         if (isValidAndOccupiedByAttackableOpponent(attackSquare, board, coloredPiece.getColor())) {
             generatePawnMoves(square, attackSquare, board, coloredPiece);
         }
@@ -190,7 +192,7 @@ public class DefaultMoveStrategy {
         }
     }
 
-    private void generatePawnMoves(final Square source, final Square target, final Board board, final ColoredPiece coloredPiece) {
+    private void generatePawnMoves(final Square source, final Square target, final SimpleBoard board, final ColoredPiece coloredPiece) {
         final boolean blackPromotion = target.getRank() == Rank.RANK_1 && coloredPiece.getColor() == Color.BLACK;
         final boolean whitePromotion = target.getRank() == Rank.RANK_8 && coloredPiece.getColor() == Color.WHITE;
 
@@ -208,16 +210,16 @@ public class DefaultMoveStrategy {
         }
     }
 
-    private static boolean isValidAndNotOccupied(final Square square, final Board board) {
+    private static boolean isValidAndNotOccupied(final Square square, final SimpleBoard board) {
         return square != null && board.getPiece(square) == null;
     }
 
-    private static boolean isValidAndOccupiedByAttackableOpponent(final Square square, final Board board, final Color color) {
+    private static boolean isValidAndOccupiedByAttackableOpponent(final Square square, final SimpleBoard board, final Color color) {
         final ColoredPiece piece = board.getPiece(square);
         return square != null && piece != null && piece.getPiece() != Piece.KING && piece.getColor() != color;
     }
 
-    private void generateCastleMove(final Square source, final Board board, final ColoredPiece coloredPiece, final Direction direction) {
+    private void generateCastleMove(final Square source, final SimpleBoard board, final ColoredPiece coloredPiece, final Direction direction) {
         final Color color = coloredPiece.getColor();
 
         // No castle while in check
@@ -290,7 +292,7 @@ public class DefaultMoveStrategy {
         return true;
     }
 
-    private void generalMultiStepStrategy(final Square square, final Board board, final List<Direction> directions, final ColoredPiece coloredPiece) {
+    private void generalMultiStepStrategy(final Square square, final SimpleBoard board, final List<Direction> directions, final ColoredPiece coloredPiece) {
         for (final Direction direction : directions) {
             Square current = square;
 
@@ -310,7 +312,7 @@ public class DefaultMoveStrategy {
         }
     }
 
-    private void generalSingleStepStrategy(final Square square, final Board board, final List<Direction> directions, final ColoredPiece coloredPiece) {
+    private void generalSingleStepStrategy(final Square square, final SimpleBoard board, final List<Direction> directions, final ColoredPiece coloredPiece) {
         directions.stream()
                   .map(square::translate)
                   .filter(sq -> isValidTarget(sq, board, coloredPiece.getColor()))
