@@ -7,10 +7,7 @@ import net.marvk.chess.core.util.Util;
 import net.marvk.chess.uci4j.*;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -113,7 +110,7 @@ public class KairukuEngine extends UciEngine {
             ply = 7;
         }
 
-        log.info("time = " + time + "\t\t" + "ply = " + ply);
+        log.info("time is " + time + ", setting " + "ply to " + ply);
 
         calculationFuture = executor.submit(() -> {
             final Move play;
@@ -190,21 +187,52 @@ public class KairukuEngine extends UciEngine {
                                      .max()
                                      .orElseThrow(IllegalStateException::new);
 
-        log.info("Stats:"
-                + "\ncolor\t\t" + color
-                + "\nnodes\t\t" + lastCount
-                + "\nduration\t" + lastDuration
-                + "\nnps last\t" + lastNps
-                + "\nnps avg\t\t" + averageNodesPerSecond
-                + "\nvalue (cp)\t" + ((100. * max) / 1024)
-        );
+        final String value;
 
-        return root.children.stream()
-                            .filter(n -> n.value == max)
-                            .findFirst()
-                            .orElseThrow(IllegalStateException::new)
-                            .getCurrentState()
-                            .getMove();
+        if (max > Integer.MAX_VALUE - 100_000) {
+            value = "WIN";
+        } else if (max < Integer.MIN_VALUE + 100_000) {
+            value = "LOSE";
+        } else {
+            value = Double.toString((100. * max) / 1024);
+        }
+
+        final Move result = root.children.stream()
+                                         .filter(n -> n.value == max)
+                                         .findFirst()
+                                         .orElseThrow(IllegalStateException::new)
+                                         .getCurrentState()
+                                         .getMove();
+
+        log.info(infoString(previousMove.getBoard(), averageNodesPerSecond, value, result));
+
+        return result;
+    }
+
+    private String infoString(final Board previousBoard, final int averageNodesPerSecond, final String value, final Move result) {
+        final StringJoiner lineJoiner = new StringJoiner("\n");
+        lineJoiner.add(previousBoard.toString());
+
+        lineJoiner.add("╔═══════════════════════════════════╗");
+
+        addToJoiner(lineJoiner, "color", color.toString());
+        addToJoiner(lineJoiner, "best move", result.getUci());
+        addToJoiner(lineJoiner, "nodes searched", Integer.toString(lastCount));
+        addToJoiner(lineJoiner, "duration", lastDuration.toString());
+        addToJoiner(lineJoiner, "nps last", Integer.toString(lastNps));
+        addToJoiner(lineJoiner, "nps avg", Integer.toString(averageNodesPerSecond));
+        addToJoiner(lineJoiner, "value (cp)", value);
+
+        lineJoiner.add("╚═══════════════════════════════════╝");
+        return "Evaluation result:\n" + lineJoiner.toString();
+    }
+
+    private static void addToJoiner(final StringJoiner lineJoiner, final String name, final String value) {
+        lineJoiner.add("║" + name + padLeft(value, 35 - name.length()) + "║");
+    }
+
+    private static String padLeft(final String s, final int n) {
+        return String.format("%" + n + "s", s);
     }
 
     public class Node {
