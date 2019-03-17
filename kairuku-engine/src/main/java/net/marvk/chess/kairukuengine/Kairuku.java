@@ -21,7 +21,7 @@ public class Kairuku extends UciEngine {
     public Kairuku(final UIChannel uiChannel) {
         super(uiChannel);
 
-        this.ply = 3;
+        this.ply = 7;
         this.executor = Executors.newSingleThreadExecutor();
     }
 
@@ -67,8 +67,30 @@ public class Kairuku extends UciEngine {
     }
 
     public void go(final Go go) {
+        final Color color = board.getState().getActivePlayer();
+
+        final Integer time;
+
+        if (color == Color.WHITE) {
+            time = go.getWhiteTime();
+        } else {
+            time = go.getBlackTime();
+        }
+
+        if (time == null) {
+            ply = 7;
+        } else if (time < 5000) {
+            ply = 5;
+        } else if (time < 30000) {
+            ply = 6;
+        } else {
+            ply = 7;
+        }
+
+        log.info("time = " + time + "\t\t" + "ply = " + ply);
+
         final AlphaBetaPlayerExplicit player =
-                new AlphaBetaPlayerExplicit(board.getState().getActivePlayer(), new SimpleHeuristic(), ply);
+                new AlphaBetaPlayerExplicit(color, new SimpleHeuristic(), ply);
 
         calculationFuture = executor.submit(() -> {
             final Move play = player.play(new MoveResult(board, Move.NULL_MOVE));

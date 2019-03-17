@@ -9,9 +9,10 @@ import net.marvk.chess.lichess4j.model.GameState;
 import net.marvk.chess.lichess4j.model.GameStateFull;
 import net.marvk.chess.lichess4j.model.Room;
 import net.marvk.chess.lichess4j.util.HttpUtil;
-import net.marvk.chess.uci4j.UciEngine;
 import net.marvk.chess.uci4j.EngineFactory;
+import net.marvk.chess.uci4j.Go;
 import net.marvk.chess.uci4j.UIChannel;
+import net.marvk.chess.uci4j.UciEngine;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -87,7 +88,13 @@ class GameThread implements Runnable, UIChannel {
 
         executorService.execute(() -> {
             engine.positionFromDefault(gameState.getMoves());
-            engine.go();
+            final Go go = Go.builder()
+                            .blackTime(gameState.getBlackTime())
+                            .whiteTime(gameState.getWhiteTime())
+                            .blackIncrement(gameState.getBlackIncrement())
+                            .whiteIncrement(gameState.getWhiteIncrement()).build();
+
+            engine.go(go);
         });
     }
 
