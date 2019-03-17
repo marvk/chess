@@ -4,6 +4,7 @@ import lombok.extern.log4j.Log4j2;
 
 import java.util.*;
 
+@Deprecated
 @Log4j2
 public class SimpleBoard implements Board {
     private static final int LENGTH = 8;
