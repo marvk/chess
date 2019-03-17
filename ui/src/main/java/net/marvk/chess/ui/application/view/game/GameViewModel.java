@@ -160,12 +160,9 @@ public class GameViewModel implements ViewModel {
                 new PlayerFactoryChoiceBoxViewModel(color -> new AlphaBetaPlayerExplicit(color, new SimpleHeuristic(), 4), "AlphaBetaPlayerExplicit(4)"),
                 new PlayerFactoryChoiceBoxViewModel(color -> new AlphaBetaPlayerExplicit(color, new SimpleHeuristic(), 5), "AlphaBetaPlayerExplicit(5)"),
                 new PlayerFactoryChoiceBoxViewModel(color -> new AlphaBetaPlayerExplicit(color, new SimpleHeuristic(), 6), "AlphaBetaPlayerExplicit(6)"),
-                new PlayerFactoryChoiceBoxViewModel(color -> new AlphaBetaPlayer(color, new SimpleHeuristic(), 1), "AlphaBetaPlayer(1)"),
-                new PlayerFactoryChoiceBoxViewModel(color -> new AlphaBetaPlayer(color, new SimpleHeuristic(), 2), "AlphaBetaPlayer(2)"),
-                new PlayerFactoryChoiceBoxViewModel(color -> new AlphaBetaPlayer(color, new SimpleHeuristic(), 3), "AlphaBetaPlayer(3)"),
-                new PlayerFactoryChoiceBoxViewModel(color -> new AlphaBetaPlayer(color, new SimpleHeuristic(), 4), "AlphaBetaPlayer(4)"),
-                new PlayerFactoryChoiceBoxViewModel(color -> new AlphaBetaPlayer(color, new SimpleHeuristic(), 5), "AlphaBetaPlayer(5)"),
-                new PlayerFactoryChoiceBoxViewModel(color -> new AlphaBetaPlayer(color, new SimpleHeuristic(), 6), "AlphaBetaPlayer(6)")
+                new PlayerFactoryChoiceBoxViewModel(color -> new AlphaBetaPlayerExplicit(color, new SimpleHeuristic(), 7), "AlphaBetaPlayerExplicit(7)"),
+                new PlayerFactoryChoiceBoxViewModel(color -> new AlphaBetaPlayerExplicit(color, new SimpleHeuristic(), 8), "AlphaBetaPlayerExplicit(8)"),
+                new PlayerFactoryChoiceBoxViewModel(color -> new AlphaBetaPlayerExplicit(color, new SimpleHeuristic(), 9), "AlphaBetaPlayerExplicit(9)")
         );
     }
 
