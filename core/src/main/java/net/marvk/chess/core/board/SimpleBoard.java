@@ -199,6 +199,11 @@ public class SimpleBoard implements Board {
     }
 
     @Override
+    public int computeScore(final Color color) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public boolean isInCheck(final Color color) {
         final Optional<Square> maybeKingSquare =
                 Arrays.stream(SQUARES)

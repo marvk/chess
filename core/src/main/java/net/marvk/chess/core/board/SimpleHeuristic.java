@@ -1,7 +1,5 @@
 package net.marvk.chess.core.board;
 
-import net.marvk.chess.core.util.Util;
-
 import java.util.Optional;
 import java.util.Random;
 
@@ -11,8 +9,8 @@ public class SimpleHeuristic implements Heuristic {
 
     @Override
     public int evaluate(final Board board, final Color self) {
-        final double mySum = board.computeScore(Util.SCORES, self);
-        final double theirSum = board.computeScore(Util.SCORES, self.opposite());
+        final int mySum = board.computeScore(self);
+        final int theirSum = board.computeScore(self.opposite());
 
         final Optional<GameResult> gameResult = board.findGameResult();
 
@@ -36,6 +34,6 @@ public class SimpleHeuristic implements Heuristic {
             noise = 0;
         }
 
-        return (int) ((mySum - theirSum) * 1024) + noise;
+        return ((mySum - theirSum) * 1024) + noise;
     }
 }

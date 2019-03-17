@@ -41,6 +41,12 @@ public interface Board {
         return isInCheck(getState().getActivePlayer());
     }
 
+    int computeScore(Color color);
+
+    default int scoreDiff() {
+        return computeScore(Color.WHITE) - computeScore(Color.BLACK);
+    }
+
     boolean isInCheck(Color color);
 
     boolean isInCheck(Color color, Square square);

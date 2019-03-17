@@ -54,11 +54,12 @@ public class Bitboard implements Board {
     private static final long RANK_SEVEN_SQUARES = getRankSquares(Rank.RANK_7);
     private static final long RANK_EIGHT_SQUARES = getRankSquares(Rank.RANK_8);
 
-    /* PERF */
+    private EndCondition endCondition;
 
-    private boolean enPassantMove;
+    private int whiteScore;
+    private int blackScore;
 
-    /* END_PERF */
+    private int scoreDiff;
 
     private static long getRankSquares(final Rank rank) {
         return Arrays.stream(SQUARES)
@@ -120,6 +121,18 @@ public class Bitboard implements Board {
         }
 
         loadFen(fen);
+
+        setScores();
+    }
+
+    /**
+     * Call this method after constructing the board to precalculate the scores
+     */
+    private void setScores() {
+        whiteScore = white.score();
+        blackScore = black.score();
+
+        scoreDiff = whiteScore - blackScore;
     }
 
     private static final long WHITE_QUEEN_SIDE_CASTLE_OCCUPANCY = bitwiseOr(Square.B1, Square.C1, Square.D1);
@@ -379,7 +392,7 @@ public class Bitboard implements Board {
             final long source = Long.highestOneBit(remainingPieces);
             remainingPieces &= ~source;
 
-            long attacks = attacksArray[Long.numberOfTrailingZeros(source)] & ~selfOccupancy;
+            final long attacks = attacksArray[Long.numberOfTrailingZeros(source)] & ~selfOccupancy;
 
             generateAttacks(color, piece, result, source, attacks);
         }
@@ -400,7 +413,7 @@ public class Bitboard implements Board {
             final long source = Long.highestOneBit(remainingPieces);
             remainingPieces &= ~source;
 
-            long attacks = bitboard.attacks(fullOccupancy, Long.numberOfTrailingZeros(source)) & ~selfOccupancy;
+            final long attacks = bitboard.attacks(fullOccupancy, Long.numberOfTrailingZeros(source)) & ~selfOccupancy;
 
             generateAttacks(color, piece, result, source, attacks);
         }
@@ -470,8 +483,6 @@ public class Bitboard implements Board {
                 nextSelf.pawns |= attack;
 
                 if (attack == enPassant) {
-                    nextBoard.enPassantMove = true;
-
                     if (color == Color.WHITE) {
                         nextOpponent.pawns &= ~(enPassant >> 8L);
                     } else {
@@ -504,63 +515,65 @@ public class Bitboard implements Board {
             }
         }
 
+        nextBoard.setScores();
+
         return new MoveResult(nextBoard, move);
     }
 
     @Override
     public ColoredPiece getPiece(final Square square) {
-        if (occupied(white.kings, square)) {
+        if (isOccupied(white.kings, square)) {
             return ColoredPiece.WHITE_KING;
         }
 
-        if (occupied(white.queens, square)) {
+        if (isOccupied(white.queens, square)) {
             return ColoredPiece.WHITE_QUEEN;
         }
 
-        if (occupied(white.rooks, square)) {
+        if (isOccupied(white.rooks, square)) {
             return ColoredPiece.WHITE_ROOK;
         }
 
-        if (occupied(white.bishops, square)) {
+        if (isOccupied(white.bishops, square)) {
             return ColoredPiece.WHITE_BISHOP;
         }
 
-        if (occupied(white.knights, square)) {
+        if (isOccupied(white.knights, square)) {
             return ColoredPiece.WHITE_KNIGHT;
         }
 
-        if (occupied(white.pawns, square)) {
+        if (isOccupied(white.pawns, square)) {
             return ColoredPiece.WHITE_PAWN;
         }
 
-        if (occupied(black.kings, square)) {
+        if (isOccupied(black.kings, square)) {
             return ColoredPiece.BLACK_KING;
         }
 
-        if (occupied(black.queens, square)) {
+        if (isOccupied(black.queens, square)) {
             return ColoredPiece.BLACK_QUEEN;
         }
 
-        if (occupied(black.rooks, square)) {
+        if (isOccupied(black.rooks, square)) {
             return ColoredPiece.BLACK_ROOK;
         }
 
-        if (occupied(black.bishops, square)) {
+        if (isOccupied(black.bishops, square)) {
             return ColoredPiece.BLACK_BISHOP;
         }
 
-        if (occupied(black.knights, square)) {
+        if (isOccupied(black.knights, square)) {
             return ColoredPiece.BLACK_KNIGHT;
         }
 
-        if (occupied(black.pawns, square)) {
+        if (isOccupied(black.pawns, square)) {
             return ColoredPiece.BLACK_PAWN;
         }
 
         return null;
     }
 
-    private boolean occupied(final long board, final Square square) {
+    private static boolean isOccupied(final long board, final Square square) {
         return (board & (1L << square.getBitboardIndex())) != 0L;
     }
 
@@ -581,14 +594,17 @@ public class Bitboard implements Board {
         final PlayerBoard self;
         final long selfOccupancy;
         final long opponentOccupancy;
+        final PlayerBoard opponent;
 
         if (color == Color.WHITE) {
             self = white;
             selfOccupancy = white.occupancy();
+            opponent = this.black;
             opponentOccupancy = black.occupancy();
         } else {
             self = black;
             selfOccupancy = black.occupancy();
+            opponent = this.white;
             opponentOccupancy = white.occupancy();
         }
 
@@ -605,6 +621,16 @@ public class Bitboard implements Board {
         pawnAttacks(result, self.pawns, selfOccupancy, opponentOccupancy, color);
         pawnMoves(result, self.pawns, occupancy, color);
         castleMoves(result, self, color, occupancy);
+
+//        if (result.isEmpty()) {
+//            if (isInCheck(turn, opponent)) {
+//                endCondition = EndCondition.CHECKMATE;
+//            } else {
+//                endCondition = EndCondition.DRAW_BY_STALEMATE;
+//            }
+//        } else if (halfmoveClock >= 50) {
+//            endCondition = EndCondition.DRAW_BY_FIFTY_MOVE_RULE;
+//        }
 
         return result;
     }
@@ -635,18 +661,26 @@ public class Bitboard implements Board {
 
     @Override
     public Optional<GameResult> findGameResult() {
-        return Optional.empty();
+        return endCondition == null
+                ? Optional.empty()
+                : Optional.of(new GameResult(endCondition == EndCondition.CHECKMATE ? turn.opposite() : null, endCondition));
     }
 
     @Override
     public double computeScore(final Map<Piece, Double> scoreMap, final Color color) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int computeScore(final Color color) {
         Objects.requireNonNull(color);
 
-        if (color == Color.WHITE) {
-            return white.score();
-        } else {
-            return black.score();
-        }
+        return color == Color.WHITE ? whiteScore : blackScore;
+    }
+
+    @Override
+    public int scoreDiff() {
+        return scoreDiff;
     }
 
     private void loadFen(final Fen fen) {
@@ -789,14 +823,6 @@ public class Bitboard implements Board {
 
     private static Move makeMove(final long source, final long target, final ColoredPiece piece) {
         return Move.simple(SQUARES[Long.numberOfTrailingZeros(source)], SQUARES[Long.numberOfTrailingZeros(target)], piece);
-    }
-
-    public int numPieces() {
-        return Long.bitCount(white.occupancy() | black.occupancy());
-    }
-
-    public boolean enPassantMove() {
-        return enPassantMove;
     }
 
     public String fen() {

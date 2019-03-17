@@ -6,7 +6,6 @@ import net.marvk.chess.core.util.Util;
 
 import java.time.Duration;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Log4j2
 public class AlphaBetaPlayerExplicit extends Player implements LastEvaluationGettable {
@@ -38,7 +37,6 @@ public class AlphaBetaPlayerExplicit extends Player implements LastEvaluationGet
 
         lastCount = 0;
         lastRoot = root;
-
         lastDuration = Stopwatch.time(root::startExploration);
         lastNps = Util.nodesPerSecond(lastDuration, lastCount);
 
@@ -105,7 +103,7 @@ public class AlphaBetaPlayerExplicit extends Player implements LastEvaluationGet
         }
 
         private int explore(int alpha, int beta, final boolean maximise, final int depth) {
-            if (depth == 0 || currentState.getBoard().findGameResult().isPresent()) {
+            if (depth == 0) {
                 value = heuristic.evaluate(currentState.getBoard(), getColor());
                 return value;
             }
@@ -114,14 +112,22 @@ public class AlphaBetaPlayerExplicit extends Player implements LastEvaluationGet
 
             final List<MoveResult> validMoves = currentState.getBoard().getValidMoves();
 
+            if (currentState.getBoard().findGameResult().isPresent()) {
+                value = heuristic.evaluate(currentState.getBoard(), getColor());
+                return value;
+            }
+
             Collections.shuffle(validMoves);
 
             //Sort by piece difference to get better pruning
             validMoves.sort(Comparator.comparing(moveResult -> {
-                final Board board = moveResult.getBoard();
-                final double diff = board.computeScore(Util.SCORES, getColor().opposite()) - board.computeScore(Util.SCORES, getColor());
+                final int diff = moveResult.getBoard().scoreDiff();
 
-                return maximise ? diff : -diff;
+                if (getColor() == Color.WHITE) {
+                    return maximise ? -diff : diff;
+                } else {
+                    return maximise ? diff : -diff;
+                }
             }));
 
             for (final MoveResult current : validMoves) {
