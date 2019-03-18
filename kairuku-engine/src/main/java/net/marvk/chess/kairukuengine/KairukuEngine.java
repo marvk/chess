@@ -241,7 +241,7 @@ public class KairukuEngine extends UciEngine {
     }
 
     private static void addToJoiner(final StringJoiner lineJoiner, final String name, final String value) {
-        lineJoiner.add("║" + name + padLeft(value, 35 - name.length()) + "║");
+        lineJoiner.add("║ " + name + padLeft(value, 33 - name.length()) + " ║");
     }
 
     private static String padLeft(final String s, final int n) {
