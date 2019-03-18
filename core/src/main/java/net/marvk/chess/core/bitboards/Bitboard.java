@@ -211,10 +211,10 @@ public class Bitboard {
     private final PlayerBoard black;
     private final PlayerBoard white;
 
-    private final Color turn;
+    private Color turn;
     private long enPassant = 0L;
 
-    private final int fullmoveClock;
+    private int fullmoveClock;
     private int halfmoveClock;
 
     private Bitboard(final Bitboard previous) {
@@ -864,11 +864,11 @@ public class Bitboard {
 
     // region Piece Getters
     //    _____ _____ ______ _____ ______    _____ ______ _______ ______ _____   _____
-    //   |  __ \_   _|  ____/ ____|  ____|  / ____|  ____|__   __|  ____|  __ \ / ____|
-    //   | |__) || | | |__ | |    | |__    | |  __| |__     | |  | |__  | |__) | (___
-    //   |  ___/ | | |  __|| |    |  __|   | | |_ |  __|    | |  |  __| |  _  / \___ \
-    //   | |    _| |_| |___| |____| |____  | |__| | |____   | |  | |____| | \ \ ____) |
-    //   |_|   |_____|______\_____|______|  \_____|______|  |_|  |______|_|  \_\_____/
+    //   |  __ \_   _|  ____/ ____|  ____|  / ____|  ____|__   __|__   __|  ____|  __ \ / ____|
+    //   | |__) || | | |__ | |    | |__    | |  __| |__     | |     | |  | |__  | |__) | (___
+    //   |  ___/ | | |  __|| |    |  __|   | | |_ |  __|    | |     | |  |  __| |  _  / \___ \
+    //   | |    _| |_| |___| |____| |____  | |__| | |____   | |     | |  | |____| | \ \ ____) |
+    //   |_|   |_____|______\_____|______|  \_____|______|  |_|     |_|  |______|_|  \_\_____/
 
     public ColoredPiece getPiece(final Square square) {
         return getPiece(square.getOccupiedBitMask());
@@ -1264,7 +1264,222 @@ public class Bitboard {
         return white.equals(bitboard.white) && black.equals(bitboard.black) && enPassant == bitboard.enPassant;
     }
 
-    static class PlayerBoard {
+    // region move do/undo
+
+    public void apply(final BBMove bbMove) {
+        final PlayerBoard self;
+        final PlayerBoard opponent;
+
+        if (turn == Color.WHITE) {
+            self = white;
+            opponent = black;
+        } else {
+            self = black;
+            opponent = white;
+        }
+
+        if (bbMove.lostKingSideCastle) {
+            self.kingSideCastle = false;
+        }
+
+        if (bbMove.lostQueenSideCastle) {
+            self.queenSideCastle = false;
+        }
+
+        if (bbMove.castle) {
+            if (bbMove.targetSquare == Square.C1.getOccupiedBitMask()) {
+                doCastle(self, Square.A1, Square.E1, Square.D1, Square.C1);
+            } else if (bbMove.targetSquare == Square.G1.getOccupiedBitMask()) {
+                doCastle(self, Square.H1, Square.E1, Square.F1, Square.G1);
+            } else if (bbMove.targetSquare == Square.C8.getOccupiedBitMask()) {
+                doCastle(self, Square.A8, Square.E8, Square.D8, Square.C8);
+            } else if (bbMove.targetSquare == Square.G8.getOccupiedBitMask()) {
+                doCastle(self, Square.H8, Square.E8, Square.F8, Square.G8);
+            }
+        } else {
+            switch (bbMove.pieceMoved) {
+                case KING:
+                    self.kings = (self.kings & ~bbMove.sourceSquare) | bbMove.targetSquare;
+                    break;
+                case QUEEN:
+                    self.queens = (self.queens & ~bbMove.sourceSquare) | bbMove.targetSquare;
+                    break;
+                case ROOK:
+                    self.rooks = (self.rooks & ~bbMove.sourceSquare) | bbMove.targetSquare;
+                    break;
+                case BISHOP:
+                    self.bishops = (self.bishops & ~bbMove.sourceSquare) | bbMove.targetSquare;
+                    break;
+                case KNIGHT:
+                    self.knights = (self.knights & ~bbMove.sourceSquare) | bbMove.targetSquare;
+                    break;
+                case PAWN:
+                    if (bbMove.promote == null) {
+                        self.pawns = (self.pawns & ~bbMove.sourceSquare) | bbMove.targetSquare;
+                    } else {
+                        self.pawns &= ~bbMove.sourceSquare;
+                        switch (bbMove.promote) {
+                            case QUEEN:
+                                self.queens |= bbMove.targetSquare;
+                                break;
+                            case ROOK:
+                                self.rooks |= bbMove.targetSquare;
+                                break;
+                            case BISHOP:
+                                self.bishops |= bbMove.targetSquare;
+                                break;
+                            case KNIGHT:
+                                self.knights |= bbMove.targetSquare;
+                                break;
+                            default:
+                                throw new IllegalStateException();
+                        }
+                    }
+            }
+
+            opponent.unsetAll(bbMove.targetSquare);
+        }
+
+        enPassant = bbMove.nextEnPassantSquare;
+        halfmoveClock = bbMove.nextHalfmove;
+
+        turn = turn.opposite();
+    }
+
+    public void undo(final BBMove bbMove) {
+        turn = turn.opposite();
+        halfmoveClock = bbMove.previousHalfmove;
+        enPassant = bbMove.previousEnPassantSquare;
+
+        final PlayerBoard self;
+        final PlayerBoard opponent;
+
+        if (turn == Color.WHITE) {
+            self = white;
+            opponent = black;
+        } else {
+            self = black;
+            opponent = white;
+        }
+
+        if (bbMove.lostQueenSideCastle) {
+            self.queenSideCastle = true;
+        }
+
+        if (bbMove.lostKingSideCastle) {
+            self.kingSideCastle = true;
+        }
+
+        if (bbMove.castle) {
+            if (bbMove.targetSquare == Square.C1.getOccupiedBitMask()) {
+                undoCastle(self, Square.A1, Square.E1, Square.D1, Square.C1);
+            } else if (bbMove.targetSquare == Square.G1.getOccupiedBitMask()) {
+                undoCastle(self, Square.H1, Square.E1, Square.F1, Square.G1);
+            } else if (bbMove.targetSquare == Square.C8.getOccupiedBitMask()) {
+                undoCastle(self, Square.A8, Square.E8, Square.D8, Square.C8);
+            } else if (bbMove.targetSquare == Square.G8.getOccupiedBitMask()) {
+                undoCastle(self, Square.H8, Square.E8, Square.F8, Square.G8);
+            }
+        } else {
+            if (bbMove.pieceAttacked != null) {
+                switch (bbMove.pieceAttacked) {
+                    case KING:
+                        opponent.kings |= bbMove.targetSquare;
+                        break;
+                    case QUEEN:
+                        opponent.queens |= bbMove.targetSquare;
+                        break;
+                    case ROOK:
+                        opponent.rooks |= bbMove.targetSquare;
+                        break;
+                    case BISHOP:
+                        opponent.bishops |= bbMove.targetSquare;
+                        break;
+                    case KNIGHT:
+                        opponent.knights |= bbMove.targetSquare;
+                        break;
+                    case PAWN:
+                        opponent.pawns |= bbMove.targetSquare;
+                        break;
+                }
+            }
+
+            switch (bbMove.pieceMoved) {
+                case KING:
+                    self.kings |= bbMove.sourceSquare;
+                    break;
+                case QUEEN:
+                    self.queens |= bbMove.sourceSquare;
+                    break;
+                case ROOK:
+                    self.rooks |= bbMove.sourceSquare;
+                    break;
+                case BISHOP:
+                    self.bishops |= bbMove.sourceSquare;
+                    break;
+                case KNIGHT:
+                    self.knights |= bbMove.sourceSquare;
+                    break;
+                case PAWN:
+                    self.pawns |= bbMove.sourceSquare;
+                    break;
+            }
+
+            self.unsetAll(bbMove.targetSquare);
+        }
+    }
+
+    private void doCastle(
+            final PlayerBoard self,
+            final Square rookSource,
+            final Square kingSource,
+            final Square rookTarget,
+            final Square kingTarget
+    ) {
+        self.rooks &= ~rookSource.getOccupiedBitMask();
+        self.kings &= ~kingSource.getOccupiedBitMask();
+
+        self.rooks |= rookTarget.getOccupiedBitMask();
+        self.kings |= kingTarget.getOccupiedBitMask();
+    }
+
+    private void undoCastle(
+            final PlayerBoard self,
+            final Square rookSource,
+            final Square kingSource,
+            final Square rookTarget,
+            final Square kingTarget
+    ) {
+        self.rooks |= rookSource.getOccupiedBitMask();
+        self.kings |= kingSource.getOccupiedBitMask();
+
+        self.rooks &= ~rookTarget.getOccupiedBitMask();
+        self.kings &= ~kingTarget.getOccupiedBitMask();
+    }
+
+    public static class BBMove {
+        private boolean castle;
+
+        private boolean lostQueenSideCastle;
+        private boolean lostKingSideCastle;
+
+        private long previousEnPassantSquare;
+        private long nextEnPassantSquare;
+
+        private long sourceSquare;
+        private long targetSquare;
+
+        private Piece pieceMoved;
+        private Piece pieceAttacked;
+        private Piece promote;
+
+        private int previousHalfmove;
+        private int nextHalfmove;
+    }
+
+    // endregion
+
+    private static class PlayerBoard {
         private long kings;
         private long queens;
         private long rooks;
