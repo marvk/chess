@@ -14,7 +14,7 @@ import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.util.StringConverter;
-import net.marvk.chess.core.board.PlayerFactory;
+import net.marvk.chess.ui.model.PlayerFactory;
 import net.marvk.chess.ui.application.view.board.BoardView;
 import net.marvk.chess.ui.application.view.board.BoardViewModel;
 

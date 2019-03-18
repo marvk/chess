@@ -7,7 +7,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
-public class Bitboard implements Board {
+public class Bitboard {
     // region Constants
     //     _____ ____  _   _  _____ _______       _   _ _______ _____
     //    / ____/ __ \| \ | |/ ____|__   __|/\   | \ | |__   __/ ____|
@@ -342,46 +342,38 @@ public class Bitboard implements Board {
     //    ____) |  | |/ ____ \| |  | |____   / ____ \ |___| |____| |____ ____) |___) | |__| | | \ \ ____) |
     //   |_____/   |_/_/    \_\_|  |______| /_/    \_\_____\_____|______|_____/_____/ \____/|_|  \_\_____/
 
-    @Override
     public int getHalfmoveClock() {
         return halfmoveClock;
     }
 
-    @Override
     public int getFullmoveClock() {
         return fullmoveClock;
     }
 
-    @Override
     public Color getActivePlayer() {
         return turn;
     }
 
-    @Override
     public boolean canCastleKingSide(final Color color) {
         Objects.requireNonNull(color);
 
         return color == Color.WHITE ? white.kingSideCastle : black.kingSideCastle;
     }
 
-    @Override
     public boolean canCastleQueenSide(final Color color) {
         Objects.requireNonNull(color);
 
         return color == Color.WHITE ? white.queenSideCastle : black.queenSideCastle;
     }
 
-    @Override
     public Square getEnPassant() {
         return enPassant == 0L ? null : SQUARES[Long.numberOfTrailingZeros(enPassant)];
     }
 
-    @Override
     public int scoreDiff() {
         return scoreDiff;
     }
 
-    @Override
     public Optional<GameResult> findGameResult() {
         return gameResult;
     }
@@ -396,7 +388,10 @@ public class Bitboard implements Board {
     //   | |  | | |__| | \  /  | |____  | |__| | |____| |\  | |____| | \ \  / ____ \| | | |__| | | \ \
     //   |_|  |_|\____/   \/   |______|  \_____|______|_| \_|______|_|  \_\/_/    \_\_|  \____/|_|  \_\
 
-    @Override
+    public List<MoveResult> getValidMoves() {
+        return getValidMovesForColor(turn);
+    }
+
     public List<MoveResult> getValidMovesForColor(final Color color) {
         Objects.requireNonNull(color);
 
@@ -848,7 +843,6 @@ public class Bitboard implements Board {
     //   | |    _| |_| |___| |____| |____  | |__| | |____   | |  | |____| | \ \ ____) |
     //   |_|   |_____|______\_____|______|  \_____|______|  |_|  |______|_|  \_\_____/
 
-    @Override
     public ColoredPiece getPiece(final Square square) {
         return getPiece(square.getOccupiedBitMask());
     }
@@ -909,7 +903,6 @@ public class Bitboard implements Board {
         return (board & square) != 0L;
     }
 
-    @Override
     public ColoredPiece getPiece(final int file, final int rank) {
         return getPiece(Square.get(file, rank));
     }
@@ -924,12 +917,6 @@ public class Bitboard implements Board {
     //   | |  | | |____| |__| | | \ \ _| |_ ____) |  | |   _| || |____ ____) |
     //   |_|  |_|______|\____/|_|  \_\_____|_____/   |_|  |_____\_____|_____/
 
-    @Override
-    public double computeScore(final Map<Piece, Double> scoreMap, final Color color) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public int computeScore(final Color color) {
         Objects.requireNonNull(color);
 
@@ -1045,7 +1032,6 @@ public class Bitboard implements Board {
     //   | |____| |  | | |___| |____| . \ ____) |
     //    \_____|_|  |_|______\_____|_|\_\_____/
 
-    @Override
     public boolean isInCheck(final Color color) {
         Objects.requireNonNull(color);
 
@@ -1056,7 +1042,6 @@ public class Bitboard implements Board {
         return isInCheck(Color.BLACK, white);
     }
 
-    @Override
     public boolean isInCheck(final Color color, final Square square) {
         Objects.requireNonNull(color);
 

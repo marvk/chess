@@ -1,15 +1,17 @@
 package net.marvk.chess.core.board;
 
+import net.marvk.chess.core.bitboards.Bitboard;
+
 public class MoveResult {
-    private final Board board;
+    private final Bitboard board;
     private final Move move;
 
-    public MoveResult(final Board board, final Move move) {
+    public MoveResult(final Bitboard board, final Move move) {
         this.board = board;
         this.move = move;
     }
 
-    public Board getBoard() {
+    public Bitboard getBoard() {
         return board;
     }
 

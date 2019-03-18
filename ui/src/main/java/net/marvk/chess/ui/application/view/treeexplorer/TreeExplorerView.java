@@ -11,7 +11,7 @@ import javafx.scene.control.cell.TextFieldTreeCell;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.util.StringConverter;
-import net.marvk.chess.core.board.Board;
+import net.marvk.chess.core.bitboards.Bitboard;
 import net.marvk.chess.core.board.Fen;
 import net.marvk.chess.core.board.Move;
 import net.marvk.chess.core.board.SimpleHeuristic;
@@ -36,20 +36,20 @@ public class TreeExplorerView implements FxmlView<net.marvk.chess.ui.application
     private net.marvk.chess.ui.application.view.treeexplorer.TreeExplorerViewModel viewModel;
 
     public void initialize() {
-        viewModel.rootTreeItemProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue != null) {
-                nodeTree.setRoot(newValue);
-                nodeTree.getSelectionModel().select(0);
-            }
-        });
-
-        depthSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 10, 3));
-
-        nodeTree.setCellFactory(param -> new TextFieldTreeCell<>(new BoardStateViewModelStringConverter()));
-
-        nodeTree.setRoot(viewModel.getRootTreeItem());
-
-        loadBoard();
+//        viewModel.rootTreeItemProperty().addListener((observable, oldValue, newValue) -> {
+//            if (newValue != null) {
+//                nodeTree.setRoot(newValue);
+//                nodeTree.getSelectionModel().select(0);
+//            }
+//        });
+//
+//        depthSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 10, 3));
+//
+//        nodeTree.setCellFactory(param -> new TextFieldTreeCell<>(new BoardStateViewModelStringConverter()));
+//
+//        nodeTree.setRoot(viewModel.getRootTreeItem());
+//
+//        loadBoard();
     }
 
     private void loadBoard() {
@@ -81,7 +81,7 @@ public class TreeExplorerView implements FxmlView<net.marvk.chess.ui.application
             final Move lastMove = viewModel.getLastMove();
 
             if (lastMove.equals(Move.NULL_MOVE)) {
-                final Board newBoard = viewModel.getNewBoard();
+                final Bitboard newBoard = viewModel.getNewBoard();
                 final net.marvk.chess.core.board.Color color = newBoard.getActivePlayer();
                 return color + " -> [" + (new SimpleHeuristic().evaluate(newBoard, color) / 100.) + "]";
             }

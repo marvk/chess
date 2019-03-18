@@ -36,7 +36,7 @@ public class BoardViewModel implements ViewModel {
             return;
         }
 
-        final Board newBoard = viewModel.getNewBoard();
+        final Bitboard newBoard = viewModel.getNewBoard();
         final Map<Move, Double> lastEvaluation = viewModel.getLastEvaluation();
         final Move lastMove = viewModel.getLastMove();
 

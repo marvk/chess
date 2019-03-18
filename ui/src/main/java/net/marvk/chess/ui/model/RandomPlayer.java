@@ -1,4 +1,8 @@
-package net.marvk.chess.core.board;
+package net.marvk.chess.ui.model;
+
+import net.marvk.chess.core.board.Color;
+import net.marvk.chess.core.board.Move;
+import net.marvk.chess.core.board.MoveResult;
 
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;

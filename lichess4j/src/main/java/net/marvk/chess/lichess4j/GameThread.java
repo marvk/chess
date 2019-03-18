@@ -1,7 +1,7 @@
 package net.marvk.chess.lichess4j;
 
 import lombok.extern.log4j.Log4j2;
-import net.marvk.chess.core.board.Board;
+import net.marvk.chess.core.bitboards.Bitboard;
 import net.marvk.chess.core.board.Color;
 import net.marvk.chess.core.board.UciMove;
 import net.marvk.chess.lichess4j.model.ChatLine;
@@ -79,7 +79,7 @@ class GameThread implements Runnable, UIChannel {
     }
 
     public void acceptGameState(final GameState gameState) {
-        final Board board = UciMove.getBoard(gameState.getMoves());
+        final Bitboard board = UciMove.getBoard(gameState.getMoves());
 
         if (board.getActivePlayer() != myColor) {
             log.debug("Not calculating move for opponent");

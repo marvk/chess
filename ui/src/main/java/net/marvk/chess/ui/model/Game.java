@@ -1,7 +1,8 @@
-package net.marvk.chess.core.board;
+package net.marvk.chess.ui.model;
 
 import lombok.extern.log4j.Log4j2;
 import net.marvk.chess.core.bitboards.Bitboard;
+import net.marvk.chess.core.board.*;
 
 import java.util.List;
 import java.util.Objects;
@@ -12,7 +13,7 @@ public class Game {
     private final Player whitePlayer;
     private final Player blackPlayer;
 
-    private Board board;
+    private Bitboard board;
     private MoveResult lastMove;
 
     //    private final List<MoveResult> history;
@@ -91,7 +92,7 @@ public class Game {
         throw new AssertionError();
     }
 
-    public Board getBoard() {
+    public Bitboard getBoard() {
         return board;
     }
 

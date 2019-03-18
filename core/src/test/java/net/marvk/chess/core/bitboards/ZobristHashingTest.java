@@ -118,7 +118,7 @@ class ZobristHashingTest {
         for (final MoveResult validMove : validMoves) {
             nodes++;
 
-            final Bitboard current = (Bitboard) validMove.getBoard();
+            final Bitboard current = validMove.getBoard();
 
             final long hash = current.zobristHash();
             final Bitboard hit = transpositionTable.get(hash);

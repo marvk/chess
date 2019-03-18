@@ -7,8 +7,13 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import lombok.extern.log4j.Log4j2;
+import net.marvk.chess.core.bitboards.Bitboard;
 import net.marvk.chess.core.board.*;
 import net.marvk.chess.ui.application.view.board.BoardStateViewModel;
+import net.marvk.chess.ui.model.AsyncPlayer;
+import net.marvk.chess.ui.model.Game;
+import net.marvk.chess.ui.model.Player;
+import net.marvk.chess.ui.model.PlayerFactory;
 
 import java.util.Collections;
 import java.util.Map;
@@ -74,7 +79,7 @@ public class GameViewModel implements ViewModel {
             log.info("Start game loop");
 
             while (!game.isGameOver() && !abortGame.get()) {
-                final Board lastBoard = game.getBoard();
+                final Bitboard lastBoard = game.getBoard();
 
                 final Optional<MoveResult> moveResult = game.nextMove();
                 Platform.runLater(() -> boardState.set(new BoardStateViewModel(
@@ -153,16 +158,17 @@ public class GameViewModel implements ViewModel {
 
     static ObservableList<PlayerFactoryChoiceBoxViewModel> playerFactoryChoiceBoxViewModels() {
         return FXCollections.observableArrayList(
-                new PlayerFactoryChoiceBoxViewModel(AsyncPlayer::new, "Human"),
-                new PlayerFactoryChoiceBoxViewModel(color -> new AlphaBetaPlayerExplicit(color, new SimpleHeuristic(), 1), "AlphaBetaPlayerExplicit(1)"),
-                new PlayerFactoryChoiceBoxViewModel(color -> new AlphaBetaPlayerExplicit(color, new SimpleHeuristic(), 2), "AlphaBetaPlayerExplicit(2)"),
-                new PlayerFactoryChoiceBoxViewModel(color -> new AlphaBetaPlayerExplicit(color, new SimpleHeuristic(), 3), "AlphaBetaPlayerExplicit(3)"),
-                new PlayerFactoryChoiceBoxViewModel(color -> new AlphaBetaPlayerExplicit(color, new SimpleHeuristic(), 4), "AlphaBetaPlayerExplicit(4)"),
-                new PlayerFactoryChoiceBoxViewModel(color -> new AlphaBetaPlayerExplicit(color, new SimpleHeuristic(), 5), "AlphaBetaPlayerExplicit(5)"),
-                new PlayerFactoryChoiceBoxViewModel(color -> new AlphaBetaPlayerExplicit(color, new SimpleHeuristic(), 6), "AlphaBetaPlayerExplicit(6)"),
-                new PlayerFactoryChoiceBoxViewModel(color -> new AlphaBetaPlayerExplicit(color, new SimpleHeuristic(), 7), "AlphaBetaPlayerExplicit(7)"),
-                new PlayerFactoryChoiceBoxViewModel(color -> new AlphaBetaPlayerExplicit(color, new SimpleHeuristic(), 8), "AlphaBetaPlayerExplicit(8)"),
-                new PlayerFactoryChoiceBoxViewModel(color -> new AlphaBetaPlayerExplicit(color, new SimpleHeuristic(), 9), "AlphaBetaPlayerExplicit(9)")
+                new PlayerFactoryChoiceBoxViewModel(AsyncPlayer::new, "Human")
+//                ,
+//                new PlayerFactoryChoiceBoxViewModel(color -> new AlphaBetaPlayerExplicit(color, new SimpleHeuristic(), 1), "AlphaBetaPlayerExplicit(1)"),
+//                new PlayerFactoryChoiceBoxViewModel(color -> new AlphaBetaPlayerExplicit(color, new SimpleHeuristic(), 2), "AlphaBetaPlayerExplicit(2)"),
+//                new PlayerFactoryChoiceBoxViewModel(color -> new AlphaBetaPlayerExplicit(color, new SimpleHeuristic(), 3), "AlphaBetaPlayerExplicit(3)"),
+//                new PlayerFactoryChoiceBoxViewModel(color -> new AlphaBetaPlayerExplicit(color, new SimpleHeuristic(), 4), "AlphaBetaPlayerExplicit(4)"),
+//                new PlayerFactoryChoiceBoxViewModel(color -> new AlphaBetaPlayerExplicit(color, new SimpleHeuristic(), 5), "AlphaBetaPlayerExplicit(5)"),
+//                new PlayerFactoryChoiceBoxViewModel(color -> new AlphaBetaPlayerExplicit(color, new SimpleHeuristic(), 6), "AlphaBetaPlayerExplicit(6)"),
+//                new PlayerFactoryChoiceBoxViewModel(color -> new AlphaBetaPlayerExplicit(color, new SimpleHeuristic(), 7), "AlphaBetaPlayerExplicit(7)"),
+//                new PlayerFactoryChoiceBoxViewModel(color -> new AlphaBetaPlayerExplicit(color, new SimpleHeuristic(), 8), "AlphaBetaPlayerExplicit(8)"),
+//                new PlayerFactoryChoiceBoxViewModel(color -> new AlphaBetaPlayerExplicit(color, new SimpleHeuristic(), 9), "AlphaBetaPlayerExplicit(9)")
         );
     }
 

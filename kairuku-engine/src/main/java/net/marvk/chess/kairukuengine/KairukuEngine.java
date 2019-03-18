@@ -1,6 +1,7 @@
 package net.marvk.chess.kairukuengine;
 
 import lombok.extern.log4j.Log4j2;
+import net.marvk.chess.core.bitboards.Bitboard;
 import net.marvk.chess.core.board.*;
 import net.marvk.chess.core.util.Stopwatch;
 import net.marvk.chess.core.util.Util;
@@ -20,7 +21,7 @@ public class KairukuEngine extends UciEngine {
 
     private Future<Void> calculationFuture;
     private int ply;
-    private Board board;
+    private Bitboard board;
 
     private Color color;
     private int lastCount;
@@ -178,7 +179,7 @@ public class KairukuEngine extends UciEngine {
     private Duration lastDuration;
     private int lastNps;
     private int lastMax;
-    private Board lastBest;
+    private Bitboard lastBest;
 
     private Move play(final MoveResult previousMove) {
         final Node root = new Node(previousMove);
@@ -224,7 +225,7 @@ public class KairukuEngine extends UciEngine {
 
     // region String generation
 
-    private String infoString(final Board previousBoard, final int averageNodesPerSecond, final String value, final Move result) {
+    private String infoString(final Bitboard previousBoard, final int averageNodesPerSecond, final String value, final Move result) {
         final StringJoiner lineJoiner = new StringJoiner("\n");
         lineJoiner.add(previousBoard.toString());
 

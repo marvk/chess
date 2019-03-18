@@ -7,7 +7,7 @@ import java.util.Optional;
 public class SimpleHeuristic implements Heuristic {
 
     @Override
-    public int evaluate(final Board board, final Color self) {
+    public int evaluate(final Bitboard board, final Color self) {
         final int mySum = board.computeScore(self);
         final int theirSum = board.computeScore(self.opposite());
 
@@ -25,7 +25,7 @@ public class SimpleHeuristic implements Heuristic {
             return winner == self ? Integer.MAX_VALUE - timePenalty : Integer.MIN_VALUE;
         }
 
-        final int pieceSquareValue = ((Bitboard) board).pieceSquareValue(self);
+        final int pieceSquareValue = board.pieceSquareValue(self);
 
         final int result = mySum - theirSum + pieceSquareValue;
 
