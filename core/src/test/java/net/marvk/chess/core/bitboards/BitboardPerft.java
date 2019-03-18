@@ -6,6 +6,7 @@ import net.marvk.chess.core.board.MoveResult;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -17,6 +18,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class BitboardPerft {
     private Path enginePath;
 
@@ -69,7 +71,7 @@ class BitboardPerft {
         result = testAndDeepen(result, 2_812);
         result = testAndDeepen(result, 43_238);
         result = testAndDeepen(result, 674_624);
-        result = testAndDeepen(result, 11_030_083);
+//        result = testAndDeepen(result, 11_030_083);
     }
 
     @Test
@@ -84,7 +86,7 @@ class BitboardPerft {
         result = testAndDeepen(result, 264);
         result = testAndDeepen(result, 9_467);
         result = testAndDeepen(result, 422_333);
-        result = testAndDeepen(result, 15_833_292);
+//        result = testAndDeepen(result, 15_833_292);
     }
 
     @Test
@@ -99,7 +101,7 @@ class BitboardPerft {
         result = testAndDeepen(result, 264);
         result = testAndDeepen(result, 9_467);
         result = testAndDeepen(result, 422_333);
-        result = testAndDeepen(result, 15_833_292);
+//        result = testAndDeepen(result, 15_833_292);
     }
 
     @Test

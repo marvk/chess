@@ -389,18 +389,12 @@ public class Bitboard {
     //   |_|  |_|\____/   \/   |______|  \_____|______|_| \_|______|_|  \_\/_/    \_\_|  \____/|_|  \_\
 
     public List<MoveResult> getValidMoves() {
-        return getValidMovesForColor(turn);
-    }
-
-    public List<MoveResult> getValidMovesForColor(final Color color) {
-        Objects.requireNonNull(color);
-
         final PlayerBoard self;
         final long selfOccupancy;
         final long opponentOccupancy;
         final PlayerBoard opponent;
 
-        if (color == Color.WHITE) {
+        if (turn == Color.WHITE) {
             self = white;
             selfOccupancy = white.occupancy();
             opponent = this.black;
@@ -416,15 +410,15 @@ public class Bitboard {
 
         final List<MoveResult> result = new ArrayList<>();
 
-        slidingAttacks(result, MagicBitboard.ROOK, self.queens, occupancy, selfOccupancy, color, Piece.QUEEN);
-        slidingAttacks(result, MagicBitboard.ROOK, self.rooks, occupancy, selfOccupancy, color, Piece.ROOK);
-        slidingAttacks(result, MagicBitboard.BISHOP, self.queens, occupancy, selfOccupancy, color, Piece.QUEEN);
-        slidingAttacks(result, MagicBitboard.BISHOP, self.bishops, occupancy, selfOccupancy, color, Piece.BISHOP);
-        singleAttacks(result, self.knights, KNIGHT_ATTACKS, selfOccupancy, color, Piece.KNIGHT);
-        singleAttacks(result, self.kings, KING_ATTACKS, selfOccupancy, color, Piece.KING);
-        pawnAttacks(result, self.pawns, selfOccupancy, opponentOccupancy, color);
-        pawnMoves(result, self.pawns, occupancy, color);
-        castleMoves(result, self, color, occupancy);
+        slidingAttacks(result, self.queens, occupancy, selfOccupancy, MagicBitboard.ROOK, Piece.QUEEN, turn);
+        slidingAttacks(result, self.rooks, occupancy, selfOccupancy, MagicBitboard.ROOK, Piece.ROOK, turn);
+        slidingAttacks(result, self.queens, occupancy, selfOccupancy, MagicBitboard.BISHOP, Piece.QUEEN, turn);
+        slidingAttacks(result, self.bishops, occupancy, selfOccupancy, MagicBitboard.BISHOP, Piece.BISHOP, turn);
+        singleAttacks(result, self.knights, selfOccupancy, KNIGHT_ATTACKS, Piece.KNIGHT, turn);
+        singleAttacks(result, self.kings, selfOccupancy, KING_ATTACKS, Piece.KING, turn);
+        pawnAttacks(result, self.pawns, selfOccupancy, opponentOccupancy, turn);
+        pawnMoves(result, self.pawns, occupancy, turn);
+        castleMoves(result, self, occupancy, turn);
 
         if (result.isEmpty()) {
             if (isInCheck(turn, opponent)) {
@@ -443,7 +437,12 @@ public class Bitboard {
         return result;
     }
 
-    private void castleMoves(final List<MoveResult> result, final PlayerBoard self, final Color color, final long occupancy) {
+    private void castleMoves(
+            final List<MoveResult> result,
+            final PlayerBoard self,
+            final long occupancy,
+            final Color color
+    ) {
         if (color == Color.WHITE && !isInCheck(color, Square.E1.getOccupiedBitMask(), black, occupancy)) {
             if (self.queenSideCastle
                     && (WHITE_QUEEN_SIDE_CASTLE_OCCUPANCY & occupancy) == 0L
@@ -479,7 +478,13 @@ public class Bitboard {
         }
     }
 
-    private MoveResult makeCastleMove(final Square rookSource, final Square kingSource, final Square rookTarget, final Square kingTarget, final ColoredPiece piece) {
+    private MoveResult makeCastleMove(
+            final Square rookSource,
+            final Square kingSource,
+            final Square rookTarget,
+            final Square kingTarget,
+            final ColoredPiece piece
+    ) {
         final Bitboard board = new Bitboard(this);
 
         final Move simple = Move.simple(kingSource, kingTarget, piece);
@@ -507,7 +512,7 @@ public class Bitboard {
     private void pawnMoves(
             final List<MoveResult> result,
             final long pawns,
-            final long occupancy,
+            final long fullOccupancy,
             final Color color
     ) {
         long remainingPawns = pawns;
@@ -530,7 +535,7 @@ public class Bitboard {
                 piece = ColoredPiece.BLACK_PAWN;
             }
 
-            if ((singleMoveTarget & occupancy) == 0L) {
+            if ((singleMoveTarget & fullOccupancy) == 0L) {
                 if ((singleMoveTarget & promoteRank) == 0L) {
                     //no promotion moves
                     final Move move = makeMove(source, singleMoveTarget, piece);
@@ -566,7 +571,7 @@ public class Bitboard {
                         doubleMoveSourceRank = RANK_SEVEN_SQUARES;
                     }
 
-                    if ((source & doubleMoveSourceRank) != 0L && (doubleMoveTarget & occupancy) == 0L) {
+                    if ((source & doubleMoveSourceRank) != 0L && (doubleMoveTarget & fullOccupancy) == 0L) {
                         //is in starting rank and free double move target square
 
                         final Move doubleMove = makeMove(source, doubleMoveTarget, piece);
@@ -594,42 +599,58 @@ public class Bitboard {
                         }
                     }
                 } else {
-                    pawnPromotions(result, color, source, singleMoveTarget, piece);
+                    pawnPromotions(result, source, singleMoveTarget, color);
                 }
             }
         }
     }
 
-    private void pawnPromotions(final List<MoveResult> result, final Color color, final long source, final long target, final ColoredPiece piece) {
+    private void pawnPromotions(
+            final List<MoveResult> result,
+            final long source,
+            final long target,
+            final Color color
+    ) {
         if (color == Color.WHITE) {
-            pawnPromotion(result, source, target, piece, ColoredPiece.WHITE_KNIGHT);
-            pawnPromotion(result, source, target, piece, ColoredPiece.WHITE_BISHOP);
-            pawnPromotion(result, source, target, piece, ColoredPiece.WHITE_ROOK);
-            pawnPromotion(result, source, target, piece, ColoredPiece.WHITE_QUEEN);
+            pawnPromotion(result, source, target, ColoredPiece.WHITE_KNIGHT);
+            pawnPromotion(result, source, target, ColoredPiece.WHITE_BISHOP);
+            pawnPromotion(result, source, target, ColoredPiece.WHITE_ROOK);
+            pawnPromotion(result, source, target, ColoredPiece.WHITE_QUEEN);
         } else {
-            pawnPromotion(result, source, target, piece, ColoredPiece.BLACK_KNIGHT);
-            pawnPromotion(result, source, target, piece, ColoredPiece.BLACK_BISHOP);
-            pawnPromotion(result, source, target, piece, ColoredPiece.BLACK_ROOK);
-            pawnPromotion(result, source, target, piece, ColoredPiece.BLACK_QUEEN);
+            pawnPromotion(result, source, target, ColoredPiece.BLACK_KNIGHT);
+            pawnPromotion(result, source, target, ColoredPiece.BLACK_BISHOP);
+            pawnPromotion(result, source, target, ColoredPiece.BLACK_ROOK);
+            pawnPromotion(result, source, target, ColoredPiece.BLACK_QUEEN);
         }
     }
 
-    private void pawnPromotion(final List<MoveResult> result, final long source, final long target, final ColoredPiece piece, final ColoredPiece promotionPiece) {
-        final Move move = Move.promotion(SQUARES[Long.numberOfTrailingZeros(source)], SQUARES[Long.numberOfTrailingZeros(target)], piece, promotionPiece);
+    private void pawnPromotion(
+            final List<MoveResult> result,
+            final long source,
+            final long target,
+            final ColoredPiece promotionPiece
+    ) {
+        final Color color = promotionPiece.getColor();
+
+        final Move move = Move.promotion(
+                SQUARES[Long.numberOfTrailingZeros(source)],
+                SQUARES[Long.numberOfTrailingZeros(target)],
+                color == Color.WHITE ? ColoredPiece.WHITE_PAWN : ColoredPiece.BLACK_PAWN,
+                promotionPiece
+        );
 
         final Bitboard board = new Bitboard(this);
 
         final PlayerBoard self;
         final PlayerBoard opponent;
 
-        if (piece.getColor() == Color.WHITE) {
+        if (color == Color.WHITE) {
             self = board.white;
             opponent = board.black;
 
             if ((target & RANK_EIGHT_SQUARES) != 0L) {
                 opponent.unsetAll(target);
             }
-
         } else {
             self = board.black;
             opponent = board.white;
@@ -651,7 +672,7 @@ public class Bitboard {
             self.queens |= target;
         }
 
-        if (!board.isInCheck(promotionPiece.getColor(), opponent)) {
+        if (!board.isInCheck(color, opponent)) {
             result.add(makeMoveResult(board, move));
         }
     }
@@ -673,17 +694,17 @@ public class Bitboard {
 
             final long attacks = pawnAttacks[Long.numberOfTrailingZeros(source)] & (opponentOccupancy | enPassant) & ~selfOccupancy;
 
-            generateAttacks(color, Piece.PAWN, result, source, attacks);
+            generateAttacks(result, source, attacks, Piece.PAWN, color);
         }
     }
 
     private void singleAttacks(
             final List<MoveResult> result,
             final long pieces,
-            final long[] attacksArray,
             final long selfOccupancy,
-            final Color color,
-            final Piece piece
+            final long[] attacksArray,
+            final Piece piece,
+            final Color color
     ) {
         long remainingPieces = pieces;
 
@@ -693,18 +714,18 @@ public class Bitboard {
 
             final long attacks = attacksArray[Long.numberOfTrailingZeros(source)] & ~selfOccupancy;
 
-            generateAttacks(color, piece, result, source, attacks);
+            generateAttacks(result, source, attacks, piece, color);
         }
     }
 
     private void slidingAttacks(
             final List<MoveResult> result,
-            final MagicBitboard bitboard,
             final long pieces,
             final long fullOccupancy,
             final long selfOccupancy,
-            final Color color,
-            final Piece piece
+            final MagicBitboard bitboard,
+            final Piece piece,
+            final Color color
     ) {
         long remainingPieces = pieces;
 
@@ -714,11 +735,17 @@ public class Bitboard {
 
             final long attacks = bitboard.attacks(fullOccupancy, Long.numberOfTrailingZeros(source)) & ~selfOccupancy;
 
-            generateAttacks(color, piece, result, source, attacks);
+            generateAttacks(result, source, attacks, piece, color);
         }
     }
 
-    private void generateAttacks(final Color color, final Piece piece, final List<MoveResult> result, final long source, final long attacks) {
+    private void generateAttacks(
+            final List<MoveResult> result,
+            final long source,
+            final long attacks,
+            final Piece piece,
+            final Color color
+    ) {
         long remainingAttacks = attacks;
 
         while (remainingAttacks != 0L) {
@@ -727,10 +754,10 @@ public class Bitboard {
 
             if (piece == Piece.PAWN) {
                 if (color == Color.WHITE && (attack & RANK_EIGHT_SQUARES) != 0L) {
-                    pawnPromotions(result, color, source, attack, ColoredPiece.WHITE_PAWN);
+                    pawnPromotions(result, source, attack, Color.WHITE);
                     continue;
                 } else if (color == Color.BLACK && (attack & RANK_ONE_SQUARES) != 0L) {
-                    pawnPromotions(result, color, source, attack, ColoredPiece.BLACK_PAWN);
+                    pawnPromotions(result, source, attack, Color.BLACK);
                     continue;
                 }
             }
