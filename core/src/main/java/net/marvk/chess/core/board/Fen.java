@@ -114,4 +114,9 @@ public class Fen {
     public String getFullmoveClock() {
         return fullmoveClock;
     }
+
+    @Override
+    public String toString() {
+        return input;
+    }
 }

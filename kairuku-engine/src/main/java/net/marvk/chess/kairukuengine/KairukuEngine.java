@@ -222,6 +222,8 @@ public class KairukuEngine extends UciEngine {
         return result;
     }
 
+    // region String generation
+
     private String infoString(final Board previousBoard, final int averageNodesPerSecond, final String value, final Move result) {
         final StringJoiner lineJoiner = new StringJoiner("\n");
         lineJoiner.add(previousBoard.toString());
@@ -247,6 +249,8 @@ public class KairukuEngine extends UciEngine {
     private static String padLeft(final String s, final int n) {
         return String.format("%" + n + "s", s);
     }
+
+    // endregion
 
     public class Node {
         private final List<Node> children;

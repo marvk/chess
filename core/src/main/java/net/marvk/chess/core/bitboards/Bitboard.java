@@ -947,11 +947,11 @@ public class Bitboard implements Board {
             final long current = Long.highestOneBit(occupancy);
             occupancy &= ~current;
 
-            final int square = Long.numberOfTrailingZeros(current);
+            final int squareIndex = Long.numberOfTrailingZeros(current);
 
             final ColoredPiece piece = getPiece(current);
 
-            final int score = getScore(piece, square, lateGame);
+            final int score = getScore(piece, squareIndex, lateGame);
 
             sum += score;
         }
@@ -997,6 +997,42 @@ public class Bitboard implements Board {
         }
 
         return 0;
+    }
+
+    public long zobristHash() {
+        long occupancy = white.occupancy() | black.occupancy();
+
+        long hash = 0L;
+
+        while (occupancy != 0L) {
+            final long current = Long.highestOneBit(occupancy);
+            occupancy &= ~current;
+
+            final int squareIndex = Long.numberOfTrailingZeros(current);
+
+            final ColoredPiece piece = getPiece(current);
+
+            hash ^= ZobristHashing.hashPieceSquare(piece, squareIndex);
+        }
+
+        if (enPassant != 0L) {
+            hash ^= ZobristHashing.hashEnPassant(Long.numberOfTrailingZeros(enPassant));
+        }
+
+        if (white.kingSideCastle) {
+            hash ^= ZobristHashing.whiteKingCastleHash();
+        }
+        if (white.queenSideCastle) {
+            hash ^= ZobristHashing.whiteQueenCastleHash();
+        }
+        if (black.kingSideCastle) {
+            hash ^= ZobristHashing.blackKingCastleHash();
+        }
+        if (black.queenSideCastle) {
+            hash ^= ZobristHashing.blackQueenCastleHash();
+        }
+
+        return hash;
     }
 
     // endregion
@@ -1212,6 +1248,10 @@ public class Bitboard implements Board {
 
     // endregion
 
+    public boolean zobristEquals(final Bitboard bitboard) {
+        return white.equals(bitboard.white) && black.equals(bitboard.black) && enPassant == bitboard.enPassant;
+    }
+
     static class PlayerBoard {
         private long kings;
         private long queens;
@@ -1281,6 +1321,37 @@ public class Bitboard implements Board {
                     + Long.bitCount(bishops) * 330
                     + Long.bitCount(knights) * 320
                     + Long.bitCount(pawns) * 100;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            final PlayerBoard that = (PlayerBoard) o;
+
+            if (kings != that.kings) return false;
+            if (queens != that.queens) return false;
+            if (rooks != that.rooks) return false;
+            if (bishops != that.bishops) return false;
+            if (knights != that.knights) return false;
+            if (pawns != that.pawns) return false;
+            if (queenSideCastle != that.queenSideCastle) return false;
+            return kingSideCastle == that.kingSideCastle;
+
+        }
+
+        @Override
+        public int hashCode() {
+            int result = (int) (kings ^ (kings >>> 32));
+            result = 31 * result + (int) (queens ^ (queens >>> 32));
+            result = 31 * result + (int) (rooks ^ (rooks >>> 32));
+            result = 31 * result + (int) (bishops ^ (bishops >>> 32));
+            result = 31 * result + (int) (knights ^ (knights >>> 32));
+            result = 31 * result + (int) (pawns ^ (pawns >>> 32));
+            result = 31 * result + (queenSideCastle ? 1 : 0);
+            result = 31 * result + (kingSideCastle ? 1 : 0);
+            return result;
         }
     }
 }
