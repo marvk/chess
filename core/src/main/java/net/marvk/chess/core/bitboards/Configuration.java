@@ -59,10 +59,6 @@ public final class Configuration {
     }
 
     private long generateAttacksForConfiguration(final long configuration) {
-        if (configuration == 144) {
-            System.out.println();
-        }
-
         long result = 0L;
 
         for (final Direction direction : directions) {

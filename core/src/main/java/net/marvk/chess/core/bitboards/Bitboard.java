@@ -660,19 +660,14 @@ public class Bitboard {
         final long attackSquare;
 
         if (enPassantAttack) {
-            if (turn == Color.WHITE) {
-                attackSquare = targetSquare >> 8L;
-            } else {
-                attackSquare = targetSquare << 8L;
-            }
+            attackSquare = turn == Color.WHITE ? targetSquare >> 8L : targetSquare << 8L;
         } else {
             attackSquare = targetSquare;
         }
 
-        final ColoredPiece pieceAttacked = getPiece(attackSquare);
+        final Piece pieceAttacked = turn == Color.WHITE ? black.getPiece(attackSquare) : white.getPiece(attackSquare);
 
-        final BBMove move = new BBMove(sourceSquare, targetSquare, pieceMoved, pieceAttacked == null ? null : pieceAttacked
-                .getPiece(), castle, enPassantAttack, promote);
+        final BBMove move = new BBMove(sourceSquare, targetSquare, pieceMoved, pieceAttacked, castle, enPassantAttack, promote);
 
         if (turn == Color.BLACK) {
             if (white.queenSideCastle && move.targetSquare == Square.A1.getOccupiedBitMask()) {
@@ -719,13 +714,7 @@ public class Bitboard {
 
         move.previousHalfmove = halfmoveClock;
 
-        //TODO set scores??
-
         return move;
-    }
-
-    private static Move makeMove(final long source, final long target, final ColoredPiece piece) {
-        return Move.simple(SQUARES[Long.numberOfTrailingZeros(source)], SQUARES[Long.numberOfTrailingZeros(target)], piece);
     }
 
     // endregion
@@ -743,51 +732,51 @@ public class Bitboard {
     }
 
     private ColoredPiece getPiece(final long square) {
-        if (isOccupied(white.kings, square)) {
+        if ((white.kings & square) != 0L) {
             return ColoredPiece.WHITE_KING;
         }
 
-        if (isOccupied(white.queens, square)) {
+        if ((white.queens & square) != 0L) {
             return ColoredPiece.WHITE_QUEEN;
         }
 
-        if (isOccupied(white.rooks, square)) {
+        if ((white.rooks & square) != 0L) {
             return ColoredPiece.WHITE_ROOK;
         }
 
-        if (isOccupied(white.bishops, square)) {
+        if ((white.bishops & square) != 0L) {
             return ColoredPiece.WHITE_BISHOP;
         }
 
-        if (isOccupied(white.knights, square)) {
+        if ((white.knights & square) != 0L) {
             return ColoredPiece.WHITE_KNIGHT;
         }
 
-        if (isOccupied(white.pawns, square)) {
+        if ((white.pawns & square) != 0L) {
             return ColoredPiece.WHITE_PAWN;
         }
 
-        if (isOccupied(black.kings, square)) {
+        if ((black.kings & square) != 0L) {
             return ColoredPiece.BLACK_KING;
         }
 
-        if (isOccupied(black.queens, square)) {
+        if ((black.queens & square) != 0L) {
             return ColoredPiece.BLACK_QUEEN;
         }
 
-        if (isOccupied(black.rooks, square)) {
+        if ((black.rooks & square) != 0L) {
             return ColoredPiece.BLACK_ROOK;
         }
 
-        if (isOccupied(black.bishops, square)) {
+        if ((black.bishops & square) != 0L) {
             return ColoredPiece.BLACK_BISHOP;
         }
 
-        if (isOccupied(black.knights, square)) {
+        if ((black.knights & square) != 0L) {
             return ColoredPiece.BLACK_KNIGHT;
         }
 
-        if (isOccupied(black.pawns, square)) {
+        if ((black.pawns & square) != 0L) {
             return ColoredPiece.BLACK_PAWN;
         }
 
@@ -815,23 +804,28 @@ public class Bitboard {
     }
 
     public int pieceSquareValue(final Color color) {
-        boolean lateGame = (white.queens | black.queens) == 0L;
+        final boolean lateGame = (white.queens | black.queens) == 0L;
 
         final int[] whiteKingTable = lateGame ? WHITE_KING_TABLE_LATE : WHITE_KING_TABLE_EARLY;
         final int[] blackKingTable = lateGame ? BLACK_KING_TABLE_LATE : BLACK_KING_TABLE_EARLY;
 
-        return sum(white.pawns, WHITE_PAWN_TABLE)
+        final int whiteSum = sum(white.pawns, WHITE_PAWN_TABLE)
                 + sum(white.knights, WHITE_KNIGHT_TABLE)
                 + sum(white.bishops, WHITE_BISHOP_TABLE)
                 + sum(white.rooks, WHITE_ROOK_TABLE)
                 + sum(white.queens, WHITE_QUEEN_TABLE)
-                + sum(white.kings, whiteKingTable)
-                + sum(black.pawns, BLACK_PAWN_TABLE)
+                + sum(white.kings, whiteKingTable);
+
+        final int blackSum = sum(black.pawns, BLACK_PAWN_TABLE)
                 + sum(black.knights, BLACK_KNIGHT_TABLE)
                 + sum(black.bishops, BLACK_BISHOP_TABLE)
                 + sum(black.rooks, BLACK_ROOK_TABLE)
                 + sum(black.queens, BLACK_QUEEN_TABLE)
                 + sum(black.kings, blackKingTable);
+
+        final int sum = whiteSum + blackSum;
+
+        return color == Color.WHITE ? -sum : sum;
     }
 
     private int sum(final long board, final int[] valueTable) {
@@ -1508,25 +1502,6 @@ public class Bitboard {
         }
     }
 
-    public static void main(String[] args) {
-        final Bitboard bitboard = new Bitboard(Fen.parse("r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10"));
-
-        final int hash = bitboard.hashCode();
-
-        for (final BBMove bbMove : bitboard.getPseudoLegalMoves()) {
-            bitboard.make(bbMove);
-
-            for (final BBMove bbMove1 : bitboard.getPseudoLegalMoves()) {
-                bitboard.make(bbMove1);
-                bitboard.unmake(bbMove1);
-            }
-
-            bitboard.unmake(bbMove);
-
-            System.out.println(hash == bitboard.hashCode());
-        }
-    }
-
     // endregion
 
     @EqualsAndHashCode
@@ -1602,6 +1577,28 @@ public class Bitboard {
                     + Long.bitCount(bishops) * BISHOP_VALUE
                     + Long.bitCount(knights) * KNIGHT_VALUE
                     + Long.bitCount(pawns) * PAWN_VALUE;
+        }
+
+        Piece getPiece(final long square) {
+            if ((pawns & square) != 0L) {
+                return Piece.PAWN;
+            }
+            if ((knights & square) != 0L) {
+                return Piece.KNIGHT;
+            }
+            if ((bishops & square) != 0L) {
+                return Piece.BISHOP;
+            }
+            if ((rooks & square) != 0L) {
+                return Piece.ROOK;
+            }
+            if ((queens & square) != 0L) {
+                return Piece.QUEEN;
+            }
+            if ((kings & square) != 0L) {
+                return Piece.KING;
+            }
+            return null;
         }
     }
 

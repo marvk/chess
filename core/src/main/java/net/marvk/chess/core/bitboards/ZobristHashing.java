@@ -80,8 +80,4 @@ public final class ZobristHashing {
     public static long blackQueenCastleHash() {
         return BLACK_QUEEN_CASTLE_HASH;
     }
-
-    public static void main(String[] args) {
-        System.out.println(Arrays.deepToString(SQUARE_PIECE_HASHES));
-    }
 }
