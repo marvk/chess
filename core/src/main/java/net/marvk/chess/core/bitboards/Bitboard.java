@@ -215,6 +215,8 @@ public class Bitboard {
     private int fullmoveClock;
     private int halfmoveClock;
 
+//    private long zobristHash;
+
     /**
      * Copy constructor
      *
@@ -229,6 +231,8 @@ public class Bitboard {
 
         this.fullmoveClock = previous.fullmoveClock;
         this.halfmoveClock = previous.halfmoveClock;
+
+//        this.zobristHash = zobristHash();
     }
 
     public Bitboard(final Fen fen) {
@@ -258,6 +262,8 @@ public class Bitboard {
         }
 
         loadFen(fen);
+
+//        this.zobristHash = zobristHash();
     }
 
     private void loadFen(final Fen fen) {
@@ -714,6 +720,8 @@ public class Bitboard {
 
         move.previousHalfmove = halfmoveClock;
 
+//        long zobristHashToggle = 0;
+
         return move;
     }
 
@@ -828,7 +836,7 @@ public class Bitboard {
         return color == Color.WHITE ? -sum : sum;
     }
 
-    private int sum(final long board, final int[] valueTable) {
+    private static int sum(final long board, final int[] valueTable) {
         long occupancy = board;
 
         int sum = 0;
@@ -840,42 +848,6 @@ public class Bitboard {
         }
 
         return sum;
-    }
-
-    private int getScore(final ColoredPiece piece, final int square, final boolean lateGame) {
-        if (piece.getColor() == Color.WHITE) {
-            switch (piece.getPiece()) {
-                case KING:
-                    return lateGame ? WHITE_KING_TABLE_LATE[square] : WHITE_KING_TABLE_EARLY[square];
-                case QUEEN:
-                    return WHITE_QUEEN_TABLE[square];
-                case ROOK:
-                    return WHITE_ROOK_TABLE[square];
-                case BISHOP:
-                    return WHITE_BISHOP_TABLE[square];
-                case KNIGHT:
-                    return WHITE_KNIGHT_TABLE[square];
-                case PAWN:
-                    return WHITE_PAWN_TABLE[square];
-            }
-        } else {
-            switch (piece.getPiece()) {
-                case KING:
-                    return lateGame ? BLACK_KING_TABLE_LATE[square] : BLACK_KING_TABLE_EARLY[square];
-                case QUEEN:
-                    return BLACK_QUEEN_TABLE[square];
-                case ROOK:
-                    return BLACK_ROOK_TABLE[square];
-                case BISHOP:
-                    return BLACK_BISHOP_TABLE[square];
-                case KNIGHT:
-                    return BLACK_KNIGHT_TABLE[square];
-                case PAWN:
-                    return BLACK_PAWN_TABLE[square];
-            }
-        }
-
-        return 0;
     }
 
     public long zobristHash() {
@@ -909,6 +881,10 @@ public class Bitboard {
         }
         if (black.queenSideCastle) {
             hash ^= ZobristHashing.blackQueenCastleHash();
+        }
+
+        if (turn == Color.BLACK) {
+            hash ^= ZobristHashing.getBlacksTurnHash();
         }
 
         return hash;
@@ -1133,7 +1109,7 @@ public class Bitboard {
 
     // endregion
 
-    public boolean zobristEquals(final Bitboard bitboard) {
+    public boolean equalsZobrist(final Bitboard bitboard) {
         return white.equals(bitboard.white) && black.equals(bitboard.black) && enPassant == bitboard.enPassant;
     }
 
@@ -1446,6 +1422,8 @@ public class Bitboard {
         private int nextHalfmove;
 
         private final int pieceAttackedValue;
+
+//        private long zobristHashToggle;
 
         BBMove(final long sourceSquare,
                final long targetSquare,

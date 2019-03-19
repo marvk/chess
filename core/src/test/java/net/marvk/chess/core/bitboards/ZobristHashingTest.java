@@ -128,7 +128,7 @@ class ZobristHashingTest {
             } else {
                 tableHits++;
 
-                if (!hit.zobristEquals(current)) {
+                if (!hit.equalsZobrist(current)) {
                     collisions++;
 
                 }

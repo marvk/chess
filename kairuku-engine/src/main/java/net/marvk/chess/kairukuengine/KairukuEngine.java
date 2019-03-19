@@ -311,6 +311,10 @@ public class KairukuEngine extends UciEngine {
         lineJoiner.add("╠═══════════════════════════════════╣");
         addToJoiner(lineJoiner, "nodes searched", metrics.getLastNodeCount());
         lineJoiner.add("╠═══════════════════════════════════╣");
+        addToJoiner(lineJoiner, "ttable hits", metrics.getLastTableHits());
+        addToJoiner(lineJoiner, "ttable hit rate", ((double) metrics.getLastTableHits()) / metrics.getLastNodeCount());
+        addToJoiner(lineJoiner, "table load factor", transpositionTable.load());
+        lineJoiner.add("╠═══════════════════════════════════╣");
         addToJoiner(lineJoiner, "nps last", metrics.getLastNps());
         addToJoiner(lineJoiner, "nps avg", metrics.getTotalNps());
         lineJoiner.add("╠═══════════════════════════════════╣");

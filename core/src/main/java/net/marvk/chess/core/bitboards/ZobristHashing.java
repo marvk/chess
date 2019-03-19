@@ -3,7 +3,6 @@ package net.marvk.chess.core.bitboards;
 import net.marvk.chess.core.board.ColoredPiece;
 import net.marvk.chess.core.board.Square;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
@@ -15,6 +14,8 @@ public final class ZobristHashing {
     private static final long WHITE_QUEEN_CASTLE_HASH;
     private static final long BLACK_KING_CASTLE_HASH;
     private static final long BLACK_QUEEN_CASTLE_HASH;
+
+    private static final long BLACKS_TURN_HASH;
 
     static {
         final Random random = new Random(350);
@@ -41,6 +42,8 @@ public final class ZobristHashing {
         WHITE_QUEEN_CASTLE_HASH = findNewHash(random, hashes);
         BLACK_KING_CASTLE_HASH = findNewHash(random, hashes);
         BLACK_QUEEN_CASTLE_HASH = findNewHash(random, hashes);
+
+        BLACKS_TURN_HASH = findNewHash(random, hashes);
     }
 
     private static long findNewHash(final Random random, final Set<Long> hashes) {
@@ -79,5 +82,9 @@ public final class ZobristHashing {
 
     public static long blackQueenCastleHash() {
         return BLACK_QUEEN_CASTLE_HASH;
+    }
+
+    public static long getBlacksTurnHash() {
+        return BLACKS_TURN_HASH;
     }
 }
