@@ -1,6 +1,5 @@
 package net.marvk.chess.kairukuengine;
 
-import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import net.marvk.chess.core.bitboards.Bitboard;
 import net.marvk.chess.core.board.*;
@@ -30,8 +29,8 @@ public class KairukuEngine extends UciEngine {
     private Color selfColor;
 
     private final Heuristic heuristic = new SimpleHeuristic();
-
     private final Metrics metrics = new Metrics();
+    private final TranspositionTable transpositionTable = new TranspositionTable();
 
     public KairukuEngine(final UIChannel uiChannel) {
         super(uiChannel);
@@ -79,9 +78,14 @@ public class KairukuEngine extends UciEngine {
     public void uciNewGame() {
         stop();
 
-        metrics.resetAll();
+        resetAll();
 
         board = null;
+    }
+
+    private void resetAll() {
+        metrics.resetAll();
+        transpositionTable.clear();
     }
 
     @Override
@@ -134,7 +138,7 @@ public class KairukuEngine extends UciEngine {
                 throw new RuntimeException();
             }
 
-            final List<ValuedMove> pv = Stream.iterate(play, vm -> vm.pvChild != null, vm -> vm.pvChild)
+            final List<ValuedMove> pv = Stream.iterate(play, vm -> vm.getPvChild() != null, ValuedMove::getPvChild)
                                               .collect(Collectors.toList());
 
             final UciMove[] pvArray =
@@ -181,7 +185,7 @@ public class KairukuEngine extends UciEngine {
     public void quit() {
         calculationFuture.cancel(true);
 
-        metrics.resetAll();
+        resetAll();
     }
 
     // endregion
@@ -200,8 +204,31 @@ public class KairukuEngine extends UciEngine {
         return result;
     }
 
-    private ValuedMove negamax(final int depth, int alpha, final int beta, final Color currentColor) {
+    private ValuedMove negamax(final int depth, final int alphaOriginal, final int betaOriginal, final Color currentColor) {
         metrics.incrementNodeCount();
+
+        int alpha = alphaOriginal;
+        int beta = betaOriginal;
+
+        final long zobristHash = board.zobristHash();
+
+        final TranspositionTable.Entry ttEntry = transpositionTable.get(zobristHash);
+
+        if (ttEntry != null && ttEntry.getDepth() >= depth) {
+            metrics.incrementTableHits();
+
+            switch (ttEntry.getNodeType()) {
+                case LOWERBOUND:
+                    alpha = Math.max(alpha, ttEntry.getValue());
+                    break;
+                case UPPERBOUND:
+                    beta = Math.min(beta, ttEntry.getValue());
+            }
+
+            if (ttEntry.getNodeType() == TranspositionTable.NodeType.EXACT || alpha >= beta) {
+                return ttEntry.getValuedMove();
+            }
+        }
 
         if (depth == 0 || board.getHalfmoveClock() == 50) {
             final int value = currentColor.getHeuristicFactor() * heuristic.evaluate(board, board.hasAnyLegalMoves());
@@ -253,14 +280,21 @@ public class KairukuEngine extends UciEngine {
             return new ValuedMove(currentColor.getHeuristicFactor() * heuristic.evaluate(board, false), null, null);
         }
 
-        return new ValuedMove(value, bestMove, bestChild);
-    }
+        final TranspositionTable.NodeType type;
 
-    @Data
-    private static class ValuedMove {
-        private final int value;
-        private final Bitboard.BBMove move;
-        private final ValuedMove pvChild;
+        if (value <= alphaOriginal) {
+            type = TranspositionTable.NodeType.UPPERBOUND;
+        } else if (value >= beta) {
+            type = TranspositionTable.NodeType.LOWERBOUND;
+        } else {
+            type = TranspositionTable.NodeType.EXACT;
+        }
+
+        final ValuedMove valuedMove = new ValuedMove(value, bestMove, bestChild);
+
+        transpositionTable.put(zobristHash, new TranspositionTable.Entry(valuedMove, depth, value, type));
+
+        return valuedMove;
     }
 
     // region String generation
@@ -271,13 +305,18 @@ public class KairukuEngine extends UciEngine {
 
         lineJoiner.add("╔═══════════════════════════════════╗");
 
-        addToJoiner(lineJoiner, "color", selfColor.toString());
-        addToJoiner(lineJoiner, "best move", play.getMove().asUciMove().toString());
-        addToJoiner(lineJoiner, "nodes searched", Integer.toString(metrics.getLastNodeCount()));
-        addToJoiner(lineJoiner, "duration", metrics.getLastDuration().toString());
-        addToJoiner(lineJoiner, "nps last", Integer.toString(metrics.getLastNps()));
-        addToJoiner(lineJoiner, "nps avg", Integer.toString(metrics.getTotalNps()));
-        addToJoiner(lineJoiner, "value (cp)", Integer.toString(play.getValue()));
+        addToJoiner(lineJoiner, "color", selfColor);
+        addToJoiner(lineJoiner, "best move", play.getMove().asUciMove());
+        addToJoiner(lineJoiner, "duration", metrics.getLastDuration());
+        lineJoiner.add("╠═══════════════════════════════════╣");
+        addToJoiner(lineJoiner, "nodes searched", metrics.getLastNodeCount());
+        addToJoiner(lineJoiner, "ttable hits", metrics.getLastTableHits());
+        addToJoiner(lineJoiner, "table load factor", transpositionTable.load());
+        lineJoiner.add("╠═══════════════════════════════════╣");
+        addToJoiner(lineJoiner, "nps last", metrics.getLastNps());
+        addToJoiner(lineJoiner, "nps avg", metrics.getTotalNps());
+        lineJoiner.add("╠═══════════════════════════════════╣");
+        addToJoiner(lineJoiner, "value (cp)", play.getValue());
 
         lineJoiner.add("╚═══════════════════════════════════╝");
         return "Evaluation result:\n" + lineJoiner.toString();
@@ -285,6 +324,10 @@ public class KairukuEngine extends UciEngine {
 
     private static void addToJoiner(final StringJoiner lineJoiner, final String name, final String value) {
         lineJoiner.add("║ " + name + padLeft(value, 33 - name.length()) + " ║");
+    }
+
+    private static void addToJoiner(final StringJoiner lineJoiner, final String name, final Object value) {
+        addToJoiner(lineJoiner, name, value.toString());
     }
 
     private static String padLeft(final String s, final int n) {

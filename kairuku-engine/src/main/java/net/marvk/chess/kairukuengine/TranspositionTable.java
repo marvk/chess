@@ -2,8 +2,6 @@ package net.marvk.chess.kairukuengine;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.Setter;
-import net.marvk.chess.core.board.MoveResult;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -37,16 +35,16 @@ public class TranspositionTable {
     @AllArgsConstructor
     @Data
     public static class Entry {
-        private final MoveResult bestMoveResult;
+        private final ValuedMove valuedMove;
         private int depth;
-        private int score;
+        private int value;
         private NodeType nodeType;
     }
 
     public enum NodeType {
-        PV,
-        ALL,
-        CUT;
+        EXACT,
+        LOWERBOUND,
+        UPPERBOUND
     }
 
     public double load() {
