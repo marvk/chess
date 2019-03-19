@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 @Log4j2
 public class GameViewModel implements ViewModel {
@@ -122,13 +123,15 @@ public class GameViewModel implements ViewModel {
 
         final Player player = game.getPlayer(game.getTurn().opposite());
 
-        if (player instanceof LastEvaluationGettable) {
-            final Map<Move, Double> map = ((LastEvaluationGettable) player).getLastEvaluation();
+//        if (player instanceof LastEvaluationGettable) {
+//            final Map<Move, Double> map = ((LastEvaluationGettable) player).getLastEvaluation();
+//
+//            return map == null ? Collections.emptyMap() : map;
+//        } else {
+//            return Collections.emptyMap();
+//        }
 
-            return map == null ? Collections.emptyMap() : map;
-        } else {
-            return Collections.emptyMap();
-        }
+        return Collections.emptyMap();
     }
 
     public void next() {

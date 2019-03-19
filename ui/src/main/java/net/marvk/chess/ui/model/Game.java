@@ -35,43 +35,45 @@ public class Game {
     }
 
     public synchronized Optional<MoveResult> nextMove() {
-        if (gameOver) {
-            throw new IllegalStateException("Game is over, no more moves");
-        }
+//        if (gameOver) {
+//            throw new IllegalStateException("Game is over, no more moves");
+//        }
+//
+//        final Move play = getPlayer(getTurn()).play(lastMove);
+//
+//        final Optional<MoveResult> maybeValidMove =
+//                validMoves.stream()
+//                          .filter(moveResult -> Objects.equals(moveResult.getMove(), play))
+//                          .findFirst();
+//
+//        if (maybeValidMove.isPresent()) {
+//            log.info(getTurn() + " played " + play);
+//            lastMove = maybeValidMove.get();
+//            board = lastMove.getBoard();
+//
+////            history.add(lastMove);
+//        } else {
+//            log.info(getTurn() + " tried to play invalid move " + play);
+//            return Optional.empty();
+//        }
+//
+//        board.getValidMoves();
+//
+//        final Optional<GameResult> gameResult = board.findGameResult();
+//
+//        if (gameResult.isPresent()) {
+//            log.info(gameResult);
+//
+//            gameOver = true;
+//        } else {
+//            validMoves = board.getValidMoves();
+//        }
+//
+//        log.info(board.getHalfmoveClock());
+//
+//        return Optional.of(lastMove);
 
-        final Move play = getPlayer(getTurn()).play(lastMove);
-
-        final Optional<MoveResult> maybeValidMove =
-                validMoves.stream()
-                          .filter(moveResult -> Objects.equals(moveResult.getMove(), play))
-                          .findFirst();
-
-        if (maybeValidMove.isPresent()) {
-            log.info(getTurn() + " played " + play);
-            lastMove = maybeValidMove.get();
-            board = lastMove.getBoard();
-
-//            history.add(lastMove);
-        } else {
-            log.info(getTurn() + " tried to play invalid move " + play);
-            return Optional.empty();
-        }
-
-        board.getValidMoves();
-
-        final Optional<GameResult> gameResult = board.findGameResult();
-
-        if (gameResult.isPresent()) {
-            log.info(gameResult);
-
-            gameOver = true;
-        } else {
-            validMoves = board.getValidMoves();
-        }
-
-        log.info(board.getHalfmoveClock());
-
-        return Optional.of(lastMove);
+        return Optional.empty();
     }
 
     public boolean isGameOver() {

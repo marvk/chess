@@ -13,7 +13,7 @@ class SimpleHeuristicTest {
         final Bitboard board = new Bitboard(fen);
         board.getValidMoves();
 
-        final int value = new SimpleHeuristic().evaluate(board, Color.BLACK);
+        final int value = new SimpleHeuristic().evaluate(board, Color.BLACK, true);
 
         final int expected = 100 + 100 + 100 + 100 + 100 - 100 - 100 - 100 - 100 + 330 + 500 + 500 - 5 - 10 - 10 - 20 + 10 + 10 + 5 - 10 - 30 + 30;
 

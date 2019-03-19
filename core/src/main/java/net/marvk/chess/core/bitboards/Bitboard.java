@@ -199,17 +199,6 @@ public class Bitboard {
     //    _| |_| |\  |_| |_   | |   _| |_ / ____ \| |____ _| |_ / /__ / ____ \| |   _| || |__| | |\  |
     //   |_____|_| \_|_____|  |_|  |_____/_/    \_\______|_____/_____/_/    \_\_|  |_____\____/|_| \_|
 
-    private EndCondition endCondition;
-
-    private int whiteScore;
-    private int blackScore;
-
-    private int whiteNumPieces;
-    private int blackNumPieces;
-
-    private int scoreDiff;
-    private Optional<GameResult> gameResult;
-
     private final PlayerBoard black;
     private final PlayerBoard white;
 
@@ -219,13 +208,20 @@ public class Bitboard {
     private int fullmoveClock;
     private int halfmoveClock;
 
+    /**
+     * Copy constructor
+     *
+     * @param previous the board to be copied
+     */
     private Bitboard(final Bitboard previous) {
         this.white = new PlayerBoard(previous.white);
         this.black = new PlayerBoard(previous.black);
 
-        this.turn = previous.turn.opposite();
-        this.halfmoveClock = previous.halfmoveClock + 1;
-        this.fullmoveClock = turn == Color.WHITE ? previous.fullmoveClock + 1 : previous.fullmoveClock;
+        this.turn = previous.turn;
+        this.enPassant = previous.enPassant;
+
+        this.fullmoveClock = previous.fullmoveClock;
+        this.halfmoveClock = previous.halfmoveClock;
     }
 
     public Bitboard(final Fen fen) {
@@ -255,21 +251,6 @@ public class Bitboard {
         }
 
         loadFen(fen);
-
-        setScores();
-    }
-
-    /**
-     * Call this method after constructing the board to precalculate the scores
-     */
-    private void setScores() {
-        whiteScore = white.score();
-        blackScore = black.score();
-
-        whiteNumPieces = Long.bitCount(white.occupancy());
-        blackNumPieces = Long.bitCount(black.occupancy());
-
-        scoreDiff = whiteScore - blackScore;
     }
 
     private void loadFen(final Fen fen) {
@@ -372,14 +353,6 @@ public class Bitboard {
         return enPassant == 0L ? null : SQUARES[Long.numberOfTrailingZeros(enPassant)];
     }
 
-    public int scoreDiff() {
-        return scoreDiff;
-    }
-
-    public Optional<GameResult> findGameResult() {
-        return gameResult;
-    }
-
     // endregion
 
     // region Move Generator
@@ -398,24 +371,46 @@ public class Bitboard {
     }
 
     private MoveResult copyMake(final BBMove move) {
-        return null;
+        final Bitboard copy = new Bitboard(this);
+
+        copy.make(move);
+
+        final Piece promotePiece = move.promote;
+
+        final ColoredPiece promoteTo = promotePiece == null ? null : promotePiece.ofColor(turn.opposite());
+
+        return new MoveResult(copy, new Move(SQUARES[Long.numberOfTrailingZeros(move.sourceSquare)], SQUARES[Long.numberOfTrailingZeros(move.targetSquare)], move.pieceMoved
+                .ofColor(turn.opposite()), promoteTo, move.castle, move.enPassantAttack, false));
+    }
+
+    public boolean hasAnyLegalMoves() {
+        for (final BBMove move : getPseudoLegalMoves()) {
+            make(move);
+
+            if (!invalidPosition()) {
+                unmake(move);
+
+                return true;
+            }
+
+            unmake(move);
+        }
+
+        return false;
     }
 
     public List<BBMove> getPseudoLegalMoves() {
         final PlayerBoard self;
         final long selfOccupancy;
         final long opponentOccupancy;
-        final PlayerBoard opponent;
 
         if (turn == Color.WHITE) {
             self = white;
             selfOccupancy = white.occupancy();
-            opponent = this.black;
             opponentOccupancy = black.occupancy();
         } else {
             self = black;
             selfOccupancy = black.occupancy();
-            opponent = this.white;
             opponentOccupancy = white.occupancy();
         }
 
@@ -432,20 +427,6 @@ public class Bitboard {
         pawnAttacks(result, self.pawns, selfOccupancy, opponentOccupancy, turn);
         pawnMoves(result, self.pawns, occupancy, turn);
         castleMoves(result, self, occupancy, turn);
-
-        if (result.isEmpty()) {
-            if (isInCheck(turn, opponent)) {
-                endCondition = EndCondition.CHECKMATE;
-            } else {
-                endCondition = EndCondition.DRAW_BY_STALEMATE;
-            }
-        } else if (halfmoveClock >= 50) {
-            endCondition = EndCondition.DRAW_BY_FIFTY_MOVE_RULE;
-        }
-
-        gameResult = endCondition == null
-                ? Optional.empty()
-                : Optional.of(new GameResult(endCondition == EndCondition.CHECKMATE ? turn.opposite() : null, endCondition));
 
         return result;
     }
@@ -828,7 +809,7 @@ public class Bitboard {
     public int computeScore(final Color color) {
         Objects.requireNonNull(color);
 
-        return color == Color.WHITE ? whiteScore : blackScore;
+        return color == Color.WHITE ? white.score() : black.score();
     }
 
     public int pieceSquareValue(final Color color) {
@@ -942,6 +923,10 @@ public class Bitboard {
 
     public boolean invalidPosition() {
         return isInCheck(turn.opposite());
+    }
+
+    public boolean isInCheck() {
+        return isInCheck(turn);
     }
 
     public boolean isInCheck(final Color color) {
@@ -1444,14 +1429,7 @@ public class Bitboard {
         }
 
         public String uci() {
-            final String squares = SQUARES[Long.numberOfTrailingZeros(sourceSquare)].getFen()
-                    + SQUARES[Long.numberOfTrailingZeros(targetSquare)].getFen();
-
-            if (promote != null) {
-                return squares + Character.toLowerCase(promote.ofColor(Color.BLACK).getSan());
-            } else {
-                return squares;
-            }
+            return asUciMove().toString();
         }
 
         @Override
@@ -1473,6 +1451,17 @@ public class Bitboard {
                     ", previousHalfmove=" + previousHalfmove +
                     ", nextHalfmove=" + nextHalfmove +
                     '}';
+        }
+
+        public UciMove asUciMove() {
+            final Square source = SQUARES[Long.numberOfTrailingZeros(sourceSquare)];
+            final Square target = SQUARES[Long.numberOfTrailingZeros(targetSquare)];
+
+            if (promote != null) {
+                return new UciMove(source, target, promote);
+            } else {
+                return new UciMove(source, target, null);
+            }
         }
     }
 
@@ -1564,7 +1553,8 @@ public class Bitboard {
         }
 
         int score() {
-            return Long.bitCount(queens) * 900
+            return Long.bitCount(kings) * 0
+                    + Long.bitCount(queens) * 900
                     + Long.bitCount(rooks) * 500
                     + Long.bitCount(bishops) * 330
                     + Long.bitCount(knights) * 320
@@ -1597,9 +1587,5 @@ public class Bitboard {
         result = 31 * result + fullmoveClock;
         result = 31 * result + halfmoveClock;
         return result;
-    }
-
-    public String blackString() {
-        return black.toString();
     }
 }

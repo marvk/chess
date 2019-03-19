@@ -11,13 +11,13 @@ public class Move {
     private final boolean enPassant;
     private final boolean pawnDoubleMove;
 
-    private Move(final Square source,
-                 final Square target,
-                 final ColoredPiece coloredPiece,
-                 final ColoredPiece promoteTo,
-                 final boolean castling,
-                 final boolean enPassant,
-                 final boolean pawnDoubleMove) {
+    public Move(final Square source,
+                final Square target,
+                final ColoredPiece coloredPiece,
+                final ColoredPiece promoteTo,
+                final boolean castling,
+                final boolean enPassant,
+                final boolean pawnDoubleMove) {
         this.source = source;
         this.target = target;
         this.coloredPiece = coloredPiece;

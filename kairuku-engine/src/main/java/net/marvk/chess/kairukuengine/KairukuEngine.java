@@ -121,15 +121,14 @@ public class KairukuEngine extends UciEngine {
         log.info("time is " + time + ", setting " + "ply to " + ply);
 
         calculationFuture = executor.submit(() -> {
-            final Move play;
+            final UciMove play;
             try {
-                play = play(new MoveResult(board, Move.NULL_MOVE));
+                play = play();
             } catch (final Throwable t) {
+                t.printStackTrace();
                 log.error("unexpected error", t);
                 throw new RuntimeException();
             }
-
-            final UciMove theMove = UciMove.parse(play.getUci());
 
             final Info info =
                     Info.builder()
@@ -141,7 +140,7 @@ public class KairukuEngine extends UciEngine {
                         .generate();
 
             uiChannel.info(info);
-            uiChannel.bestMove(theMove);
+            uiChannel.bestMove(play);
 
             return null;
         });
@@ -178,13 +177,10 @@ public class KairukuEngine extends UciEngine {
     private int totalCount;
     private Duration lastDuration;
     private int lastNps;
-    private int lastMax;
-    private Bitboard lastBest;
 
-    private Move play(final MoveResult previousMove) {
-        final Node root = new Node(previousMove);
+    private UciMove play() {
+        final Node root = new Node();
 
-        lastMax = Integer.MIN_VALUE;
         lastCount = 0;
         lastRoot = root;
         lastDuration = Stopwatch.time(root::startExploration);
@@ -209,30 +205,28 @@ public class KairukuEngine extends UciEngine {
             value = Double.toString(max);
         }
 
-        final Move result = root.children.stream()
-                                         .filter(n -> n.value == max)
-                                         .findFirst()
-                                         .orElseThrow(IllegalStateException::new)
-                                         .getCurrentState()
-                                         .getMove();
+        final UciMove result = root.children.stream()
+                                            .filter(n -> n.value == max)
+                                            .findFirst()
+                                            .map(Node::getMove)
+                                            .map(Bitboard.BBMove::asUciMove)
+                                            .orElseThrow(IllegalStateException::new);
 
-        log.info(infoString(previousMove.getBoard(), averageNodesPerSecond, value, result));
-//
-//        System.out.println(lastBest);
+        log.info(infoString(board, averageNodesPerSecond, value, result));
 
         return result;
     }
 
     // region String generation
 
-    private String infoString(final Bitboard previousBoard, final int averageNodesPerSecond, final String value, final Move result) {
+    private String infoString(final Bitboard previousBoard, final int averageNodesPerSecond, final String value, final UciMove result) {
         final StringJoiner lineJoiner = new StringJoiner("\n");
         lineJoiner.add(previousBoard.toString());
 
         lineJoiner.add("╔═══════════════════════════════════╗");
 
         addToJoiner(lineJoiner, "color", color.toString());
-        addToJoiner(lineJoiner, "best move", result.getUci());
+        addToJoiner(lineJoiner, "best move", result.toString());
         addToJoiner(lineJoiner, "nodes searched", Integer.toString(lastCount));
         addToJoiner(lineJoiner, "duration", lastDuration.toString());
         addToJoiner(lineJoiner, "nps last", Integer.toString(lastNps));
@@ -259,17 +253,17 @@ public class KairukuEngine extends UciEngine {
 
         private int value;
 
-        private final MoveResult currentState;
+        private final Bitboard.BBMove theMove;
 
-        public Node(final MoveResult currentState) {
-            this(null, currentState);
+        Node() {
+            this(null, null);
         }
 
-        Node(final Node parent, final MoveResult currentState) {
+        Node(final Node parent, final Bitboard.BBMove move) {
             this.parent = parent;
+            this.theMove = move;
             lastCount++;
 
-            this.currentState = currentState;
             this.children = new ArrayList<>();
         }
 
@@ -278,35 +272,52 @@ public class KairukuEngine extends UciEngine {
         }
 
         private int explore(int alpha, int beta, final boolean maximise, final int depth) {
-            value = maximise ? Integer.MIN_VALUE : Integer.MAX_VALUE;
-
-            final List<MoveResult> validMoves = currentState.getBoard().getValidMoves();
-
-            if (depth == 0 || currentState.getBoard().findGameResult().isPresent()) {
-                value = heuristic.evaluate(currentState.getBoard(), color);
-
-                if (value > lastMax) {
-                    lastBest = currentState.getBoard();
-                }
+            if (depth == 0) {
+                value = heuristic.evaluate(board, color, board.hasAnyLegalMoves());
 
                 return value;
             }
 
+            if (board.getHalfmoveClock() == 50) {
+                value = 0;
+
+                return value;
+            }
+
+            value = maximise ? Integer.MIN_VALUE : Integer.MAX_VALUE;
+
+            final List<Bitboard.BBMove> validMoves = board.getPseudoLegalMoves();
+
             Collections.shuffle(validMoves);
 
-            //Sort by piece difference to get better pruning
+//            Sort by piece difference to get better pruning
             validMoves.sort(Comparator.comparing(moveResult -> {
-                final int diff = moveResult.getBoard().scoreDiff();
+                final int myScore = board.computeScore(color);
+                final int opponentScore = board.computeScore(color.opposite());
 
-                if (color == Color.WHITE) {
-                    return maximise ? -diff : diff;
+                if (maximise) {
+                    return myScore - opponentScore;
                 } else {
-                    return maximise ? diff : -diff;
+                    return opponentScore - myScore;
                 }
             }));
 
-            for (final MoveResult current : validMoves) {
-                final Node node = new Node(this, current);
+            boolean anyLegalMoves = false;
+
+            final int hash = board.hashCode();
+
+            for (final Bitboard.BBMove move : validMoves) {
+                final Node node = new Node(this, move);
+
+                board.make(move);
+
+                if (board.invalidPosition()) {
+                    board.unmake(move);
+                    continue;
+                }
+
+                anyLegalMoves = true;
+
                 children.add(node);
 
                 final int childValue = node.explore(alpha, beta, !maximise, depth - 1);
@@ -319,34 +330,32 @@ public class KairukuEngine extends UciEngine {
                     beta = Math.min(beta, value);
                 }
 
+                board.unmake(move);
+
+                if (hash != board.hashCode()) {
+                    throw new IllegalStateException();
+                }
+
                 if (beta <= alpha) {
                     break;
                 }
             }
 
+            if (!anyLegalMoves) {
+                value = heuristic.evaluate(board, color, false);
+
+                return value;
+            }
+
             return value;
-        }
-
-        public MoveResult getCurrentState() {
-            return currentState;
-        }
-
-        @Override
-        public String toString() {
-            return "Node{" +
-                    "children=" + children +
-                    ", parent=" + parent +
-                    ", value=" + value +
-                    ", currentState=" + currentState +
-                    '}';
-        }
-
-        public List<Node> getChildren() {
-            return children;
         }
 
         public int getValue() {
             return value;
+        }
+
+        public Bitboard.BBMove getMove() {
+            return theMove;
         }
     }
 }
