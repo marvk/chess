@@ -16,6 +16,8 @@ import java.util.concurrent.Future;
 @Log4j2
 public class KairukuEngine extends UciEngine {
     private static final String PLY_OPTION = "ply";
+    private static final Comparator<Bitboard.BBMove> MOVE_ORDER_COMPARATOR = Comparator.comparing(Bitboard.BBMove::getPieceAttackedValue)
+                                                                                       .reversed();
 
     private final ExecutorService executor;
 
@@ -253,18 +255,23 @@ public class KairukuEngine extends UciEngine {
 
         private int value;
 
-        private final Bitboard.BBMove theMove;
+        private final Bitboard.BBMove move;
 
         Node() {
             this(null, null);
         }
 
         Node(final Node parent, final Bitboard.BBMove move) {
-            this.parent = parent;
-            this.theMove = move;
             lastCount++;
 
-            this.children = new ArrayList<>();
+            this.parent = parent;
+            this.move = move;
+
+            if (parent == null) {
+                this.children = new ArrayList<>();
+            } else {
+                this.children = null;
+            }
         }
 
         private void startExploration() {
@@ -291,19 +298,11 @@ public class KairukuEngine extends UciEngine {
             Collections.shuffle(validMoves);
 
 //            Sort by piece difference to get better pruning
-            validMoves.sort(Comparator.comparing(m -> {
-                // TODO investigate if this is correct
-                final int value = m.attackedPieceValue();
-                return maximise ? value : -value;
-            }));
+            validMoves.sort(MOVE_ORDER_COMPARATOR);
 
-            boolean anyLegalMoves = false;
-
-            final int hash = board.hashCode();
+            boolean legalMoves = false;
 
             for (final Bitboard.BBMove move : validMoves) {
-                final Node node = new Node(this, move);
-
                 board.make(move);
 
                 if (board.invalidPosition()) {
@@ -311,9 +310,13 @@ public class KairukuEngine extends UciEngine {
                     continue;
                 }
 
-                anyLegalMoves = true;
+                final Node node = new Node(this, move);
 
-                children.add(node);
+                legalMoves = true;
+
+                if (parent == null) {
+                    children.add(node);
+                }
 
                 final int childValue = node.explore(alpha, beta, !maximise, depth - 1);
 
@@ -327,16 +330,12 @@ public class KairukuEngine extends UciEngine {
 
                 board.unmake(move);
 
-                if (hash != board.hashCode()) {
-                    throw new IllegalStateException();
-                }
-
                 if (beta <= alpha) {
                     break;
                 }
             }
 
-            if (!anyLegalMoves) {
+            if (!legalMoves) {
                 value = heuristic.evaluate(board, color, false);
 
                 return value;
@@ -350,7 +349,7 @@ public class KairukuEngine extends UciEngine {
         }
 
         public Bitboard.BBMove getMove() {
-            return theMove;
+            return move;
         }
     }
 }

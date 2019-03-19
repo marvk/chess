@@ -657,7 +657,22 @@ public class Bitboard {
     }
 
     private BBMove makeBbMove(final long sourceSquare, final long targetSquare, final Piece pieceMoved, final boolean castle, final boolean enPassantAttack, final Piece promote, final long enPassantOpportunity) {
-        final BBMove move = new BBMove(sourceSquare, targetSquare, pieceMoved, castle, enPassantAttack, promote);
+        final long attackSquare;
+
+        if (enPassantAttack) {
+            if (turn == Color.WHITE) {
+                attackSquare = targetSquare >> 8L;
+            } else {
+                attackSquare = targetSquare << 8L;
+            }
+        } else {
+            attackSquare = targetSquare;
+        }
+
+        final ColoredPiece pieceAttacked = getPiece(attackSquare);
+
+        final BBMove move = new BBMove(sourceSquare, targetSquare, pieceMoved, pieceAttacked == null ? null : pieceAttacked
+                .getPiece(), castle, enPassantAttack, promote);
 
         if (turn == Color.BLACK) {
             if (white.queenSideCastle && move.targetSquare == Square.A1.getOccupiedBitMask()) {
@@ -692,22 +707,6 @@ public class Bitboard {
                 move.selfLostKingSideCastle = true;
             }
         }
-
-        final long attackSquare;
-
-        if (enPassantAttack) {
-            if (turn == Color.WHITE) {
-                attackSquare = move.targetSquare >> 8L;
-            } else {
-                attackSquare = move.targetSquare << 8L;
-            }
-        } else {
-            attackSquare = move.targetSquare;
-        }
-
-        final ColoredPiece pieceAttacked = getPiece(attackSquare);
-
-        move.pieceAttacked = pieceAttacked == null ? null : pieceAttacked.getPiece();
 
         if (move.pieceMoved == Piece.PAWN || move.pieceAttacked != null) {
             move.nextHalfmove = 0;
@@ -1376,7 +1375,7 @@ public class Bitboard {
         }
     }
 
-    private void doCastle(
+    private static void doCastle(
             final PlayerBoard self,
             final Square rookSource,
             final Square kingSource,
@@ -1390,7 +1389,7 @@ public class Bitboard {
         self.kings |= kingTarget.getOccupiedBitMask();
     }
 
-    private void undoCastle(
+    private static void undoCastle(
             final PlayerBoard self,
             final Square rookSource,
             final Square kingSource,
@@ -1404,9 +1403,32 @@ public class Bitboard {
         self.kings &= ~kingTarget.getOccupiedBitMask();
     }
 
+    private static int pieceValue(final Piece piece) {
+        if (piece == null) {
+            return 0;
+        }
+
+        switch (piece) {
+            case KING:
+                return KING_VALUE;
+            case QUEEN:
+                return QUEEN_VALUE;
+            case ROOK:
+                return ROOK_VALUE;
+            case BISHOP:
+                return BISHOP_VALUE;
+            case KNIGHT:
+                return KNIGHT_VALUE;
+            case PAWN:
+                return PAWN_VALUE;
+            default:
+                throw new AssertionError();
+        }
+    }
+
     public static class BBMove {
-        private boolean castle;
-        private boolean enPassantAttack;
+        private final boolean castle;
+        private final boolean enPassantAttack;
 
         private boolean selfLostQueenSideCastle;
         private boolean selfLostKingSideCastle;
@@ -1416,46 +1438,34 @@ public class Bitboard {
         private long previousEnPassantSquare;
         private long nextEnPassantSquare;
 
-        private long sourceSquare;
-        private long targetSquare;
+        private final long sourceSquare;
+        private final long targetSquare;
 
-        private Piece pieceMoved;
-        private Piece pieceAttacked;
-        private Piece promote;
+        private final Piece pieceMoved;
+        private final Piece pieceAttacked;
+        private final Piece promote;
 
         private int previousHalfmove;
         private int nextHalfmove;
 
-        BBMove(final long sourceSquare, final long targetSquare, final Piece pieceMoved, final boolean castle, final boolean enPassantAttack, final Piece promote) {
+        private final int pieceAttackedValue;
+
+        BBMove(final long sourceSquare,
+               final long targetSquare,
+               final Piece pieceMoved,
+               final Piece pieceAttacked,
+               final boolean castle,
+               final boolean enPassantAttack,
+               final Piece promote
+        ) {
             this.sourceSquare = sourceSquare;
             this.targetSquare = targetSquare;
             this.pieceMoved = pieceMoved;
+            this.pieceAttacked = pieceAttacked;
             this.castle = castle;
             this.enPassantAttack = enPassantAttack;
             this.promote = promote;
-        }
-
-        public int attackedPieceValue() {
-            if (pieceAttacked == null) {
-                return 0;
-            }
-
-            switch (pieceAttacked) {
-                case KING:
-                    return KING_VALUE;
-                case QUEEN:
-                    return QUEEN_VALUE;
-                case ROOK:
-                    return ROOK_VALUE;
-                case BISHOP:
-                    return BISHOP_VALUE;
-                case KNIGHT:
-                    return KNIGHT_VALUE;
-                case PAWN:
-                    return PAWN_VALUE;
-                default:
-                    throw new AssertionError();
-            }
+            this.pieceAttackedValue = pieceValue(pieceAttacked);
         }
 
         @Override
@@ -1488,6 +1498,10 @@ public class Bitboard {
             } else {
                 return new UciMove(source, target, null);
             }
+        }
+
+        public int getPieceAttackedValue() {
+            return pieceAttackedValue;
         }
     }
 
