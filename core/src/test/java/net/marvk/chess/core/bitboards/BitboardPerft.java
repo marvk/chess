@@ -24,7 +24,7 @@ class BitboardPerft {
 
     @BeforeAll
     public void setup() {
-        this.enginePath = Paths.get("B:/Marvin/Desktop/Programme/perft-10-win/Windows/stockfish_10_x64.exe");
+        this.enginePath = Paths.get("B:/Marvin/Desktop/Programme/stockfish-10-win/Windows/stockfish_10_x64.exe");
     }
 
     @Test
