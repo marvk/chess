@@ -115,13 +115,13 @@ public class KairukuEngine extends UciEngine {
             ply = go.getDepth();
         } else if (time == null) {
             ply = 7;
-        } else if (time < 200) {
+        } else if (time <= 2_000) {
             ply = 3;
-        } else if (time < 5_000) {
+        } else if (time <= 7_500) {
             ply = 4;
-        } else if (time < 30_000) {
+        } else if (time <= 20_000) {
             ply = 5;
-        } else if (time < 120_000) {
+        } else if (time <= 60_000) {
             ply = 6;
         } else {
             ply = 7;
@@ -310,8 +310,6 @@ public class KairukuEngine extends UciEngine {
         addToJoiner(lineJoiner, "duration", metrics.getLastDuration());
         lineJoiner.add("╠═══════════════════════════════════╣");
         addToJoiner(lineJoiner, "nodes searched", metrics.getLastNodeCount());
-        addToJoiner(lineJoiner, "ttable hits", metrics.getLastTableHits());
-        addToJoiner(lineJoiner, "table load factor", transpositionTable.load());
         lineJoiner.add("╠═══════════════════════════════════╣");
         addToJoiner(lineJoiner, "nps last", metrics.getLastNps());
         addToJoiner(lineJoiner, "nps avg", metrics.getTotalNps());
