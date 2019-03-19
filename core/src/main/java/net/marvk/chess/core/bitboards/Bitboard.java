@@ -25,6 +25,13 @@ public class Bitboard {
     private static final long[] WHITE_PAWN_ATTACKS;
     private static final long[] BLACK_PAWN_ATTACKS;
 
+    private static final int KING_VALUE = 0;
+    private static final int QUEEN_VALUE = 900;
+    private static final int ROOK_VALUE = 500;
+    private static final int BISHOP_VALUE = 330;
+    private static final int KNIGHT_VALUE = 320;
+    private static final int PAWN_VALUE = 100;
+
     static {
         SQUARES = new Square[64];
 
@@ -1428,8 +1435,27 @@ public class Bitboard {
             this.promote = promote;
         }
 
-        public String uci() {
-            return asUciMove().toString();
+        public int attackedPieceValue() {
+            if (pieceAttacked == null) {
+                return 0;
+            }
+
+            switch (pieceAttacked) {
+                case KING:
+                    return KING_VALUE;
+                case QUEEN:
+                    return QUEEN_VALUE;
+                case ROOK:
+                    return ROOK_VALUE;
+                case BISHOP:
+                    return BISHOP_VALUE;
+                case KNIGHT:
+                    return KNIGHT_VALUE;
+                case PAWN:
+                    return PAWN_VALUE;
+                default:
+                    throw new AssertionError();
+            }
         }
 
         @Override
@@ -1553,12 +1579,12 @@ public class Bitboard {
         }
 
         int score() {
-            return Long.bitCount(kings) * 0
-                    + Long.bitCount(queens) * 900
-                    + Long.bitCount(rooks) * 500
-                    + Long.bitCount(bishops) * 330
-                    + Long.bitCount(knights) * 320
-                    + Long.bitCount(pawns) * 100;
+            return Long.bitCount(kings) * KING_VALUE
+                    + Long.bitCount(queens) * QUEEN_VALUE
+                    + Long.bitCount(rooks) * ROOK_VALUE
+                    + Long.bitCount(bishops) * BISHOP_VALUE
+                    + Long.bitCount(knights) * KNIGHT_VALUE
+                    + Long.bitCount(pawns) * PAWN_VALUE;
         }
     }
 

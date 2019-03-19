@@ -291,15 +291,10 @@ public class KairukuEngine extends UciEngine {
             Collections.shuffle(validMoves);
 
 //            Sort by piece difference to get better pruning
-            validMoves.sort(Comparator.comparing(moveResult -> {
-                final int myScore = board.computeScore(color);
-                final int opponentScore = board.computeScore(color.opposite());
-
-                if (maximise) {
-                    return myScore - opponentScore;
-                } else {
-                    return opponentScore - myScore;
-                }
+            validMoves.sort(Comparator.comparing(m -> {
+                // TODO investigate if this is correct
+                final int value = m.attackedPieceValue();
+                return maximise ? value : -value;
             }));
 
             boolean anyLegalMoves = false;
