@@ -798,10 +798,6 @@ public class Bitboard {
         return (board & square) != 0L;
     }
 
-    public ColoredPiece getPiece(final int file, final int rank) {
-        return getPiece(Square.get(file, rank));
-    }
-
     // endregion
 
     // region Heuristics
@@ -819,30 +815,37 @@ public class Bitboard {
     }
 
     public int pieceSquareValue(final Color color) {
-        long occupancy = white.occupancy() | black.occupancy();
-
         boolean lateGame = (white.queens | black.queens) == 0L;
+
+        final int[] whiteKingTable = lateGame ? WHITE_KING_TABLE_LATE : WHITE_KING_TABLE_EARLY;
+        final int[] blackKingTable = lateGame ? BLACK_KING_TABLE_LATE : BLACK_KING_TABLE_EARLY;
+
+        return sum(white.pawns, WHITE_PAWN_TABLE)
+                + sum(white.knights, WHITE_KNIGHT_TABLE)
+                + sum(white.bishops, WHITE_BISHOP_TABLE)
+                + sum(white.rooks, WHITE_ROOK_TABLE)
+                + sum(white.queens, WHITE_QUEEN_TABLE)
+                + sum(white.kings, whiteKingTable)
+                + sum(black.pawns, BLACK_PAWN_TABLE)
+                + sum(black.knights, BLACK_KNIGHT_TABLE)
+                + sum(black.bishops, BLACK_BISHOP_TABLE)
+                + sum(black.rooks, BLACK_ROOK_TABLE)
+                + sum(black.queens, BLACK_QUEEN_TABLE)
+                + sum(black.kings, blackKingTable);
+    }
+
+    private int sum(final long board, final int[] valueTable) {
+        long occupancy = board;
 
         int sum = 0;
 
         while (occupancy != 0L) {
             final long current = Long.highestOneBit(occupancy);
             occupancy &= ~current;
-
-            final int squareIndex = Long.numberOfTrailingZeros(current);
-
-            final ColoredPiece piece = getPiece(current);
-
-            final int score = getScore(piece, squareIndex, lateGame);
-
-            sum += score;
+            sum += valueTable[Long.numberOfTrailingZeros(current)];
         }
 
-        if (color == Color.WHITE) {
-            return -sum;
-        } else {
-            return sum;
-        }
+        return sum;
     }
 
     private int getScore(final ColoredPiece piece, final int square, final boolean lateGame) {
