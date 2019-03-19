@@ -18,8 +18,8 @@ import java.util.stream.Stream;
 @Log4j2
 public class KairukuEngine extends UciEngine {
     private static final String PLY_OPTION = "ply";
-    private static final Comparator<Bitboard.BBMove> MOVE_ORDER_COMPARATOR = Comparator.comparing(Bitboard.BBMove::getPieceAttackedValue)
-                                                                                       .reversed();
+    private static final Comparator<Bitboard.BBMove> MOVE_ORDER_COMPARATOR =
+            Comparator.comparing(Bitboard.BBMove::getMoveOrderValue).reversed();
 
     private final ExecutorService executor;
 
@@ -186,10 +186,16 @@ public class KairukuEngine extends UciEngine {
 
     // endregion
 
+    private Bitboard.BBMove secondToLast;
+    private Bitboard.BBMove last;
+
     private ValuedMove play() {
         final StopWatch stopwatch = StopWatch.createStarted();
         final ValuedMove result = negamax(ply, SimpleHeuristic.LOSS, SimpleHeuristic.WIN, selfColor);
         stopwatch.stop();
+
+        secondToLast = last;
+        last = result.getMove();
 
         final Duration duration = Duration.ofNanos(stopwatch.getNanoTime());
 
@@ -220,7 +226,15 @@ public class KairukuEngine extends UciEngine {
 
         boolean legalMovesEncountered = false;
 
+        Bitboard.BBMove repetition = null;
+
         for (final Bitboard.BBMove current : pseudoLegalMoves) {
+            // Don't repeat second to last move, not perfect but good approximation
+            if (current.isRepetitionOf(secondToLast)) {
+                repetition = current;
+                continue;
+            }
+
             board.make(current);
 
             if (board.invalidPosition()) {
@@ -250,6 +264,11 @@ public class KairukuEngine extends UciEngine {
         }
 
         if (!legalMovesEncountered) {
+            //Forced repetition check
+            if (repetition != null) {
+                return new ValuedMove(0, repetition, null);
+            }
+
             return new ValuedMove(currentColor.getHeuristicFactor() * heuristic.evaluate(board, false), null, null);
         }
 
