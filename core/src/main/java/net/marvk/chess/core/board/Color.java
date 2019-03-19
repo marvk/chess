@@ -1,13 +1,13 @@
 package net.marvk.chess.core.board;
 
 public enum Color {
-    BLACK("b") {
+    BLACK("b", -1) {
         @Override
         public Color opposite() {
             return WHITE;
         }
     },
-    WHITE("w") {
+    WHITE("w", 1) {
         @Override
         public Color opposite() {
             return BLACK;
@@ -15,9 +15,11 @@ public enum Color {
     };
 
     private final String fen;
+    private final int heuristicFactor;
 
-    Color(final String fen) {
+    Color(final String fen, final int heuristicFactor) {
         this.fen = fen;
+        this.heuristicFactor = heuristicFactor;
     }
 
     public String getFen() {
@@ -34,6 +36,10 @@ public enum Color {
         }
 
         return null;
+    }
+
+    public int getHeuristicFactor() {
+        return heuristicFactor;
     }
 
     public abstract Color opposite();

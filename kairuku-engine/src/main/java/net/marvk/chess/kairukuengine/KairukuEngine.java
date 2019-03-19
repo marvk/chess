@@ -1,17 +1,19 @@
 package net.marvk.chess.kairukuengine;
 
+import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import net.marvk.chess.core.bitboards.Bitboard;
 import net.marvk.chess.core.board.*;
-import net.marvk.chess.core.util.Stopwatch;
-import net.marvk.chess.core.util.Util;
 import net.marvk.chess.uci4j.*;
+import org.apache.commons.lang3.time.StopWatch;
 
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Log4j2
 public class KairukuEngine extends UciEngine {
@@ -25,18 +27,17 @@ public class KairukuEngine extends UciEngine {
     private int ply;
     private Bitboard board;
 
-    private Color color;
-    private int lastCount;
+    private Color selfColor;
 
     private final Heuristic heuristic = new SimpleHeuristic();
+
+    private final Metrics metrics = new Metrics();
 
     public KairukuEngine(final UIChannel uiChannel) {
         super(uiChannel);
 
         this.ply = 7;
         this.executor = Executors.newSingleThreadExecutor();
-
-        resetStats();
     }
 
     // region UCI Methods
@@ -78,7 +79,7 @@ public class KairukuEngine extends UciEngine {
     public void uciNewGame() {
         stop();
 
-        resetStats();
+        metrics.resetAll();
 
         board = null;
     }
@@ -100,9 +101,11 @@ public class KairukuEngine extends UciEngine {
             return;
         }
 
-        color = board.getActivePlayer();
+        metrics.resetRound();
 
-        final Integer time = color == Color.WHITE ? go.getWhiteTime() : go.getBlackTime();
+        selfColor = board.getActivePlayer();
+
+        final Integer time = selfColor == Color.WHITE ? go.getWhiteTime() : go.getBlackTime();
 
         if (go.getDepth() != null) {
             ply = go.getDepth();
@@ -123,26 +126,40 @@ public class KairukuEngine extends UciEngine {
         log.info("time is " + time + ", setting " + "ply to " + ply);
 
         calculationFuture = executor.submit(() -> {
-            final UciMove play;
+            final ValuedMove play;
             try {
                 play = play();
             } catch (final Throwable t) {
-                t.printStackTrace();
                 log.error("unexpected error", t);
                 throw new RuntimeException();
             }
 
-            final Info info =
-                    Info.builder()
-                        .nps(((long) lastNps))
-                        .score(new Score(lastRoot.getValue(), null, null))
-                        .depth(ply)
-                        .nodes(((long) lastCount))
-                        .time(((int) lastDuration.toMillis()))
-                        .generate();
+            final List<ValuedMove> pv = Stream.iterate(play, vm -> vm.pvChild != null, vm -> vm.pvChild)
+                                              .collect(Collectors.toList());
 
-            uiChannel.info(info);
-            uiChannel.bestMove(play);
+            final UciMove[] pvArray =
+                    pv.stream().map(ValuedMove::getMove)
+                      .filter(Objects::nonNull)
+                      .map(Bitboard.BBMove::asUciMove)
+                      .toArray(UciMove[]::new);
+
+            uiChannel.bestMove(play.getMove().asUciMove());
+
+            try {
+                final Info info =
+                        Info.builder()
+                            .nps(((long) metrics.getLastNps()))
+                            .score(new Score(play.getValue(), null, null))
+                            .depth(ply)
+                            .principalVariation(pvArray)
+                            .nodes(((long) metrics.getLastNodeCount()))
+                            .time(((int) metrics.getLastDuration().toMillis()))
+                            .generate();
+
+                uiChannel.info(info);
+            } catch (final Throwable t) {
+                log.error("unexpected error", t);
+            }
 
             return null;
         });
@@ -151,6 +168,8 @@ public class KairukuEngine extends UciEngine {
     @Override
     public void stop() {
         calculationFuture.cancel(true);
+
+        metrics.resetRound();
     }
 
     @Override
@@ -161,79 +180,104 @@ public class KairukuEngine extends UciEngine {
     @Override
     public void quit() {
         calculationFuture.cancel(true);
+
+        metrics.resetAll();
     }
 
     // endregion
 
-    private void resetStats() {
-        lastRoot = null;
-        totalDuration = Duration.ZERO;
-        totalCount = 0;
-        lastDuration = null;
-        lastNps = 0;
-    }
+    private ValuedMove play() {
+        final StopWatch stopwatch = StopWatch.createStarted();
+        final ValuedMove result = negamax(ply, SimpleHeuristic.LOSS, SimpleHeuristic.WIN, selfColor);
+        stopwatch.stop();
 
-    private Node lastRoot;
+        final Duration duration = Duration.ofNanos(stopwatch.getNanoTime());
 
-    private Duration totalDuration;
-    private int totalCount;
-    private Duration lastDuration;
-    private int lastNps;
+        metrics.incrementDuration(duration);
 
-    private UciMove play() {
-        final Node root = new Node();
-
-        lastCount = 0;
-        lastRoot = root;
-        lastDuration = Stopwatch.time(root::startExploration);
-        lastNps = Util.nodesPerSecond(lastDuration, lastCount);
-
-        totalCount += lastCount;
-        totalDuration = totalDuration.plus(lastDuration);
-
-        final int averageNodesPerSecond = Util.nodesPerSecond(totalDuration, totalCount);
-        final int max = root.children.stream()
-                                     .mapToInt(Node::getValue)
-                                     .max()
-                                     .orElseThrow(IllegalStateException::new);
-
-        final String value;
-
-        if (max > Integer.MAX_VALUE - 100_000) {
-            value = "WIN";
-        } else if (max < Integer.MIN_VALUE + 100_000) {
-            value = "LOSE";
-        } else {
-            value = Double.toString(max);
-        }
-
-        final UciMove result = root.children.stream()
-                                            .filter(n -> n.value == max)
-                                            .findFirst()
-                                            .map(Node::getMove)
-                                            .map(Bitboard.BBMove::asUciMove)
-                                            .orElseThrow(IllegalStateException::new);
-
-        log.info(infoString(board, averageNodesPerSecond, value, result));
+        log.info(infoString(result));
 
         return result;
     }
 
+    private ValuedMove negamax(final int depth, int alpha, final int beta, final Color currentColor) {
+        metrics.incrementNodeCount();
+
+        if (depth == 0 || board.getHalfmoveClock() == 50) {
+            final int value = currentColor.getHeuristicFactor() * heuristic.evaluate(board, board.hasAnyLegalMoves());
+
+            return new ValuedMove(value, null, null);
+        }
+
+        final List<Bitboard.BBMove> pseudoLegalMoves = board.getPseudoLegalMoves();
+
+        Collections.shuffle(pseudoLegalMoves);
+        pseudoLegalMoves.sort(MOVE_ORDER_COMPARATOR);
+
+        int value = SimpleHeuristic.LOSS;
+        ValuedMove bestChild = null;
+        Bitboard.BBMove bestMove = null;
+
+        boolean legalMovesEncountered = false;
+
+        for (final Bitboard.BBMove current : pseudoLegalMoves) {
+            board.make(current);
+
+            if (board.invalidPosition()) {
+                board.unmake(current);
+                continue;
+            }
+
+            legalMovesEncountered = true;
+
+            final ValuedMove child = negamax(depth - 1, -beta, -alpha, currentColor.opposite());
+
+            final int childValue = -child.getValue();
+
+            if (childValue > value) {
+                value = childValue;
+                bestMove = current;
+                bestChild = child;
+            }
+
+            alpha = Math.max(alpha, value);
+
+            board.unmake(current);
+
+            if (alpha >= beta) {
+                break;
+            }
+        }
+
+        if (!legalMovesEncountered) {
+            return new ValuedMove(currentColor.getHeuristicFactor() * heuristic.evaluate(board, false), null, null);
+        }
+
+        return new ValuedMove(value, bestMove, bestChild);
+    }
+
+    @Data
+    private static class ValuedMove {
+        private final int value;
+        private final Bitboard.BBMove move;
+        private final ValuedMove pvChild;
+    }
+
     // region String generation
 
-    private String infoString(final Bitboard previousBoard, final int averageNodesPerSecond, final String value, final UciMove result) {
+    private String infoString(final ValuedMove play) {
         final StringJoiner lineJoiner = new StringJoiner("\n");
-        lineJoiner.add(previousBoard.toString());
+        lineJoiner.add(board.toString());
 
         lineJoiner.add("╔═══════════════════════════════════╗");
 
-        addToJoiner(lineJoiner, "color", color.toString());
-        addToJoiner(lineJoiner, "best move", result.toString());
-        addToJoiner(lineJoiner, "nodes searched", Integer.toString(lastCount));
-        addToJoiner(lineJoiner, "duration", lastDuration.toString());
-        addToJoiner(lineJoiner, "nps last", Integer.toString(lastNps));
-        addToJoiner(lineJoiner, "nps avg", Integer.toString(averageNodesPerSecond));
-        addToJoiner(lineJoiner, "value (cp)", value);
+        addToJoiner(lineJoiner, "color", selfColor.toString());
+        addToJoiner(lineJoiner, "best move", play.getMove().asUciMove().toString());
+        addToJoiner(lineJoiner, "nodes searched", Integer.toString(metrics.getLastNodeCount()));
+        addToJoiner(lineJoiner, "duration", metrics.getLastDuration().toString());
+        addToJoiner(lineJoiner, "nps last", Integer.toString(metrics.getLastNps()));
+        addToJoiner(lineJoiner, "nps avg", Integer.toString(metrics.getTotalNps()));
+        addToJoiner(lineJoiner, "value (cp)", Integer.toString(play.getValue()));
 
         lineJoiner.add("╚═══════════════════════════════════╝");
         return "Evaluation result:\n" + lineJoiner.toString();
@@ -248,108 +292,4 @@ public class KairukuEngine extends UciEngine {
     }
 
     // endregion
-
-    public class Node {
-        private final List<Node> children;
-        private final Node parent;
-
-        private int value;
-
-        private final Bitboard.BBMove move;
-
-        Node() {
-            this(null, null);
-        }
-
-        Node(final Node parent, final Bitboard.BBMove move) {
-            lastCount++;
-
-            this.parent = parent;
-            this.move = move;
-
-            if (parent == null) {
-                this.children = new ArrayList<>();
-            } else {
-                this.children = null;
-            }
-        }
-
-        private void startExploration() {
-            value = explore(Integer.MIN_VALUE, Integer.MAX_VALUE, true, ply);
-        }
-
-        private int explore(int alpha, int beta, final boolean maximise, final int depth) {
-            if (depth == 0) {
-                value = heuristic.evaluate(board, color, board.hasAnyLegalMoves());
-
-                return value;
-            }
-
-            if (board.getHalfmoveClock() == 50) {
-                value = 0;
-
-                return value;
-            }
-
-            value = maximise ? Integer.MIN_VALUE : Integer.MAX_VALUE;
-
-            final List<Bitboard.BBMove> validMoves = board.getPseudoLegalMoves();
-
-            Collections.shuffle(validMoves);
-
-//            Sort by piece difference to get better pruning
-            validMoves.sort(MOVE_ORDER_COMPARATOR);
-
-            boolean legalMoves = false;
-
-            for (final Bitboard.BBMove move : validMoves) {
-                board.make(move);
-
-                if (board.invalidPosition()) {
-                    board.unmake(move);
-                    continue;
-                }
-
-                final Node node = new Node(this, move);
-
-                legalMoves = true;
-
-                if (parent == null) {
-                    children.add(node);
-                }
-
-                final int childValue = node.explore(alpha, beta, !maximise, depth - 1);
-
-                if (maximise) {
-                    value = Math.max(value, childValue);
-                    alpha = Math.max(alpha, value);
-                } else {
-                    value = Math.min(value, childValue);
-                    beta = Math.min(beta, value);
-                }
-
-                board.unmake(move);
-
-                if (beta <= alpha) {
-                    break;
-                }
-            }
-
-            if (!legalMoves) {
-                value = heuristic.evaluate(board, color, false);
-
-                return value;
-            }
-
-            return value;
-        }
-
-        public int getValue() {
-            return value;
-        }
-
-        public Bitboard.BBMove getMove() {
-            return move;
-        }
-    }
 }

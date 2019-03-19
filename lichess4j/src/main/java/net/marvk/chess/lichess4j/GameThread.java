@@ -3,6 +3,7 @@ package net.marvk.chess.lichess4j;
 import lombok.extern.log4j.Log4j2;
 import net.marvk.chess.core.bitboards.Bitboard;
 import net.marvk.chess.core.board.Color;
+import net.marvk.chess.core.board.Fen;
 import net.marvk.chess.core.board.UciMove;
 import net.marvk.chess.lichess4j.model.ChatLine;
 import net.marvk.chess.lichess4j.model.GameState;
@@ -38,6 +39,7 @@ class GameThread implements Runnable, UIChannel {
     private final UciEngine engine;
 
     private Color myColor;
+    private String initialFen;
 
     public GameThread(final String botId,
                       final String apiToken,
@@ -60,6 +62,8 @@ class GameThread implements Runnable, UIChannel {
             this.myColor = Color.BLACK;
         }
 
+        initialFen = gameStateFull.getInitialFen();
+
 //        final Clock clock = gameStateFull.getClock();
 //        final int initialClock = clock != null ? clock.getInitial() : Integer.MAX_VALUE;
 //
@@ -79,7 +83,13 @@ class GameThread implements Runnable, UIChannel {
     }
 
     public void acceptGameState(final GameState gameState) {
-        final Bitboard board = UciMove.getBoard(gameState.getMoves());
+        final Bitboard board;
+        final boolean defaultFen = initialFen == null || "startpos".equals(initialFen) || initialFen.trim().isEmpty();
+        if (defaultFen) {
+            board = UciMove.getBoard(gameState.getMoves());
+        } else {
+            board = UciMove.getBoard(gameState.getMoves(), Fen.parse(initialFen));
+        }
 
         if (board.getActivePlayer() != myColor) {
             log.debug("Not calculating move for opponent");
@@ -87,7 +97,12 @@ class GameThread implements Runnable, UIChannel {
         }
 
         executorService.execute(() -> {
-            engine.positionFromDefault(gameState.getMoves());
+            if (defaultFen) {
+                engine.positionFromDefault(gameState.getMoves());
+            } else {
+                engine.position(initialFen, gameState.getMoves());
+            }
+
             final Go go = Go.builder()
                             .blackTime(gameState.getBlackTime())
                             .whiteTime(gameState.getWhiteTime())

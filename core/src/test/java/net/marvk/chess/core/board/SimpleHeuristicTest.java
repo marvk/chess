@@ -13,7 +13,7 @@ class SimpleHeuristicTest {
         final Bitboard board = new Bitboard(fen);
         board.getValidMoves();
 
-        final int value = new SimpleHeuristic().evaluate(board, Color.BLACK, true);
+        final int value = Color.BLACK.getHeuristicFactor() * new SimpleHeuristic().evaluate(board, true);
 
         final int blackPawns = 100 + 100 + 100 + 100 + 100;
         final int whitePawns = 100 + 100 + 100 + 100;

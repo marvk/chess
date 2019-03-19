@@ -6,15 +6,14 @@ import de.saxsys.mvvmfx.InjectViewModel;
 import de.saxsys.mvvmfx.ViewTuple;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
-import javafx.scene.control.cell.TextFieldTreeCell;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SplitPane;
+import javafx.scene.control.TextField;
+import javafx.scene.control.TreeView;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.util.StringConverter;
-import net.marvk.chess.core.bitboards.Bitboard;
 import net.marvk.chess.core.board.Fen;
-import net.marvk.chess.core.board.Move;
-import net.marvk.chess.core.board.SimpleHeuristic;
 import net.marvk.chess.ui.application.view.board.BoardStateViewModel;
 import net.marvk.chess.ui.application.view.board.BoardView;
 import net.marvk.chess.ui.application.view.board.BoardViewModel;
@@ -78,17 +77,18 @@ public class TreeExplorerView implements FxmlView<net.marvk.chess.ui.application
     private static class BoardStateViewModelStringConverter extends StringConverter<BoardStateViewModel> {
         @Override
         public String toString(final BoardStateViewModel viewModel) {
-            final Move lastMove = viewModel.getLastMove();
-
-            if (lastMove.equals(Move.NULL_MOVE)) {
-                final Bitboard newBoard = viewModel.getNewBoard();
-                final net.marvk.chess.core.board.Color color = newBoard.getActivePlayer();
-                return color + " -> [" + (new SimpleHeuristic().evaluate(newBoard, color) / 100.) + "]";
-            }
-
-            return lastMove.getColoredPiece().getColor() + " -> " + lastMove.getSource().getFen()
-                    + lastMove.getTarget().getFen()
-                    + "[" + viewModel.getEvaluation() / 1024.0 + "]";
+//            final Move lastMove = viewModel.getLastMove();
+//
+//            if (lastMove.equals(Move.NULL_MOVE)) {
+//                final Bitboard newBoard = viewModel.getNewBoard();
+//                final net.marvk.chess.core.board.Color color = newBoard.getActivePlayer();
+//                return color + " -> [" + (new SimpleHeuristic().evaluate(newBoard) / 100.) + "]";
+//            }
+//
+//            return lastMove.getColoredPiece().getColor() + " -> " + lastMove.getSource().getFen()
+//                    + lastMove.getTarget().getFen()
+//                    + "[" + viewModel.getEvaluation() / 1024.0 + "]";
+            return "";
         }
 
         @Override
