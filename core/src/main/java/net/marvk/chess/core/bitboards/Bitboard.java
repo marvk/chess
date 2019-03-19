@@ -472,7 +472,7 @@ public class Bitboard {
             ) {
                 result.add(makeCastleMove(Square.E1, Square.G1));
             }
-        } else if (!isInCheck(color, Square.E8.getOccupiedBitMask(), white, occupancy)) {
+        } else if (color == Color.BLACK && !isInCheck(color, Square.E8.getOccupiedBitMask(), white, occupancy)) {
             if (self.queenSideCastle
                     && (BLACK_QUEEN_SIDE_CASTLE_OCCUPANCY & occupancy) == 0L
                     && !isInCheck(color, Square.C8.getOccupiedBitMask(), white, occupancy)
@@ -1591,11 +1591,11 @@ public class Bitboard {
     @Override
     public int hashCode() {
         int result = black != null ? black.hashCode() : 0;
-//        result = 31 * result + (white != null ? white.hashCode() : 0);
-//        result = 31 * result + (turn != null ? turn.hashCode() : 0);
-//        result = 31 * result + (int) (enPassant ^ (enPassant >>> 32));
-//        result = 31 * result + fullmoveClock;
-//        result = 31 * result + halfmoveClock;
+        result = 31 * result + (white != null ? white.hashCode() : 0);
+        result = 31 * result + (turn != null ? turn.hashCode() : 0);
+        result = 31 * result + (int) (enPassant ^ (enPassant >>> 32));
+        result = 31 * result + fullmoveClock;
+        result = 31 * result + halfmoveClock;
         return result;
     }
 

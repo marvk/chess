@@ -34,6 +34,7 @@ public class BitboardMakeUnmakePerft {
             , new NominalPerftStep(2, 2_039L)
             , new NominalPerftStep(3, 97_862L)
             , new NominalPerftStep(4, 4_085_603L)
+            , new NominalPerftStep(5, 193_690_690L)
     );
 
     private static final NominalPerft POSITION_3 = new NominalPerft("position 3", "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -",
@@ -43,6 +44,7 @@ public class BitboardMakeUnmakePerft {
             , new NominalPerftStep(4, 43_238L)
             , new NominalPerftStep(5, 674_624L)
             , new NominalPerftStep(6, 11_030_083L)
+            , new NominalPerftStep(7, 178_633_661L)
     );
 
     private static final NominalPerft POSITION_4 = new NominalPerft("position 4", "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1",
@@ -51,6 +53,7 @@ public class BitboardMakeUnmakePerft {
             , new NominalPerftStep(3, 9_467L)
             , new NominalPerftStep(4, 422_333L)
             , new NominalPerftStep(5, 15_833_292L)
+            , new NominalPerftStep(6, 706_045_033L)
     );
 
     private static final NominalPerft POSITION_4_MIRRORED = new NominalPerft("position 4 mirrored", "r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1",
@@ -59,6 +62,7 @@ public class BitboardMakeUnmakePerft {
             , new NominalPerftStep(3, 9_467L)
             , new NominalPerftStep(4, 422_333L)
             , new NominalPerftStep(5, 15_833_292L)
+            , new NominalPerftStep(6, 706_045_033L)
     );
 
     private static final NominalPerft POSITION_5 = new NominalPerft("position 5", "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8 ",
@@ -66,6 +70,7 @@ public class BitboardMakeUnmakePerft {
             , new NominalPerftStep(2, 1_486L)
             , new NominalPerftStep(3, 62_379L)
             , new NominalPerftStep(4, 2_103_487L)
+            , new NominalPerftStep(5, 89_941_194L)
     );
 
     private static final NominalPerft POSITION_6 = new NominalPerft("position 6", "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10",
@@ -73,6 +78,7 @@ public class BitboardMakeUnmakePerft {
             , new NominalPerftStep(2, 2_079L)
             , new NominalPerftStep(3, 89_890L)
             , new NominalPerftStep(4, 3_894_594L)
+            , new NominalPerftStep(5, 164_075_551L)
     );
 
     private static Path enginePath;
@@ -107,24 +113,49 @@ public class BitboardMakeUnmakePerft {
         }
     }
 
-    private static long perft(final Bitboard bitboard, final int depth) {
+    private static long perft(final Bitboard board, final int depth) {
         if (depth == 0) {
             return 1L;
         }
 
-        final List<Bitboard.BBMove> moves = bitboard.getPseudoLegalMoves();
+        final List<Bitboard.BBMove> moves = board.getPseudoLegalMoves();
 
         long nodes = 0L;
 
         for (final Bitboard.BBMove move : moves) {
-            bitboard.make(move);
+            board.make(move);
 
-            if (!bitboard.invalidPosition()) {
+//            board.unmake(move);
+//
+//            Assertions.assertEquals(hash, board.hashCode(), () -> {
+//                final StringJoiner error = new StringJoiner("\n");
+//                final String actual = board.toString();
+//
+//                error.add("Wrong undo");
+//                error.add(fen);
+//                error.add("depth: " + depth);
+//                error.add("Previous\t" + previous);
+//                error.add("Move \t\t" + move.uci());
+//                error.add("expected:");
+//                error.add(expected);
+//                error.add("actual:");
+//                error.add(actual);
+//                error.add(Boolean.toString(expected.equals(actual)));
+//                error.add(black);
+//                error.add(board.blackString());
+//
+//                return error.toString();
+//            });
+//
+//            board.make(move);
 
-                nodes += perft(bitboard, depth - 1);
+            final boolean valid = !board.invalidPosition();
+
+            if (valid) {
+                nodes += perft(board, depth - 1);
             }
 
-            bitboard.unmake(move);
+            board.unmake(move);
         }
 
         return nodes;
