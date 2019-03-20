@@ -16,7 +16,7 @@ public class SimpleHeuristic implements Heuristic {
         if (!legalMovesRemaining) {
             if (board.isInCheck()) {
                 if (board.getActivePlayer() == Color.WHITE) {
-                    return LOSS;
+                    return LOSS + board.getFullmoveClock();
                 } else {
                     return WIN - board.getFullmoveClock();
                 }

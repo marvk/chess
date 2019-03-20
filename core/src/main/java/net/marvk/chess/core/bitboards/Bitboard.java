@@ -396,17 +396,27 @@ public class Bitboard {
                 .ofColor(turn.opposite()), promoteTo, move.castle, move.enPassantAttack, false));
     }
 
-    public boolean hasAnyLegalMoves() {
-        for (final BBMove move : getPseudoLegalMoves()) {
-            make(move);
+    public static boolean hasAnyLegalMoves(final Bitboard board, final Collection<BBMove> moves) {
+        for (final BBMove move : moves) {
+            board.make(move);
 
-            if (!invalidPosition()) {
-                unmake(move);
+            if (!board.isInvalidPosition()) {
+                board.unmake(move);
 
                 return true;
             }
 
-            unmake(move);
+            board.unmake(move);
+        }
+
+        return false;
+    }
+
+    public static boolean hasAnyAttackMoves(final Collection<BBMove> moves) {
+        for (final BBMove pseudoLegalMove : moves) {
+            if (pseudoLegalMove.isAttack()) {
+                return true;
+            }
         }
 
         return false;
@@ -673,7 +683,10 @@ public class Bitboard {
 
         final Piece pieceAttacked = turn == Color.WHITE ? black.getPiece(attackSquare) : white.getPiece(attackSquare);
 
-        final BBMove move = new BBMove(sourceSquare, targetSquare, pieceMoved, pieceAttacked, castle, enPassantAttack, promote);
+        final int squareDiff = pieceSquareValue(pieceMoved, turn, Long.numberOfTrailingZeros(targetSquare)) -
+                pieceSquareValue(pieceMoved, turn, Long.numberOfTrailingZeros(sourceSquare));
+
+        final BBMove move = new BBMove(sourceSquare, targetSquare, pieceMoved, pieceAttacked, castle, enPassantAttack, promote, squareDiff);
 
         if (turn == Color.BLACK) {
             if (white.queenSideCastle && move.targetSquare == Square.A1.getOccupiedBitMask()) {
@@ -812,7 +825,7 @@ public class Bitboard {
     }
 
     public int pieceSquareValue(final Color color) {
-        final boolean lateGame = (white.queens | black.queens) == 0L;
+        final boolean lateGame = isLateGame();
 
         final int[] whiteKingTable = lateGame ? WHITE_KING_TABLE_LATE : WHITE_KING_TABLE_EARLY;
         final int[] blackKingTable = lateGame ? BLACK_KING_TABLE_LATE : BLACK_KING_TABLE_EARLY;
@@ -836,6 +849,10 @@ public class Bitboard {
         return color == Color.WHITE ? -sum : sum;
     }
 
+    private boolean isLateGame() {
+        return (white.queens | black.queens) == 0L;
+    }
+
     private static int sum(final long board, final int[] valueTable) {
         long occupancy = board;
 
@@ -848,6 +865,52 @@ public class Bitboard {
         }
 
         return sum;
+    }
+
+    private static int mvvLva(final Piece source, final Piece target) {
+        if (target == null || target == Piece.KING) {
+            return 0;
+        }
+
+        final int sourceValue = source == Piece.KING ? QUEEN_VALUE + 1 : pieceValue(source);
+
+        return (pieceValue(target) << 8) - sourceValue;
+    }
+
+    private int pieceSquareValue(final Piece piece, final Color color, final int square) {
+        if (color == Color.WHITE) {
+            switch (piece) {
+                case KING:
+                    return isLateGame() ? WHITE_KING_TABLE_LATE[square] : WHITE_KING_TABLE_EARLY[square];
+                case QUEEN:
+                    return WHITE_QUEEN_TABLE[square];
+                case ROOK:
+                    return WHITE_ROOK_TABLE[square];
+                case BISHOP:
+                    return WHITE_BISHOP_TABLE[square];
+                case KNIGHT:
+                    return WHITE_KNIGHT_TABLE[square];
+                case PAWN:
+                    return WHITE_PAWN_TABLE[square];
+            }
+        } else {
+            switch (piece) {
+                case KING:
+                    return isLateGame() ? BLACK_KING_TABLE_LATE[square] : BLACK_KING_TABLE_EARLY[square];
+                case QUEEN:
+                    return BLACK_QUEEN_TABLE[square];
+                case ROOK:
+                    return BLACK_ROOK_TABLE[square];
+                case BISHOP:
+                    return BLACK_BISHOP_TABLE[square];
+                case KNIGHT:
+                    return BLACK_KNIGHT_TABLE[square];
+                case PAWN:
+                    return BLACK_PAWN_TABLE[square];
+            }
+        }
+
+        throw new IllegalStateException();
     }
 
     public long zobristHash() {
@@ -890,6 +953,10 @@ public class Bitboard {
         return hash;
     }
 
+    public boolean zobristEquals(final Bitboard bitboard) {
+        return white.equals(bitboard.white) && black.equals(bitboard.black) && enPassant == bitboard.enPassant;
+    }
+
     // endregion
 
     // region Checks
@@ -900,7 +967,7 @@ public class Bitboard {
     //   | |____| |  | | |___| |____| . \ ____) |
     //    \_____|_|  |_|______\_____|_|\_\_____/
 
-    public boolean invalidPosition() {
+    public boolean isInvalidPosition() {
         return isInCheck(turn.opposite());
     }
 
@@ -1108,10 +1175,6 @@ public class Bitboard {
     }
 
     // endregion
-
-    public boolean equalsZobrist(final Bitboard bitboard) {
-        return white.equals(bitboard.white) && black.equals(bitboard.black) && enPassant == bitboard.enPassant;
-    }
 
     // region Move Do/Undo
     //    __  __  ______      ________   _____   ____     ___    _ _   _ _____   ____
@@ -1402,6 +1465,7 @@ public class Bitboard {
     public static class BBMove {
         private final boolean castle;
         private final boolean enPassantAttack;
+        private final int mvvLva;
 
         private boolean selfLostQueenSideCastle;
         private boolean selfLostKingSideCastle;
@@ -1421,7 +1485,7 @@ public class Bitboard {
         private int previousHalfmove;
         private int nextHalfmove;
 
-        private final int pieceAttackedValue;
+        private final int moveOrderValue;
 
 //        private long zobristHashToggle;
 
@@ -1431,7 +1495,8 @@ public class Bitboard {
                final Piece pieceAttacked,
                final boolean castle,
                final boolean enPassantAttack,
-               final Piece promote
+               final Piece promote,
+               final int squareDiff
         ) {
             this.sourceSquare = sourceSquare;
             this.targetSquare = targetSquare;
@@ -1440,7 +1505,9 @@ public class Bitboard {
             this.castle = castle;
             this.enPassantAttack = enPassantAttack;
             this.promote = promote;
-            this.pieceAttackedValue = pieceValue(pieceAttacked);
+
+            this.mvvLva = mvvLva(pieceMoved, pieceAttacked);
+            this.moveOrderValue = mvvLva + squareDiff;
         }
 
         @Override
@@ -1475,8 +1542,25 @@ public class Bitboard {
             }
         }
 
-        public int getPieceAttackedValue() {
-            return pieceAttackedValue;
+        public int getMvvLvaSquarePieceDifferenceValue() {
+            return moveOrderValue;
+        }
+
+        public int getMvvLvaValue() {
+            return mvvLva;
+        }
+
+        public boolean isRepetitionOf(final BBMove other) {
+            return other != null
+                    && pieceAttacked == null
+                    && other.pieceAttacked == null
+                    && sourceSquare == other.sourceSquare
+                    && targetSquare == other.targetSquare
+                    && pieceMoved == other.pieceMoved;
+        }
+
+        public boolean isAttack() {
+            return pieceAttacked != null;
         }
     }
 

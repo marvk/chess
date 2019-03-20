@@ -149,7 +149,7 @@ public class BitboardMakeUnmakePerft {
 //
 //            board.make(move);
 
-            final boolean valid = !board.invalidPosition();
+            final boolean valid = !board.isInvalidPosition();
 
             if (valid) {
                 nodes += perft(board, depth - 1);
