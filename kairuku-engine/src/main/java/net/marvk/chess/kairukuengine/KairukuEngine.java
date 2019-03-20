@@ -8,9 +8,7 @@ import net.marvk.chess.uci4j.*;
 import org.apache.commons.lang3.time.StopWatch;
 
 import java.time.Duration;
-import java.util.List;
-import java.util.Objects;
-import java.util.StringJoiner;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -35,6 +33,8 @@ public class KairukuEngine extends UciEngine {
     private Color selfColor;
 
     private final Metrics metrics = new Metrics();
+
+    private final Set<UciMove> searchMoves = new HashSet<>();
 
     public KairukuEngine(final UIChannel uiChannel) {
         super(uiChannel);
@@ -82,8 +82,12 @@ public class KairukuEngine extends UciEngine {
     public void uciNewGame() {
         stop();
 
-        metrics.resetAll();
+        resetAll();
+    }
 
+    private void resetAll() {
+        resetForMove();
+        metrics.resetAll();
         board = null;
     }
 
@@ -102,6 +106,10 @@ public class KairukuEngine extends UciEngine {
         if (board == null) {
             log.warn("not going, no position loaded");
             return;
+        }
+
+        if (go.getSearchMoves() != null && go.getSearchMoves().length > 0) {
+            searchMoves.addAll(Arrays.asList(go.getSearchMoves()));
         }
 
         selfColor = board.getActivePlayer();
@@ -129,11 +137,11 @@ public class KairukuEngine extends UciEngine {
         calculationFuture = executor.submit(() -> {
             final ValuedMove play;
             try {
-                metrics.resetRound();
+                resetForMove();
                 play = play();
             } catch (final Throwable t) {
                 log.error("unexpected error", t);
-                throw new RuntimeException();
+                throw new RuntimeException(t);
             }
 
             final List<ValuedMove> pv = Stream.iterate(play, vm -> vm.pvChild != null, vm -> vm.pvChild)
@@ -167,11 +175,16 @@ public class KairukuEngine extends UciEngine {
         });
     }
 
+    private void resetForMove() {
+        searchMoves.clear();
+        metrics.resetRound();
+        secondToLast = null;
+        last = null;
+    }
+
     @Override
     public void stop() {
         calculationFuture.cancel(true);
-
-        metrics.resetRound();
     }
 
     @Override
@@ -183,7 +196,7 @@ public class KairukuEngine extends UciEngine {
     public void quit() {
         calculationFuture.cancel(true);
 
-        metrics.resetAll();
+        resetAll();
     }
 
     // endregion
@@ -217,7 +230,7 @@ public class KairukuEngine extends UciEngine {
             final boolean legalMovesRemaining = Bitboard.hasAnyLegalMoves(board, pseudoLegalMoves);
 
             if (legalMovesRemaining && Bitboard.hasAnyAttackMoves(pseudoLegalMoves)) {
-                return quiescenceSearch(4, alpha, beta, currentColor);
+                return quiescenceSearch(20, alpha, beta, currentColor);
             }
 
             final int value = currentColor.getHeuristicFactor() * heuristic.evaluate(board, legalMovesRemaining);
@@ -236,6 +249,10 @@ public class KairukuEngine extends UciEngine {
         Bitboard.BBMove repetition = null;
 
         for (final Bitboard.BBMove current : pseudoLegalMoves) {
+            if (depth == ply && !searchMoves.isEmpty() && !searchMoves.contains(current.asUciMove())) {
+                continue;
+            }
+
             // Don't repeat second to last move, not perfect but good approximation
             if (current.isRepetitionOf(secondToLast)) {
                 repetition = current;
@@ -289,13 +306,17 @@ public class KairukuEngine extends UciEngine {
 
         final int standingPat = currentColor.getHeuristicFactor() * heuristic.evaluate(board, legalMovesRemaining);
 
-        if (depth == 0 || !legalMovesRemaining || standingPat >= initialBeta) {
+        if (standingPat >= initialBeta) {
             return new ValuedMove(initialBeta, null, null);
         }
 
         int alpha = initialAlpha < standingPat
                 ? standingPat
                 : initialAlpha;
+
+        if (depth == 0 || !legalMovesRemaining) {
+            return new ValuedMove(alpha, null, null);
+        }
 
         quiescenceSearchMoveOrder.sort(pseudoLegalMoves);
 
