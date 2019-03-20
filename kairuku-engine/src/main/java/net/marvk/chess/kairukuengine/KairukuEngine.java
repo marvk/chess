@@ -8,7 +8,9 @@ import net.marvk.chess.uci4j.*;
 import org.apache.commons.lang3.time.StopWatch;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.List;
+import java.util.Objects;
+import java.util.StringJoiner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -18,8 +20,11 @@ import java.util.stream.Stream;
 @Log4j2
 public class KairukuEngine extends UciEngine {
     private static final String PLY_OPTION = "ply";
-    private static final Comparator<Bitboard.BBMove> MOVE_ORDER_COMPARATOR =
-            Comparator.comparing(Bitboard.BBMove::getMoveOrderValue).reversed();
+
+    private final MoveOrder defaultMoveOrder = new MvvLvaPieceSquareDifferenceMoveOrder();
+    private final MoveOrder quiescenceSearchMoveOrder = new MvvLvaMoveOrder();
+
+    private final Heuristic heuristic = new SimpleHeuristic();
 
     private final ExecutorService executor;
 
@@ -28,8 +33,6 @@ public class KairukuEngine extends UciEngine {
     private Bitboard board;
 
     private Color selfColor;
-
-    private final Heuristic heuristic = new SimpleHeuristic();
 
     private final Metrics metrics = new Metrics();
 
@@ -101,26 +104,24 @@ public class KairukuEngine extends UciEngine {
             return;
         }
 
-        metrics.resetRound();
-
         selfColor = board.getActivePlayer();
 
         final Integer time = selfColor == Color.WHITE ? go.getWhiteTime() : go.getBlackTime();
 
         if (go.getDepth() != null) {
             ply = go.getDepth();
-        } else if (time == null) {
+        } else if (time == null || time >= Integer.MAX_VALUE) {
             ply = 7;
         } else if (time < 200) {
-            ply = 3;
+            ply = 2;
         } else if (time < 5_000) {
-            ply = 4;
+            ply = 3;
         } else if (time < 30_000) {
-            ply = 5;
+            ply = 4;
         } else if (time < 120_000) {
-            ply = 6;
+            ply = 5;
         } else {
-            ply = 7;
+            ply = 6;
         }
 
         log.info("time is " + time + ", setting " + "ply to " + ply);
@@ -128,6 +129,7 @@ public class KairukuEngine extends UciEngine {
         calculationFuture = executor.submit(() -> {
             final ValuedMove play;
             try {
+                metrics.resetRound();
                 play = play();
             } catch (final Throwable t) {
                 log.error("unexpected error", t);
@@ -209,16 +211,21 @@ public class KairukuEngine extends UciEngine {
     private ValuedMove negamax(final int depth, int alpha, final int beta, final Color currentColor) {
         metrics.incrementNodeCount();
 
+        final List<Bitboard.BBMove> pseudoLegalMoves = board.getPseudoLegalMoves();
+
         if (depth == 0 || board.getHalfmoveClock() == 50) {
-            final int value = currentColor.getHeuristicFactor() * heuristic.evaluate(board, board.hasAnyLegalMoves());
+            final boolean legalMovesRemaining = Bitboard.hasAnyLegalMoves(board, pseudoLegalMoves);
+
+            if (legalMovesRemaining && Bitboard.hasAnyAttackMoves(pseudoLegalMoves)) {
+                return quiescenceSearch(4, alpha, beta, currentColor);
+            }
+
+            final int value = currentColor.getHeuristicFactor() * heuristic.evaluate(board, legalMovesRemaining);
 
             return new ValuedMove(value, null, null);
         }
 
-        final List<Bitboard.BBMove> pseudoLegalMoves = board.getPseudoLegalMoves();
-
-        Collections.shuffle(pseudoLegalMoves);
-        pseudoLegalMoves.sort(MOVE_ORDER_COMPARATOR);
+        defaultMoveOrder.sort(pseudoLegalMoves);
 
         int value = SimpleHeuristic.LOSS;
         ValuedMove bestChild = null;
@@ -237,7 +244,7 @@ public class KairukuEngine extends UciEngine {
 
             board.make(current);
 
-            if (board.invalidPosition()) {
+            if (board.isInvalidPosition()) {
                 board.unmake(current);
                 continue;
             }
@@ -275,11 +282,74 @@ public class KairukuEngine extends UciEngine {
         return new ValuedMove(value, bestMove, bestChild);
     }
 
+    private ValuedMove quiescenceSearch(final int depth, final int initialAlpha, final int initialBeta, final Color currentColor) {
+        final List<Bitboard.BBMove> pseudoLegalMoves = board.getPseudoLegalMoves();
+
+        final boolean legalMovesRemaining = Bitboard.hasAnyLegalMoves(board, pseudoLegalMoves);
+
+        final int standingPat = currentColor.getHeuristicFactor() * heuristic.evaluate(board, legalMovesRemaining);
+
+        if (depth == 0 || !legalMovesRemaining || standingPat >= initialBeta) {
+            return new ValuedMove(initialBeta, null, null);
+        }
+
+        int alpha = initialAlpha < standingPat
+                ? standingPat
+                : initialAlpha;
+
+        quiescenceSearchMoveOrder.sort(pseudoLegalMoves);
+
+        Bitboard.BBMove bestMove = null;
+        ValuedMove bestChild = null;
+
+        for (final Bitboard.BBMove current : pseudoLegalMoves) {
+            if (!current.isAttack()) {
+                continue;
+            }
+
+            board.make(current);
+
+            if (board.isInvalidPosition()) {
+                board.unmake(current);
+                continue;
+            }
+
+            final ValuedMove child = quiescenceSearch(depth - 1, -initialBeta, -alpha, currentColor.opposite());
+            final int value = -child.getValue();
+
+            metrics.incrementNodeCount();
+
+            board.unmake(current);
+
+            if (value >= initialBeta) {
+                return new ValuedMove(initialBeta, current, child);
+            }
+
+            if (value > alpha) {
+                alpha = value;
+
+                bestMove = current;
+                bestChild = child;
+            }
+        }
+
+        return new ValuedMove(alpha, bestMove, bestChild);
+    }
+
     @Data
     private static class ValuedMove {
         private final int value;
         private final Bitboard.BBMove move;
         private final ValuedMove pvChild;
+
+        @Override
+        public String toString() {
+            return "ValuedMove{" +
+                    "value=" + value +
+                    ", move=" + (move == null ? null : move.asUciMove()) +
+                    ", pvChild=" + pvChild +
+                    '}';
+        }
     }
 
     // region String generation

@@ -390,17 +390,27 @@ public class Bitboard {
                 .ofColor(turn.opposite()), promoteTo, move.castle, move.enPassantAttack, false));
     }
 
-    public boolean hasAnyLegalMoves() {
-        for (final BBMove move : getPseudoLegalMoves()) {
-            make(move);
+    public static boolean hasAnyLegalMoves(final Bitboard board, final Collection<BBMove> moves) {
+        for (final BBMove move : moves) {
+            board.make(move);
 
-            if (!invalidPosition()) {
-                unmake(move);
+            if (!board.isInvalidPosition()) {
+                board.unmake(move);
 
                 return true;
             }
 
-            unmake(move);
+            board.unmake(move);
+        }
+
+        return false;
+    }
+
+    public static boolean hasAnyAttackMoves(final Collection<BBMove> moves) {
+        for (final BBMove pseudoLegalMove : moves) {
+            if (pseudoLegalMove.isAttack()) {
+                return true;
+            }
         }
 
         return false;
@@ -945,7 +955,7 @@ public class Bitboard {
     //   | |____| |  | | |___| |____| . \ ____) |
     //    \_____|_|  |_|______\_____|_|\_\_____/
 
-    public boolean invalidPosition() {
+    public boolean isInvalidPosition() {
         return isInCheck(turn.opposite());
     }
 
@@ -1443,6 +1453,7 @@ public class Bitboard {
     public static class BBMove {
         private final boolean castle;
         private final boolean enPassantAttack;
+        private final int mvvLva;
 
         private boolean selfLostQueenSideCastle;
         private boolean selfLostKingSideCastle;
@@ -1481,7 +1492,8 @@ public class Bitboard {
             this.enPassantAttack = enPassantAttack;
             this.promote = promote;
 
-            this.moveOrderValue = mvvLva(pieceMoved, pieceAttacked) + squareDiff;
+            this.mvvLva = mvvLva(pieceMoved, pieceAttacked);
+            this.moveOrderValue = mvvLva + squareDiff;
         }
 
         @Override
@@ -1516,8 +1528,12 @@ public class Bitboard {
             }
         }
 
-        public int getMoveOrderValue() {
+        public int getMvvLvaSquarePieceDifferenceValue() {
             return moveOrderValue;
+        }
+
+        public int getMvvLvaValue() {
+            return mvvLva;
         }
 
         public boolean isRepetitionOf(final BBMove other) {
@@ -1527,6 +1543,10 @@ public class Bitboard {
                     && sourceSquare == other.sourceSquare
                     && targetSquare == other.targetSquare
                     && pieceMoved == other.pieceMoved;
+        }
+
+        public boolean isAttack() {
+            return pieceAttacked != null;
         }
     }
 
