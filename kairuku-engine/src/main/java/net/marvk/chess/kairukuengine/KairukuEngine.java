@@ -34,7 +34,8 @@ public class KairukuEngine extends UciEngine {
     private Color selfColor;
 
     private final Metrics metrics = new Metrics();
-    private final TranspositionTable transpositionTable = new TranspositionTable(100000);
+    private final TranspositionTable transpositionTable = new TranspositionTable(10000000);
+    private final Set<Long> movesSinceHalfmoveReset = new HashSet<>();
 
     private final Set<UciMove> searchMoves = new HashSet<>();
 
@@ -82,8 +83,6 @@ public class KairukuEngine extends UciEngine {
 
     @Override
     public void uciNewGame() {
-        stop();
-
         resetAll();
     }
 
@@ -93,6 +92,9 @@ public class KairukuEngine extends UciEngine {
         board = null;
         plyBonus = 0.0;
         transpositionTable.clear();
+
+        // TODO remove last two (?) entries if no new position has been given since last go
+        movesSinceHalfmoveReset.clear();
     }
 
     @Override
@@ -218,8 +220,6 @@ public class KairukuEngine extends UciEngine {
     private void resetForMove() {
         searchMoves.clear();
         metrics.resetRound();
-        secondToLast = null;
-        last = null;
     }
 
     @Override
@@ -241,16 +241,12 @@ public class KairukuEngine extends UciEngine {
 
     // endregion
 
-    private Bitboard.BBMove secondToLast;
-    private Bitboard.BBMove last;
-
     private ValuedMove play() {
+        movesSinceHalfmoveReset.add(board.zobristHash());
+
         final StopWatch stopwatch = StopWatch.createStarted();
         final ValuedMove result = negamax(ply, SimpleHeuristic.LOSS, SimpleHeuristic.WIN, selfColor);
         stopwatch.stop();
-
-        secondToLast = last;
-        last = result.getMove();
 
         final Duration duration = Duration.ofNanos(stopwatch.getNanoTime());
 
@@ -258,18 +254,27 @@ public class KairukuEngine extends UciEngine {
 
         log.info(infoString(result));
 
+        final Bitboard.BBMove theMove = result.getMove();
+        board.make(theMove);
+        movesSinceHalfmoveReset.add(board.zobristHash());
+        board.unmake(theMove);
+
         return result;
     }
 
     private ValuedMove negamax(final int depth, final int alphaOriginal, final int betaOriginal, final Color currentColor) {
         metrics.incrementNodeCount();
 
-        int alpha = alphaOriginal;
-        int beta = betaOriginal;
-
         final long zobristHash = board.zobristHash();
 
+        if (depth < ply && movesSinceHalfmoveReset.contains(zobristHash)) {
+            return new ValuedMove(SimpleHeuristic.DRAW, null, null);
+        }
+
         final TranspositionTable.Entry ttEntry = transpositionTable.get(zobristHash);
+
+        int alpha = alphaOriginal;
+        int beta = betaOriginal;
 
         if (ttEntry != null) {
             if (ttEntry.getDepth() >= depth) {
@@ -311,16 +316,8 @@ public class KairukuEngine extends UciEngine {
 
         boolean legalMovesEncountered = false;
 
-        Bitboard.BBMove repetition = null;
-
         for (final Bitboard.BBMove current : pseudoLegalMoves) {
             if (depth == ply && !searchMoves.isEmpty() && !searchMoves.contains(current.asUciMove())) {
-                continue;
-            }
-
-            // Don't repeat second to last move, not perfect but good approximation
-            if (current.isRepetitionOf(secondToLast)) {
-                repetition = current;
                 continue;
             }
 
@@ -352,19 +349,19 @@ public class KairukuEngine extends UciEngine {
             }
         }
 
-        if (!legalMovesEncountered) {
-            //Forced repetition check
-            if (repetition != null) {
-                return new ValuedMove(0, repetition, null);
-            }
+        // Might produce NPE later...
+        if (bestMove == null) {
+            log.warn("best move null at depth " + depth);
+        }
 
+        if (!legalMovesEncountered) {
             return new ValuedMove(currentColor.getHeuristicFactor() * heuristic.evaluate(board, false), null, null);
         }
 
         final ValuedMove result = new ValuedMove(value, bestMove, bestChild);
 
         //Don't store game ending moves to still get the quickest mate
-        if (!SimpleHeuristic.isGameEndingValue(value)) {
+        if (!SimpleHeuristic.isCheckmateValue(value)) {
             final TranspositionTable.NodeType type;
 
             if (value <= alphaOriginal) {
@@ -400,16 +397,13 @@ public class KairukuEngine extends UciEngine {
             return new ValuedMove(alpha, null, null);
         }
 
+        pseudoLegalMoves.removeIf(m -> !m.isAttack());
         quiescenceSearchMoveOrder.sort(pseudoLegalMoves);
 
         Bitboard.BBMove bestMove = null;
         ValuedMove bestChild = null;
 
         for (final Bitboard.BBMove current : pseudoLegalMoves) {
-            if (!current.isAttack()) {
-                continue;
-            }
-
             board.make(current);
 
             if (board.isInvalidPosition()) {

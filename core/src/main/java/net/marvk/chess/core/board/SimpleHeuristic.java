@@ -11,7 +11,7 @@ public class SimpleHeuristic implements Heuristic {
     //Assume no game lasts a million full moves
     private static final int MAX_FULL_MOVES = 1 << 20;
 
-    public static boolean isGameEndingValue(final int value) {
+    public static boolean isCheckmateValue(final int value) {
         return value > WIN - MAX_FULL_MOVES || value < LOSS + MAX_FULL_MOVES;
     }
 
