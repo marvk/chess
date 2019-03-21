@@ -27,12 +27,14 @@ public class KairukuEngine extends UciEngine {
 
     private Future<Void> calculationFuture;
     private int ply;
+    private double plyBonus;
+
     private Bitboard board;
 
     private Color selfColor;
 
     private final Metrics metrics = new Metrics();
-    private final TranspositionTable transpositionTable = new TranspositionTable();
+    private final TranspositionTable transpositionTable = new TranspositionTable(100000);
 
     private final Set<UciMove> searchMoves = new HashSet<>();
 
@@ -89,6 +91,7 @@ public class KairukuEngine extends UciEngine {
         resetForMove();
         metrics.resetAll();
         board = null;
+        plyBonus = 0.0;
         transpositionTable.clear();
     }
 
@@ -109,36 +112,23 @@ public class KairukuEngine extends UciEngine {
             return;
         }
 
-        if (go.getSearchMoves() != null && go.getSearchMoves().length > 0) {
-            searchMoves.addAll(Arrays.asList(go.getSearchMoves()));
-        }
-
         selfColor = board.getActivePlayer();
 
         final Integer time = selfColor == Color.WHITE ? go.getWhiteTime() : go.getBlackTime();
 
-        if (go.getDepth() != null) {
-            ply = go.getDepth();
-        } else if (time == null || time >= Integer.MAX_VALUE) {
-            ply = 7;
-        } else if (time <= 2_000) {
-            ply = 2;
-        } else if (time <= 7_500) {
-            ply = 3;
-        } else if (time <= 20_000) {
-            ply = 4;
-        } else if (time <= 60_000) {
-            ply = 5;
-        } else {
-            ply = 6;
-        }
+        final int actualPly = calculatePly(go, time);
 
-        log.info("time is " + time + ", setting " + "ply to " + ply);
+        log.info("time remaining is " + time + "ms, setting ply to " + ply + " (" + actualPly + " + " + ((int) plyBonus) + ")");
 
         calculationFuture = executor.submit(() -> {
+            resetForMove();
+
+            if (go.getSearchMoves() != null && go.getSearchMoves().length > 0) {
+                searchMoves.addAll(Arrays.asList(go.getSearchMoves()));
+            }
+
             final ValuedMove play;
             try {
-                resetForMove();
                 play = play();
             } catch (final Throwable t) {
                 log.error("unexpected error", t);
@@ -174,6 +164,55 @@ public class KairukuEngine extends UciEngine {
 
             return null;
         });
+    }
+
+    private int calculatePly(final Go go, final Integer timeRemaining) {
+        if (go.getDepth() != null) {
+            ply = go.getDepth();
+            return ply;
+        }
+
+        if (timeRemaining == null) {
+            ply = 7;
+            return ply;
+        }
+
+        if (timeRemaining > 60_000) {
+            ply = 6;
+        } else if (timeRemaining > 20_000) {
+            ply = 5;
+        } else if (timeRemaining > 7_500) {
+            ply = 4;
+        } else if (timeRemaining > 2_000) {
+            ply = 3;
+        } else if (timeRemaining > 1_000) {
+            ply = 2;
+        } else {
+            ply = 2;
+            return ply;
+        }
+
+        if (board.getFullmoveClock() > 1 && metrics.getLastTableHitRate() < 0.75) {
+            final long lastMillis = metrics.getLastDuration().toMillis();
+
+            if (timeRemaining <= 30_000 && timeRemaining > 1_000) {
+                if (lastMillis < 10L) {
+                    plyBonus += 1.5;
+                } else if (lastMillis < 100L) {
+                    plyBonus += 0.5;
+                } else {
+                    plyBonus = Math.max(0.0, plyBonus / 2.0);
+                }
+            } else {
+                plyBonus = 0.0;
+            }
+        }
+
+        final int actualPly = ply;
+
+        ply += ((int) plyBonus);
+
+        return actualPly;
     }
 
     private void resetForMove() {
@@ -232,19 +271,21 @@ public class KairukuEngine extends UciEngine {
 
         final TranspositionTable.Entry ttEntry = transpositionTable.get(zobristHash);
 
-        if (ttEntry != null && ttEntry.getDepth() >= depth) {
-            metrics.incrementTableHits();
+        if (ttEntry != null) {
+            if (ttEntry.getDepth() >= depth) {
+                metrics.incrementTableHits();
 
-            switch (ttEntry.getNodeType()) {
-                case LOWERBOUND:
-                    alpha = Math.max(alpha, ttEntry.getValue());
-                    break;
-                case UPPERBOUND:
-                    beta = Math.min(beta, ttEntry.getValue());
-            }
+                switch (ttEntry.getNodeType()) {
+                    case LOWERBOUND:
+                        alpha = Math.max(alpha, ttEntry.getValue());
+                        break;
+                    case UPPERBOUND:
+                        beta = Math.min(beta, ttEntry.getValue());
+                }
 
-            if (ttEntry.getNodeType() == TranspositionTable.NodeType.EXACT || alpha >= beta) {
-                return ttEntry.getValuedMove();
+                if (ttEntry.getNodeType() == TranspositionTable.NodeType.EXACT || alpha >= beta) {
+                    return ttEntry.getValuedMove();
+                }
             }
         }
 
@@ -254,7 +295,7 @@ public class KairukuEngine extends UciEngine {
             final boolean legalMovesRemaining = Bitboard.hasAnyLegalMoves(board, pseudoLegalMoves);
 
             if (legalMovesRemaining && Bitboard.hasAnyAttackMoves(pseudoLegalMoves)) {
-                return quiescenceSearch(20, alpha, beta, currentColor);
+                return quiescenceSearch(5, alpha, beta, currentColor);
             }
 
             final int value = currentColor.getHeuristicFactor() * heuristic.evaluate(board, legalMovesRemaining);
@@ -320,21 +361,24 @@ public class KairukuEngine extends UciEngine {
             return new ValuedMove(currentColor.getHeuristicFactor() * heuristic.evaluate(board, false), null, null);
         }
 
-        final TranspositionTable.NodeType type;
+        final ValuedMove result = new ValuedMove(value, bestMove, bestChild);
 
-        if (value <= alphaOriginal) {
-            type = TranspositionTable.NodeType.UPPERBOUND;
-        } else if (value >= beta) {
-            type = TranspositionTable.NodeType.LOWERBOUND;
-        } else {
-            type = TranspositionTable.NodeType.EXACT;
+        //Don't store game ending moves to still get the quickest mate
+        if (!SimpleHeuristic.isGameEndingValue(value)) {
+            final TranspositionTable.NodeType type;
+
+            if (value <= alphaOriginal) {
+                type = TranspositionTable.NodeType.UPPERBOUND;
+            } else if (value >= beta) {
+                type = TranspositionTable.NodeType.LOWERBOUND;
+            } else {
+                type = TranspositionTable.NodeType.EXACT;
+            }
+
+            transpositionTable.put(zobristHash, new TranspositionTable.Entry(result, depth, value, type));
         }
 
-        final ValuedMove valuedMove = new ValuedMove(value, bestMove, bestChild);
-
-        transpositionTable.put(zobristHash, new TranspositionTable.Entry(valuedMove, depth, value, type));
-
-        return valuedMove;
+        return result;
     }
 
     private ValuedMove quiescenceSearch(final int depth, final int initialAlpha, final int initialBeta, final Color currentColor) {
@@ -410,7 +454,7 @@ public class KairukuEngine extends UciEngine {
         addToJoiner(lineJoiner, "nodes searched", metrics.getLastNodeCount());
         lineJoiner.add("╠═══════════════════════════════════╣");
         addToJoiner(lineJoiner, "ttable hits", metrics.getLastTableHits());
-        addToJoiner(lineJoiner, "ttable hit rate", ((double) metrics.getLastTableHits()) / metrics.getLastNodeCount());
+        addToJoiner(lineJoiner, "ttable hit rate", ((int) (metrics.getLastTableHitRate() * 1000000.0)) / 1000000.0);
         addToJoiner(lineJoiner, "table load factor", transpositionTable.load());
         lineJoiner.add("╠═══════════════════════════════════╣");
         addToJoiner(lineJoiner, "nps last", metrics.getLastNps());

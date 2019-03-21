@@ -48,6 +48,10 @@ public class Metrics {
         return Util.nodesPerSecond(lastDuration, lastNodeCount);
     }
 
+    public double getLastTableHitRate() {
+        return (double) lastTableHits / lastNodeCount;
+    }
+
     public int getTotalNodeCount() {
         return totalNodeCount;
     }
@@ -62,6 +66,10 @@ public class Metrics {
 
     public int getTotalNps() {
         return Util.nodesPerSecond(totalDuration, totalNodeCount);
+    }
+
+    public int getTotalTableHitRate() {
+        return totalTableHits / totalNodeCount;
     }
 
     public void resetRound() {

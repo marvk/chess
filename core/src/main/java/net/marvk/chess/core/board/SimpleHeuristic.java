@@ -8,6 +8,13 @@ public class SimpleHeuristic implements Heuristic {
     public static final int LOSS = -WIN;
     public static final int DRAW = 0;
 
+    //Assume no game lasts a million full moves
+    private static final int MAX_FULL_MOVES = 1 << 20;
+
+    public static boolean isGameEndingValue(final int value) {
+        return value > WIN - MAX_FULL_MOVES || value < LOSS + MAX_FULL_MOVES;
+    }
+
     /**
      * @return the heuristic value of the board from White's perspective
      */
