@@ -17,6 +17,7 @@ import org.apache.http.protocol.HttpContext;
 
 import java.nio.CharBuffer;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.function.Consumer;
 
 @Log4j2
@@ -53,11 +54,9 @@ class GameStateResponseConsumer extends AsyncCharConsumer<Boolean> {
 
         log.trace("Received game state response:\n" + response);
 
-        final GameStateResponse gameStateResponse = GSON.fromJson(response, GameStateResponse.class);
-
-        if (gameStateResponse != null) {
-            acceptGameStateResponse(gameStateResponse);
-        }
+        Arrays.stream(response.split("\n"))
+              .map(s -> GSON.fromJson(response, GameStateResponse.class))
+              .forEach(this::acceptGameStateResponse);
     }
 
     private void acceptGameStateResponse(final GameStateResponse gameStateResponse) {
