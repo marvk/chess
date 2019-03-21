@@ -8,7 +8,7 @@ import java.util.List;
 
 public class MvvLvaMoveOrder implements MoveOrder{
     private static final Comparator<Bitboard.BBMove> MOVE_ORDER_COMPARATOR =
-            Comparator.comparing(Bitboard.BBMove::getMvvLvaSquarePieceDifferenceValue).reversed();
+            Comparator.comparing(Bitboard.BBMove::getMvvLvaValue).reversed();
 
     @Override
     public void sort(final List<Bitboard.BBMove> moves) {

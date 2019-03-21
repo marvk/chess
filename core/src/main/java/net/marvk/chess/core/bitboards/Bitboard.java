@@ -1,6 +1,7 @@
 package net.marvk.chess.core.bitboards;
 
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import net.marvk.chess.core.board.*;
 
 import java.util.*;
@@ -1462,10 +1463,10 @@ public class Bitboard {
         }
     }
 
+    @ToString
     public static class BBMove {
         private final boolean castle;
         private final boolean enPassantAttack;
-        private final int mvvLva;
 
         private boolean selfLostQueenSideCastle;
         private boolean selfLostKingSideCastle;
@@ -1485,6 +1486,7 @@ public class Bitboard {
         private int previousHalfmove;
         private int nextHalfmove;
 
+        private final int mvvLva;
         private final int moveOrderValue;
 
 //        private long zobristHashToggle;
@@ -1510,27 +1512,6 @@ public class Bitboard {
             this.moveOrderValue = mvvLva + squareDiff;
         }
 
-        @Override
-        public String toString() {
-            return "BBMove{" +
-                    "castle=" + castle +
-                    ", enPassantAttack=" + enPassantAttack +
-                    ", selfLostQueenSideCastle=" + selfLostQueenSideCastle +
-                    ", selfLostKingSideCastle=" + selfLostKingSideCastle +
-                    ", opponentLostQueenSideCastle=" + opponentLostQueenSideCastle +
-                    ", opponentLostKingSideCastle=" + opponentLostKingSideCastle +
-                    ", previousEnPassantSquare=" + previousEnPassantSquare +
-                    ", nextEnPassantSquare=" + nextEnPassantSquare +
-                    ", sourceSquare=" + sourceSquare +
-                    ", targetSquare=" + targetSquare +
-                    ", pieceMoved=" + pieceMoved +
-                    ", pieceAttacked=" + pieceAttacked +
-                    ", promote=" + promote +
-                    ", previousHalfmove=" + previousHalfmove +
-                    ", nextHalfmove=" + nextHalfmove +
-                    '}';
-        }
-
         public UciMove asUciMove() {
             final Square source = SQUARES[Long.numberOfTrailingZeros(sourceSquare)];
             final Square target = SQUARES[Long.numberOfTrailingZeros(targetSquare)];
@@ -1548,15 +1529,6 @@ public class Bitboard {
 
         public int getMvvLvaValue() {
             return mvvLva;
-        }
-
-        public boolean isRepetitionOf(final BBMove other) {
-            return other != null
-                    && pieceAttacked == null
-                    && other.pieceAttacked == null
-                    && sourceSquare == other.sourceSquare
-                    && targetSquare == other.targetSquare
-                    && pieceMoved == other.pieceMoved;
         }
 
         public boolean isAttack() {
