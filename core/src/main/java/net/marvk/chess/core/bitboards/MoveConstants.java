@@ -1,5 +1,7 @@
 package net.marvk.chess.core.bitboards;
 
+import net.marvk.chess.core.board.Piece;
+
 /*
  * MSB . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . LSB
  *
@@ -35,6 +37,8 @@ package net.marvk.chess.core.bitboards;
  *                     ------------------------------------------------------------> Next en passant square     } and get that information from the pawn move
  */
 public final class MoveConstants {
+    public static final long NO_SQUARE = 0L;
+
     public static final int NO_PIECE = 0;
     public static final int PAWN     = 0b001;
     public static final int KNIGHT   = 0b010;
@@ -42,6 +46,16 @@ public final class MoveConstants {
     public static final int ROOK     = 0b100;
     public static final int QUEEN    = 0b101;
     public static final int KING     = 0b110;
+
+    public static final Piece[] PIECES = {
+            null,
+            Piece.PAWN,
+            Piece.KNIGHT,
+            Piece.BISHOP,
+            Piece.ROOK,
+            Piece.QUEEN,
+            Piece.KING
+    };
 
     public static final long PIECE_MOVED_MASK                      = 0x7L;
     public static final long PIECE_ATTACKED_MASK                   = 0x38L;

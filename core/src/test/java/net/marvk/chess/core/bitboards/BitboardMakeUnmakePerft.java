@@ -3,18 +3,18 @@ package net.marvk.chess.core.bitboards;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import net.marvk.chess.core.board.Fen;
+import org.apache.logging.log4j.core.util.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -26,7 +26,7 @@ public class BitboardMakeUnmakePerft {
             , new NominalPerftStep(3, 8_902L, 34L, 0L, 0L, 0L, 12L, 0L, 0L, 0L)
             , new NominalPerftStep(4, 197_281L, 1_576L, 0L, 0L, 0L, 469L, 0L, 0L, 8L)
             , new NominalPerftStep(5, 4_865_609L, 82_719L, 258L, 0L, 0L, 27_351L, 6L, 0L, 347L)
-            , new NominalPerftStep(6, 119_060_324L, 2_812_008L, 5_248L, 0L, 0L, 809_099L, 329L, 46L, 10_828L)
+//            , new NominalPerftStep(6, 119_060_324L, 2_812_008L, 5_248L, 0L, 0L, 809_099L, 329L, 46L, 10_828L)
     );
 
     private static final NominalPerft POSITION_2 = new NominalPerft("position 2", "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -",
@@ -34,7 +34,7 @@ public class BitboardMakeUnmakePerft {
             , new NominalPerftStep(2, 2_039L)
             , new NominalPerftStep(3, 97_862L)
             , new NominalPerftStep(4, 4_085_603L)
-            , new NominalPerftStep(5, 193_690_690L)
+//            , new NominalPerftStep(5, 193_690_690L)
     );
 
     private static final NominalPerft POSITION_3 = new NominalPerft("position 3", "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -",
@@ -44,7 +44,7 @@ public class BitboardMakeUnmakePerft {
             , new NominalPerftStep(4, 43_238L)
             , new NominalPerftStep(5, 674_624L)
             , new NominalPerftStep(6, 11_030_083L)
-            , new NominalPerftStep(7, 178_633_661L)
+//            , new NominalPerftStep(7, 178_633_661L)
     );
 
     private static final NominalPerft POSITION_4 = new NominalPerft("position 4", "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1",
@@ -53,7 +53,7 @@ public class BitboardMakeUnmakePerft {
             , new NominalPerftStep(3, 9_467L)
             , new NominalPerftStep(4, 422_333L)
             , new NominalPerftStep(5, 15_833_292L)
-            , new NominalPerftStep(6, 706_045_033L)
+//            , new NominalPerftStep(6, 706_045_033L)
     );
 
     private static final NominalPerft POSITION_4_MIRRORED = new NominalPerft("position 4 mirrored", "r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1",
@@ -70,7 +70,7 @@ public class BitboardMakeUnmakePerft {
             , new NominalPerftStep(2, 1_486L)
             , new NominalPerftStep(3, 62_379L)
             , new NominalPerftStep(4, 2_103_487L)
-            , new NominalPerftStep(5, 89_941_194L)
+//            , new NominalPerftStep(5, 89_941_194L)
     );
 
     private static final NominalPerft POSITION_6 = new NominalPerft("position 6", "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10",
@@ -78,7 +78,7 @@ public class BitboardMakeUnmakePerft {
             , new NominalPerftStep(2, 2_079L)
             , new NominalPerftStep(3, 89_890L)
             , new NominalPerftStep(4, 3_894_594L)
-            , new NominalPerftStep(5, 164_075_551L)
+//            , new NominalPerftStep(5, 164_075_551L)
     );
 
     private static Path enginePath;
@@ -122,11 +122,25 @@ public class BitboardMakeUnmakePerft {
 
         long nodes = 0L;
 
+//        final String fen = board.fen();
+//        final int hash = board.hashCode();
+//        final String expected = board.toString();
+//
+//        final String previous = board.bitboardStrings();
+
+//        final Set<String> actuals = new HashSet<>();
         for (final Bitboard.BBMove move : moves) {
             board.make(move);
 
-//            board.unmake(move);
-//
+            final boolean valid = !board.isInvalidPosition();
+
+            if (valid) {
+//                actuals.add(move.asUciMove().toString());
+                nodes += perft(board, depth - 1);
+            }
+
+            board.unmake(move);
+
 //            Assertions.assertEquals(hash, board.hashCode(), () -> {
 //                final StringJoiner error = new StringJoiner("\n");
 //                final String actual = board.toString();
@@ -134,29 +148,45 @@ public class BitboardMakeUnmakePerft {
 //                error.add("Wrong undo");
 //                error.add(fen);
 //                error.add("depth: " + depth);
-//                error.add("Previous\t" + previous);
-//                error.add("Move \t\t" + move.uci());
+////                error.add("Previous\t" + previous);
+//                error.add("Move \t\t" + move.asUciMove());
 //                error.add("expected:");
 //                error.add(expected);
 //                error.add("actual:");
 //                error.add(actual);
 //                error.add(Boolean.toString(expected.equals(actual)));
-//                error.add(black);
-//                error.add(board.blackString());
+//                error.add("expected bitboards:");
+//                error.add(previous);
+//                error.add("actual bitboards:");
+//                error.add(board.bitboardStrings());
 //
 //                return error.toString();
 //            });
-//
-//            board.make(move);
-
-            final boolean valid = !board.isInvalidPosition();
-
-            if (valid) {
-                nodes += perft(board, depth - 1);
-            }
-
-            board.unmake(move);
         }
+
+//        try {
+//            final Set<String> expecteds = new EnginePerft(enginePath).perft(fen);
+//
+//            final Set<String> missed = new HashSet<>(expecteds);
+//            missed.removeAll(actuals);
+//
+//            final Set<String> illegal = new HashSet<>(actuals);
+//            illegal.removeAll(expecteds);
+//
+//            if (!missed.isEmpty() || !illegal.isEmpty()) {
+//                System.out.println("actuals   = " + actuals);
+//                System.out.println("expecteds = " + expecteds);
+//
+//                System.out.println(fen);
+//                System.out.println("missed  = " + missed);
+//                System.out.println("illegal = " + illegal);
+//
+//                Assertions.fail();
+//            }
+//
+//        } catch (final IOException | ExecutionException | InterruptedException e) {
+//            e.printStackTrace();
+//        }
 
         return nodes;
     }

@@ -40,9 +40,13 @@ public class UciMove {
     }
 
     public boolean representsMove(final Move move) {
+        final boolean promotionEquals = move.getPromoteTo() == null
+                ? promote == null
+                : move.getPromoteTo().getPiece() == promote;
+
         return move.getSource() == source &&
                 move.getTarget() == target &&
-                (!move.isPromotion() && promote == null || move.getPromoteTo().getPiece() == promote);
+                promotionEquals;
     }
 
     public boolean representsMove(final MoveResult moveResult) {
@@ -53,10 +57,10 @@ public class UciMove {
         Bitboard board = startingBoard;
 
         for (final UciMove uciMove : uciMoves) {
-            final Optional<MoveResult> maybeMove =
-                    board.getValidMoves()
+            final Optional<Bitboard.BBMove> maybeMove =
+                    board.getPseudoLegalMoves()
                          .stream()
-                         .filter(uciMove::representsMove)
+                         .filter(p -> p.asUciMove().equals(uciMove))
                          .findFirst();
 
             if (!maybeMove.isPresent()) {
@@ -64,7 +68,7 @@ public class UciMove {
                         .toString(uciMoves));
             }
 
-            board = maybeMove.get().getBoard();
+            board.make(maybeMove.get());
         }
 
         return board;
