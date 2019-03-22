@@ -18,8 +18,8 @@ import java.util.stream.Stream;
 public class KairukuEngine extends UciEngine {
     private static final String PLY_OPTION = "ply";
 
-    private final MoveOrder defaultMoveOrder = new MvvLvaPieceSquareDifferenceMoveOrder();
-    private final MoveOrder quiescenceSearchMoveOrder = new MvvLvaMoveOrder();
+    private final MvvLvaPieceSquareDifferenceMoveOrder defaultMoveOrder = new MvvLvaPieceSquareDifferenceMoveOrder();
+    private final MvvLvaMoveOrder quiescenceSearchMoveOrder = new MvvLvaMoveOrder();
 
     private final Heuristic heuristic = new SimpleHeuristic();
 
@@ -38,6 +38,8 @@ public class KairukuEngine extends UciEngine {
     private final Set<Long> movesSinceHalfmoveReset = new HashSet<>();
 
     private final Set<UciMove> searchMoves = new HashSet<>();
+
+    private Bitboard.BBMove[] previousPv;
 
     public KairukuEngine(final UIChannel uiChannel) {
         super(uiChannel);
@@ -92,6 +94,7 @@ public class KairukuEngine extends UciEngine {
         board = null;
         plyBonus = 0.0;
         transpositionTable.clear();
+        previousPv = null;
 
         // TODO remove last two (?) entries if no new position has been given since last go
         movesSinceHalfmoveReset.clear();
@@ -133,12 +136,16 @@ public class KairukuEngine extends UciEngine {
             try {
                 play = play();
             } catch (final Throwable t) {
-                log.error("unexpected error", t);
+                log.error("unexpected error, board state:\n" + board, t);
                 throw new RuntimeException(t);
             }
 
             final List<ValuedMove> pv = Stream.iterate(play, vm -> vm.getPvChild() != null, ValuedMove::getPvChild)
                                               .collect(Collectors.toList());
+
+            previousPv = Stream.iterate(play, vm -> vm.getPvChild() != null, ValuedMove::getPvChild)
+                               .map(ValuedMove::getMove)
+                               .toArray(Bitboard.BBMove[]::new);
 
             final UciMove[] pvArray =
                     pv.stream().map(ValuedMove::getMove)
@@ -296,7 +303,7 @@ public class KairukuEngine extends UciEngine {
 
         final List<Bitboard.BBMove> pseudoLegalMoves = board.generatePseudoLegalMoves();
 
-        if (depth == 0 || board.getHalfmoveClock() == 50) {
+        if (depth == 0) {
             final boolean legalMovesRemaining = Bitboard.hasAnyLegalMoves(board, pseudoLegalMoves);
 
             if (legalMovesRemaining && Bitboard.hasAnyAttackMoves(pseudoLegalMoves)) {
@@ -308,7 +315,18 @@ public class KairukuEngine extends UciEngine {
             return new ValuedMove(value, null, null);
         }
 
-        defaultMoveOrder.sort(pseudoLegalMoves);
+        if (previousPv != null) {
+            final int i = 2 + ply - depth;
+
+            if (i < previousPv.length) {
+                // set the previous PV move as the first move to be searched
+                defaultMoveOrder.sort(pseudoLegalMoves, previousPv[i]);
+            } else {
+                defaultMoveOrder.sort(pseudoLegalMoves);
+            }
+        } else {
+            defaultMoveOrder.sort(pseudoLegalMoves);
+        }
 
         int value = SimpleHeuristic.LOSS;
         ValuedMove bestChild = null;
@@ -347,11 +365,6 @@ public class KairukuEngine extends UciEngine {
             if (alpha >= beta) {
                 break;
             }
-        }
-
-        // Might produce NPE later...
-        if (bestMove == null) {
-            log.warn("best move null at depth " + depth);
         }
 
         if (!legalMovesEncountered) {

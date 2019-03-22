@@ -32,7 +32,7 @@ public class SimpleHeuristic implements Heuristic {
             }
         }
 
-        if (board.getHalfmoveClock() == 50) {
+        if (board.getHalfmoveClock() >= 50) {
             return DRAW;
         }
 
