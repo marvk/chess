@@ -34,7 +34,7 @@ public class KairukuEngine extends UciEngine {
     private Color selfColor;
 
     private final Metrics metrics = new Metrics();
-    private final TranspositionTable transpositionTable = new TranspositionTable(10000000);
+    private final TranspositionTable transpositionTable = new TranspositionTable(10_000_000);
     private final Set<Long> movesSinceHalfmoveReset = new HashSet<>();
 
     private final Set<UciMove> searchMoves = new HashSet<>();
@@ -379,11 +379,10 @@ public class KairukuEngine extends UciEngine {
     }
 
     private ValuedMove quiescenceSearch(final int depth, final int initialAlpha, final int initialBeta, final Color currentColor) {
-        final List<Bitboard.BBMove> pseudoLegalMoves = board.generatePseudoLegalMoves();
+        final List<Bitboard.BBMove> pseudoLegalAttackMoves = board.generatePseudoLegalAttackMoves();
 
-        final boolean legalMovesRemaining = Bitboard.hasAnyLegalMoves(board, pseudoLegalMoves);
-
-        final int standingPat = currentColor.getHeuristicFactor() * heuristic.evaluate(board, legalMovesRemaining);
+        // Pretent the game is not over for speed?!
+        final int standingPat = currentColor.getHeuristicFactor() * heuristic.evaluate(board, true);
 
         if (standingPat >= initialBeta) {
             return new ValuedMove(initialBeta, null, null);
@@ -393,17 +392,16 @@ public class KairukuEngine extends UciEngine {
                 ? standingPat
                 : initialAlpha;
 
-        if (depth == 0 || !legalMovesRemaining) {
+        if (depth == 0) {
             return new ValuedMove(alpha, null, null);
         }
 
-        pseudoLegalMoves.removeIf(m -> !m.isAttack());
-        quiescenceSearchMoveOrder.sort(pseudoLegalMoves);
+        quiescenceSearchMoveOrder.sort(pseudoLegalAttackMoves);
 
         Bitboard.BBMove bestMove = null;
         ValuedMove bestChild = null;
 
-        for (final Bitboard.BBMove current : pseudoLegalMoves) {
+        for (final Bitboard.BBMove current : pseudoLegalAttackMoves) {
             board.make(current);
 
             if (board.isInvalidPosition()) {

@@ -402,10 +402,11 @@ public class Bitboard {
 
     @Deprecated
     public List<MoveResult> generateValidMoves() {
-        return new MoveGenerator().getPseudoLegalMoves()
-                                  .stream()
-                                  .map(this::copyMake)
-                                  .collect(Collectors.toList());
+        return new MoveGenerator(false)
+                .getPseudoLegalMoves()
+                .stream()
+                .map(this::copyMake)
+                .collect(Collectors.toList());
     }
 
     private MoveResult copyMake(final BBMove move) {
@@ -426,15 +427,6 @@ public class Bitboard {
                 false,
                 false
         ));
-//        return new MoveResult(copy, new Move(
-//                SQUARES[Long.numberOfTrailingZeros((move.bits & SOURCE_SQUARE_INDEX_MASK) >> SOURCE_SQUARE_INDEX_SHIFT)],
-//                SQUARES[Long.numberOfTrailingZeros((move.bits & TARGET_SQUARE_INDEX_MASK) >> TARGET_SQUARE_INDEX_SHIFT)],
-//                move.pieceMoved.ofColor(turn.opposite()),
-//                promoteTo,
-//                move.castle,
-//                move.enPassantAttack,
-//                false)
-//        );
     }
 
     public static boolean hasAnyLegalMoves(final Bitboard board, final Collection<BBMove> moves) {
@@ -464,13 +456,23 @@ public class Bitboard {
     }
 
     public List<BBMove> generatePseudoLegalMoves() {
-        return new MoveGenerator().getPseudoLegalMoves();
+        return new MoveGenerator(false).getPseudoLegalMoves();
+    }
+
+    public List<BBMove> generatePseudoLegalAttackMoves() {
+        return new MoveGenerator(true).getPseudoLegalMoves();
     }
 
     private class MoveGenerator {
-        private List<BBMove> result;
+        private final boolean onlyAttackMoves;
+        private final List<BBMove> result;
 
-        public List<BBMove> getPseudoLegalMoves() {
+        MoveGenerator(final boolean onlyAttackMoves) {
+            this.onlyAttackMoves = onlyAttackMoves;
+            this.result = new ArrayList<>();
+        }
+
+        List<BBMove> getPseudoLegalMoves() {
             final PlayerBoard self;
             final long selfOccupancy;
             final long opponentOccupancy;
@@ -484,8 +486,6 @@ public class Bitboard {
                 selfOccupancy = black.occupancy();
                 opponentOccupancy = white.occupancy();
             }
-
-            result = new ArrayList<>();
 
             final long occupancy = selfOccupancy | opponentOccupancy;
 
@@ -722,6 +722,10 @@ public class Bitboard {
             }
 
             final int pieceAttacked = turn == Color.WHITE ? black.getPieceConst(attackSquareIndex) : white.getPieceConst(attackSquareIndex);
+
+            if (onlyAttackMoves && pieceAttacked == 0) {
+                return;
+            }
 
             bits |= (long) pieceMoved << PIECE_MOVED_SHIFT;
             bits |= (long) pieceAttacked << PIECE_ATTACKED_SHIFT;
@@ -1705,5 +1709,9 @@ public class Bitboard {
 
     public String bitboardStrings() {
         return "white:\n" + white + "\nblack:" + black;
+    }
+
+    public static void main(String[] args) {
+        System.out.println(new Bitboard(Fen.parse("r1b2rk1/pp3pp1/5n2/2pp4/8/q3P3/1bQNNPPP/2R1K2R w K - 2 18")).generatePseudoLegalAttackMoves());
     }
 }

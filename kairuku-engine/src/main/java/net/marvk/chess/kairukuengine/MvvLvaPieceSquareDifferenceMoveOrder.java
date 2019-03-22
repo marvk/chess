@@ -2,7 +2,6 @@ package net.marvk.chess.kairukuengine;
 
 import net.marvk.chess.core.bitboards.Bitboard;
 
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -12,7 +11,6 @@ public class MvvLvaPieceSquareDifferenceMoveOrder implements MoveOrder {
 
     @Override
     public void sort(final List<Bitboard.BBMove> moves) {
-        Collections.shuffle(moves);
         moves.sort(MOVE_ORDER_COMPARATOR);
     }
 }
