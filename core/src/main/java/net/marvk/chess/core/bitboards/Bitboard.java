@@ -554,7 +554,7 @@ public class Bitboard {
             final long promoteRank;
 
             final boolean whiteTurn = turn == Color.WHITE;
-            
+
             if (whiteTurn) {
                 singleMoveTarget = source << 8;
                 promoteRank = RANK_EIGHT_SQUARES;
@@ -698,17 +698,11 @@ public class Bitboard {
             final long attack = Long.highestOneBit(remainingAttacks);
             remainingAttacks &= ~attack;
 
-            if (turn == Color.WHITE && (attack & RANK_EIGHT_SQUARES) != 0L) {
+            if ((turn == Color.WHITE && (attack & RANK_EIGHT_SQUARES) != 0L) || (turn == Color.BLACK && (attack & RANK_ONE_SQUARES) != 0L)) {
                 pawnPromotions(result, source, attack);
-                continue;
+            } else {
+                result.add(makeBbMove(source, attack, PAWN, false, attack == enPassant, NO_PIECE, NO_SQUARE));
             }
-
-            if (turn == Color.BLACK && (attack & RANK_ONE_SQUARES) != 0L) {
-                pawnPromotions(result, source, attack);
-                continue;
-            }
-
-            result.add(makeBbMove(source, attack, PAWN, false, attack == enPassant, NO_PIECE, NO_SQUARE));
         }
     }
 
