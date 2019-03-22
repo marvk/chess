@@ -24,13 +24,7 @@ public class TranspositionTable {
         return table.get(hash);
     }
 
-    private static int putCount = 0;
-
     public Entry put(final long key, final Entry value) {
-        putCount++;
-        if (putCount % 100000 == 0) {
-            System.out.println("putCount = " + putCount);
-        }
         return table.put(key, value);
     }
 
