@@ -62,7 +62,7 @@ public class BitboardMakeUnmakePerft {
             , new NominalPerftStep(3, 9_467L)
             , new NominalPerftStep(4, 422_333L)
             , new NominalPerftStep(5, 15_833_292L)
-            , new NominalPerftStep(6, 706_045_033L)
+//            , new NominalPerftStep(6, 706_045_033L)
     );
 
     private static final NominalPerft POSITION_5 = new NominalPerft("position 5", "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8 ",
