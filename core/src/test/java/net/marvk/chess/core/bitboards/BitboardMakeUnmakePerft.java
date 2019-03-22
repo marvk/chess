@@ -3,18 +3,15 @@ package net.marvk.chess.core.bitboards;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import net.marvk.chess.core.board.Fen;
-import org.apache.logging.log4j.core.util.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -118,7 +115,7 @@ public class BitboardMakeUnmakePerft {
             return 1L;
         }
 
-        final List<Bitboard.BBMove> moves = board.getPseudoLegalMoves();
+        final List<Bitboard.BBMove> moves = board.generatePseudoLegalMoves();
 
         long nodes = 0L;
 

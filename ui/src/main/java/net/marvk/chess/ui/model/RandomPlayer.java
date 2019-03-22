@@ -14,7 +14,7 @@ public class RandomPlayer extends Player {
 
     @Override
     public Move play(final MoveResult previousMove) {
-        final List<MoveResult> validMoves = previousMove.getBoard().getValidMoves();
+        final List<MoveResult> validMoves = previousMove.getBoard().generateValidMoves();
 
         final int index = ThreadLocalRandom.current().nextInt(validMoves.size());
 

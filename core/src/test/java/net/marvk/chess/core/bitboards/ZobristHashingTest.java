@@ -113,7 +113,7 @@ class ZobristHashingTest {
             return;
         }
 
-        final List<MoveResult> validMoves = board.getValidMoves();
+        final List<MoveResult> validMoves = board.generateValidMoves();
 
         for (final MoveResult validMove : validMoves) {
             nodes++;

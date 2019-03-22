@@ -294,7 +294,7 @@ public class KairukuEngine extends UciEngine {
             }
         }
 
-        final List<Bitboard.BBMove> pseudoLegalMoves = board.getPseudoLegalMoves();
+        final List<Bitboard.BBMove> pseudoLegalMoves = board.generatePseudoLegalMoves();
 
         if (depth == 0 || board.getHalfmoveClock() == 50) {
             final boolean legalMovesRemaining = Bitboard.hasAnyLegalMoves(board, pseudoLegalMoves);
@@ -379,7 +379,7 @@ public class KairukuEngine extends UciEngine {
     }
 
     private ValuedMove quiescenceSearch(final int depth, final int initialAlpha, final int initialBeta, final Color currentColor) {
-        final List<Bitboard.BBMove> pseudoLegalMoves = board.getPseudoLegalMoves();
+        final List<Bitboard.BBMove> pseudoLegalMoves = board.generatePseudoLegalMoves();
 
         final boolean legalMovesRemaining = Bitboard.hasAnyLegalMoves(board, pseudoLegalMoves);
 

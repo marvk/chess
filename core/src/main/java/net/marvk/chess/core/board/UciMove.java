@@ -58,7 +58,7 @@ public class UciMove {
 
         for (final UciMove uciMove : uciMoves) {
             final Optional<Bitboard.BBMove> maybeMove =
-                    board.getPseudoLegalMoves()
+                    board.generatePseudoLegalMoves()
                          .stream()
                          .filter(p -> p.asUciMove().equals(uciMove))
                          .findFirst();

@@ -1,6 +1,5 @@
 package net.marvk.chess.core.bitboards;
 
-import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import net.marvk.chess.core.board.*;
 
@@ -401,11 +400,12 @@ public class Bitboard {
     //   | |  | | |__| | \  /  | |____  | |__| | |____| |\  | |____| | \ \  / ____ \| | | |__| | | \ \
     //   |_|  |_|\____/   \/   |______|  \_____|______|_| \_|______|_|  \_\/_/    \_\_|  \____/|_|  \_\
 
-    public List<MoveResult> getValidMoves() {
-        return getPseudoLegalMoves()
-                .stream()
-                .map(this::copyMake)
-                .collect(Collectors.toList());
+    @Deprecated
+    public List<MoveResult> generateValidMoves() {
+        return new MoveGenerator().getPseudoLegalMoves()
+                                  .stream()
+                                  .map(this::copyMake)
+                                  .collect(Collectors.toList());
     }
 
     private MoveResult copyMake(final BBMove move) {
@@ -463,335 +463,333 @@ public class Bitboard {
         return false;
     }
 
-    public List<BBMove> getPseudoLegalMoves() {
-        final PlayerBoard self;
-        final long selfOccupancy;
-        final long opponentOccupancy;
-
-        if (turn == Color.WHITE) {
-            self = white;
-            selfOccupancy = white.occupancy();
-            opponentOccupancy = black.occupancy();
-        } else {
-            self = black;
-            selfOccupancy = black.occupancy();
-            opponentOccupancy = white.occupancy();
-        }
-
-        final long occupancy = selfOccupancy | opponentOccupancy;
-
-        final List<BBMove> result = new ArrayList<>();
-
-        slidingAttacks(result, self.queens, occupancy, selfOccupancy, MagicBitboard.ROOK, QUEEN);
-        slidingAttacks(result, self.rooks, occupancy, selfOccupancy, MagicBitboard.ROOK, ROOK);
-        slidingAttacks(result, self.queens, occupancy, selfOccupancy, MagicBitboard.BISHOP, QUEEN);
-        slidingAttacks(result, self.bishops, occupancy, selfOccupancy, MagicBitboard.BISHOP, BISHOP);
-        singleAttacks(result, self.knights, selfOccupancy, KNIGHT_ATTACKS, KNIGHT);
-        singleAttacks(result, self.kings, selfOccupancy, KING_ATTACKS, KING);
-        pawnAttacks(result, self.pawns, selfOccupancy, opponentOccupancy);
-        pawnMoves(result, self.pawns, occupancy);
-        castleMoves(result, self, occupancy);
-
-        return result;
+    public List<BBMove> generatePseudoLegalMoves() {
+        return new MoveGenerator().getPseudoLegalMoves();
     }
 
-    private void castleMoves(
-            final List<BBMove> result,
-            final PlayerBoard self,
-            final long occupancy
-    ) {
-        if (turn == Color.WHITE && !isInCheck(Color.WHITE, Square.E1.getOccupiedBitMask(), black, occupancy)) {
-            if (self.queenSideCastle
-                    && (WHITE_QUEEN_SIDE_CASTLE_OCCUPANCY & occupancy) == 0L
-                    && !isInCheck(Color.WHITE, Square.C1.getOccupiedBitMask(), black, occupancy)
-                    && !isInCheck(Color.WHITE, Square.D1.getOccupiedBitMask(), black, occupancy)
-            ) {
-                result.add(makeCastleMove(Square.E1, Square.C1));
-            }
+    private class MoveGenerator {
+        private List<BBMove> result;
 
-            if (self.kingSideCastle
-                    && (WHITE_KING_SIDE_CASTLE_OCCUPANCY & occupancy) == 0L
-                    && !isInCheck(Color.WHITE, Square.F1.getOccupiedBitMask(), black, occupancy)
-                    && !isInCheck(Color.WHITE, Square.G1.getOccupiedBitMask(), black, occupancy)
-            ) {
-                result.add(makeCastleMove(Square.E1, Square.G1));
-            }
-        } else if (turn == Color.BLACK && !isInCheck(Color.BLACK, Square.E8.getOccupiedBitMask(), white, occupancy)) {
-            if (self.queenSideCastle
-                    && (BLACK_QUEEN_SIDE_CASTLE_OCCUPANCY & occupancy) == 0L
-                    && !isInCheck(Color.BLACK, Square.C8.getOccupiedBitMask(), white, occupancy)
-                    && !isInCheck(Color.BLACK, Square.D8.getOccupiedBitMask(), white, occupancy)
-            ) {
-                result.add(makeCastleMove(Square.E8, Square.C8));
-            }
+        public List<BBMove> getPseudoLegalMoves() {
+            final PlayerBoard self;
+            final long selfOccupancy;
+            final long opponentOccupancy;
 
-            if (self.kingSideCastle
-                    && (BLACK_KING_SIDE_CASTLE_OCCUPANCY & occupancy) == 0L
-                    && !isInCheck(Color.BLACK, Square.F8.getOccupiedBitMask(), white, occupancy)
-                    && !isInCheck(Color.BLACK, Square.G8.getOccupiedBitMask(), white, occupancy)
-            ) {
-                result.add(makeCastleMove(Square.E8, Square.G8));
-            }
-        }
-    }
-
-    private BBMove makeCastleMove(final Square kingSource, final Square kingTarget) {
-        return makeBbMove(kingSource.getOccupiedBitMask(), kingTarget.getOccupiedBitMask(), KING, true, false, NO_PIECE, 0L);
-    }
-
-    private void pawnMoves(
-            final List<BBMove> result,
-            final long pawns,
-            final long fullOccupancy
-    ) {
-        long remainingPawns = pawns;
-
-        while (remainingPawns != 0L) {
-            final long source = Long.highestOneBit(remainingPawns);
-            remainingPawns &= ~source;
-
-            final long singleMoveTarget;
-            final long promoteRank;
-
-            final boolean whiteTurn = turn == Color.WHITE;
-
-            if (whiteTurn) {
-                singleMoveTarget = source << 8;
-                promoteRank = RANK_EIGHT_SQUARES;
+            if (turn == Color.WHITE) {
+                self = white;
+                selfOccupancy = white.occupancy();
+                opponentOccupancy = black.occupancy();
             } else {
-                singleMoveTarget = source >> 8;
-                promoteRank = RANK_ONE_SQUARES;
+                self = black;
+                selfOccupancy = black.occupancy();
+                opponentOccupancy = white.occupancy();
             }
 
-            if ((singleMoveTarget & fullOccupancy) == 0L) {
-                if ((singleMoveTarget & promoteRank) == 0L) {
-                    //no promotion moves
+            result = new ArrayList<>();
 
-                    result.add(makeBbMove(source, singleMoveTarget, PAWN, false, false, NO_PIECE, NO_SQUARE));
+            final long occupancy = selfOccupancy | opponentOccupancy;
 
-                    final long doubleMoveTarget;
-                    final long doubleMoveSourceRank;
+            slidingAttacks(self.queens, occupancy, selfOccupancy, MagicBitboard.ROOK, QUEEN);
+            slidingAttacks(self.rooks, occupancy, selfOccupancy, MagicBitboard.ROOK, ROOK);
+            slidingAttacks(self.queens, occupancy, selfOccupancy, MagicBitboard.BISHOP, QUEEN);
+            slidingAttacks(self.bishops, occupancy, selfOccupancy, MagicBitboard.BISHOP, BISHOP);
+            singleAttacks(self.knights, selfOccupancy, KNIGHT_ATTACKS, KNIGHT);
+            singleAttacks(self.kings, selfOccupancy, KING_ATTACKS, KING);
+            pawnAttacks(self.pawns, selfOccupancy, opponentOccupancy);
+            pawnMoves(self.pawns, occupancy);
+            castleMoves(self, occupancy);
 
-                    if (whiteTurn) {
-                        doubleMoveTarget = singleMoveTarget << 8;
-                        doubleMoveSourceRank = RANK_TWO_SQUARES;
-                    } else {
-                        doubleMoveTarget = singleMoveTarget >> 8;
-                        doubleMoveSourceRank = RANK_SEVEN_SQUARES;
-                    }
+            return result;
+        }
 
-                    if ((source & doubleMoveSourceRank) != 0L && (doubleMoveTarget & fullOccupancy) == 0L) {
-                        //is in starting rank and free double move target square
+        private void castleMoves(
+                final PlayerBoard self,
+                final long occupancy
+        ) {
+            if (turn == Color.WHITE && !isInCheck(Color.WHITE, Square.E1.getOccupiedBitMask(), black, occupancy)) {
+                if (self.queenSideCastle
+                        && (WHITE_QUEEN_SIDE_CASTLE_OCCUPANCY & occupancy) == 0L
+                        && !isInCheck(Color.WHITE, Square.C1.getOccupiedBitMask(), black, occupancy)
+                        && !isInCheck(Color.WHITE, Square.D1.getOccupiedBitMask(), black, occupancy)
+                ) {
+                    makeCastleMove(Square.E1, Square.C1);
+                }
 
-                        result.add(makeBbMove(source, doubleMoveTarget, PAWN, false, false, NO_PIECE, singleMoveTarget));
-                    }
-                } else {
-                    pawnPromotions(result, source, singleMoveTarget);
+                if (self.kingSideCastle
+                        && (WHITE_KING_SIDE_CASTLE_OCCUPANCY & occupancy) == 0L
+                        && !isInCheck(Color.WHITE, Square.F1.getOccupiedBitMask(), black, occupancy)
+                        && !isInCheck(Color.WHITE, Square.G1.getOccupiedBitMask(), black, occupancy)
+                ) {
+                    makeCastleMove(Square.E1, Square.G1);
+                }
+            } else if (turn == Color.BLACK && !isInCheck(Color.BLACK, Square.E8.getOccupiedBitMask(), white, occupancy)) {
+                if (self.queenSideCastle
+                        && (BLACK_QUEEN_SIDE_CASTLE_OCCUPANCY & occupancy) == 0L
+                        && !isInCheck(Color.BLACK, Square.C8.getOccupiedBitMask(), white, occupancy)
+                        && !isInCheck(Color.BLACK, Square.D8.getOccupiedBitMask(), white, occupancy)
+                ) {
+                    makeCastleMove(Square.E8, Square.C8);
+                }
+
+                if (self.kingSideCastle
+                        && (BLACK_KING_SIDE_CASTLE_OCCUPANCY & occupancy) == 0L
+                        && !isInCheck(Color.BLACK, Square.F8.getOccupiedBitMask(), white, occupancy)
+                        && !isInCheck(Color.BLACK, Square.G8.getOccupiedBitMask(), white, occupancy)
+                ) {
+                    makeCastleMove(Square.E8, Square.G8);
                 }
             }
         }
-    }
 
-    private void pawnPromotions(
-            final List<BBMove> result,
-            final long source,
-            final long target
-    ) {
-        pawnPromotion(result, source, target, KNIGHT);
-        pawnPromotion(result, source, target, BISHOP);
-        pawnPromotion(result, source, target, ROOK);
-        pawnPromotion(result, source, target, QUEEN);
-    }
-
-    private void pawnPromotion(
-            final List<BBMove> result,
-            final long source,
-            final long target,
-            final int promotionPiece
-    ) {
-        result.add(makeBbMove(source, target, PAWN, false, false, promotionPiece, 0L));
-    }
-
-    private void pawnAttacks(
-            final List<BBMove> result,
-            final long pawns,
-            final long selfOccupancy,
-            final long opponentOccupancy
-    ) {
-        long remainingPawns = pawns;
-
-        final long[] pawnAttacks = turn == Color.WHITE ? WHITE_PAWN_ATTACKS : BLACK_PAWN_ATTACKS;
-
-        while (remainingPawns != 0L) {
-            final long source = Long.highestOneBit(remainingPawns);
-            remainingPawns &= ~source;
-
-            final long attacks = pawnAttacks[Long.numberOfTrailingZeros(source)] & (opponentOccupancy | enPassant) & ~selfOccupancy;
-
-            generatePawnAttacks(result, source, attacks);
+        private void makeCastleMove(final Square kingSource, final Square kingTarget) {
+            makeBbMove(kingSource.getOccupiedBitMask(), kingTarget.getOccupiedBitMask(), KING, true, false, NO_PIECE, 0L);
         }
-    }
 
-    private void singleAttacks(
-            final List<BBMove> result,
-            final long pieces,
-            final long selfOccupancy,
-            final long[] attacksArray,
-            final int piece
-    ) {
-        long remainingPieces = pieces;
+        private void pawnMoves(
+                final long pawns,
+                final long fullOccupancy
+        ) {
+            long remainingPawns = pawns;
 
-        while (remainingPieces != 0L) {
-            final long source = Long.highestOneBit(remainingPieces);
-            remainingPieces &= ~source;
+            while (remainingPawns != 0L) {
+                final long source = Long.highestOneBit(remainingPawns);
+                remainingPawns &= ~source;
 
-            final long attacks = attacksArray[Long.numberOfTrailingZeros(source)] & ~selfOccupancy;
+                final long singleMoveTarget;
+                final long promoteRank;
 
-            generateAttacks(result, source, attacks, piece);
+                final boolean whiteTurn = turn == Color.WHITE;
+
+                if (whiteTurn) {
+                    singleMoveTarget = source << 8;
+                    promoteRank = RANK_EIGHT_SQUARES;
+                } else {
+                    singleMoveTarget = source >> 8;
+                    promoteRank = RANK_ONE_SQUARES;
+                }
+
+                if ((singleMoveTarget & fullOccupancy) == 0L) {
+                    if ((singleMoveTarget & promoteRank) == 0L) {
+                        //no promotion moves
+
+                        makeBbMove(source, singleMoveTarget, PAWN, false, false, NO_PIECE, NO_SQUARE);
+
+                        final long doubleMoveTarget;
+                        final long doubleMoveSourceRank;
+
+                        if (whiteTurn) {
+                            doubleMoveTarget = singleMoveTarget << 8;
+                            doubleMoveSourceRank = RANK_TWO_SQUARES;
+                        } else {
+                            doubleMoveTarget = singleMoveTarget >> 8;
+                            doubleMoveSourceRank = RANK_SEVEN_SQUARES;
+                        }
+
+                        if ((source & doubleMoveSourceRank) != 0L && (doubleMoveTarget & fullOccupancy) == 0L) {
+                            //is in starting rank and free double move target square
+
+                            makeBbMove(source, doubleMoveTarget, PAWN, false, false, NO_PIECE, singleMoveTarget);
+                        }
+                    } else {
+                        pawnPromotions(source, singleMoveTarget);
+                    }
+                }
+            }
         }
-    }
 
-    private void slidingAttacks(
-            final List<BBMove> result,
-            final long pieces,
-            final long fullOccupancy,
-            final long selfOccupancy,
-            final MagicBitboard bitboard,
-            final int piece
-    ) {
-        long remainingPieces = pieces;
-
-        while (remainingPieces != 0L) {
-            final long source = Long.highestOneBit(remainingPieces);
-            remainingPieces &= ~source;
-
-            final long attacks = bitboard.attacks(fullOccupancy, Long.numberOfTrailingZeros(source)) & ~selfOccupancy;
-
-            generateAttacks(result, source, attacks, piece);
+        private void pawnPromotions(
+                final long source,
+                final long target
+        ) {
+            pawnPromotion(source, target, KNIGHT);
+            pawnPromotion(source, target, BISHOP);
+            pawnPromotion(source, target, ROOK);
+            pawnPromotion(source, target, QUEEN);
         }
-    }
 
-    private void generateAttacks(
-            final List<BBMove> result,
-            final long source,
-            final long attacks,
-            final int piece
-    ) {
-        long remainingAttacks = attacks;
-
-        while (remainingAttacks != 0L) {
-            final long attack = Long.highestOneBit(remainingAttacks);
-            remainingAttacks &= ~attack;
-
-            result.add(makeBbMove(source, attack, piece, false, false, NO_PIECE, NO_SQUARE));
+        private void pawnPromotion(
+                final long source,
+                final long target,
+                final int promotionPiece
+        ) {
+            makeBbMove(source, target, PAWN, false, false, promotionPiece, 0L);
         }
-    }
 
-    private void generatePawnAttacks(
-            final List<BBMove> result,
-            final long source,
-            final long attacks
-    ) {
-        long remainingAttacks = attacks;
+        private void pawnAttacks(
+                final long pawns,
+                final long selfOccupancy,
+                final long opponentOccupancy
+        ) {
+            long remainingPawns = pawns;
 
-        while (remainingAttacks != 0L) {
-            final long attack = Long.highestOneBit(remainingAttacks);
-            remainingAttacks &= ~attack;
+            final long[] pawnAttacks = turn == Color.WHITE ? WHITE_PAWN_ATTACKS : BLACK_PAWN_ATTACKS;
 
-            if ((turn == Color.WHITE && (attack & RANK_EIGHT_SQUARES) != 0L) || (turn == Color.BLACK && (attack & RANK_ONE_SQUARES) != 0L)) {
-                pawnPromotions(result, source, attack);
+            while (remainingPawns != 0L) {
+                final long source = Long.highestOneBit(remainingPawns);
+                remainingPawns &= ~source;
+
+                final long attacks = pawnAttacks[Long.numberOfTrailingZeros(source)] & (opponentOccupancy | enPassant) & ~selfOccupancy;
+
+                generatePawnAttacks(source, attacks);
+            }
+        }
+
+        private void singleAttacks(
+                final long pieces,
+                final long selfOccupancy,
+                final long[] attacksArray,
+                final int piece
+        ) {
+            long remainingPieces = pieces;
+
+            while (remainingPieces != 0L) {
+                final long source = Long.highestOneBit(remainingPieces);
+                remainingPieces &= ~source;
+
+                final long attacks = attacksArray[Long.numberOfTrailingZeros(source)] & ~selfOccupancy;
+
+                generateAttacks(source, attacks, piece);
+            }
+        }
+
+        private void slidingAttacks(
+                final long pieces,
+                final long fullOccupancy,
+                final long selfOccupancy,
+                final MagicBitboard bitboard,
+                final int piece
+        ) {
+            long remainingPieces = pieces;
+
+            while (remainingPieces != 0L) {
+                final long source = Long.highestOneBit(remainingPieces);
+                remainingPieces &= ~source;
+
+                final long attacks = bitboard.attacks(fullOccupancy, Long.numberOfTrailingZeros(source)) & ~selfOccupancy;
+
+                generateAttacks(source, attacks, piece);
+            }
+        }
+
+        private void generateAttacks(
+                final long source,
+                final long attacks,
+                final int piece
+        ) {
+            long remainingAttacks = attacks;
+
+            while (remainingAttacks != 0L) {
+                final long attack = Long.highestOneBit(remainingAttacks);
+                remainingAttacks &= ~attack;
+
+                makeBbMove(source, attack, piece, false, false, NO_PIECE, NO_SQUARE);
+            }
+        }
+
+        private void generatePawnAttacks(
+                final long source,
+                final long attacks
+        ) {
+            long remainingAttacks = attacks;
+
+            while (remainingAttacks != 0L) {
+                final long attack = Long.highestOneBit(remainingAttacks);
+                remainingAttacks &= ~attack;
+
+                if ((turn == Color.WHITE && (attack & RANK_EIGHT_SQUARES) != 0L) || (turn == Color.BLACK && (attack & RANK_ONE_SQUARES) != 0L)) {
+                    pawnPromotions(source, attack);
+                } else {
+                    makeBbMove(source, attack, PAWN, false, attack == enPassant, NO_PIECE, NO_SQUARE);
+                }
+            }
+        }
+
+        private void makeBbMove(
+                final long sourceSquare, final long targetSquare, final int pieceMoved, final boolean castleMove, final boolean enPassantAttack, final int piecePromote, final long enPassantOpportunitySquare
+        ) {
+            final int sourceSquareIndex = Long.numberOfTrailingZeros(sourceSquare);
+            final int targetSquareIndex = Long.numberOfTrailingZeros(targetSquare);
+
+            long bits = 0L;
+
+            final int attackSquareIndex;
+
+            if (enPassantAttack) {
+                attackSquareIndex = turn == Color.WHITE ? targetSquareIndex - 8 : targetSquareIndex + 8;
+                bits |= EN_PASSANT_ATTACK_MASK;
             } else {
-                result.add(makeBbMove(source, attack, PAWN, false, attack == enPassant, NO_PIECE, NO_SQUARE));
-            }
-        }
-    }
-
-    @SuppressWarnings({"IntegerMultiplicationImplicitCastToLong", "ImplicitNumericConversion"})
-    private BBMove makeBbMove(
-            final long sourceSquare, final long targetSquare, final int pieceMoved, final boolean castleMove, final boolean enPassantAttack, final int piecePromote, final long enPassantOpportunitySquare
-    ) {
-        final int sourceSquareIndex = Long.numberOfTrailingZeros(sourceSquare);
-        final int targetSquareIndex = Long.numberOfTrailingZeros(targetSquare);
-
-        long bits = 0L;
-
-        final int attackSquareIndex;
-
-        if (enPassantAttack) {
-            attackSquareIndex = turn == Color.WHITE ? targetSquareIndex -8 : targetSquareIndex + 8;
-            bits |= EN_PASSANT_ATTACK_MASK;
-        } else {
-            attackSquareIndex = targetSquareIndex;
-        }
-
-        final int pieceAttacked = turn == Color.WHITE ? black.getPieceConst(attackSquareIndex) : white.getPieceConst(attackSquareIndex);
-
-        bits |= pieceMoved << PIECE_MOVED_SHIFT;
-        bits |= pieceAttacked << PIECE_ATTACKED_SHIFT;
-
-        bits |= (long) sourceSquareIndex << SOURCE_SQUARE_INDEX_SHIFT;
-        bits |= (long) targetSquareIndex << TARGET_SQUARE_INDEX_SHIFT;
-
-        if (castleMove) {
-            bits |= CASTLE_MOVE_MASK;
-        }
-
-        if (pieceMoved == PAWN || pieceAttacked != NO_PIECE) {
-            bits |= HALFMOVE_RESET_MASK;
-        }
-
-        bits |= halfmoveClock << PREVIOUS_HALFMOVE_SHIFT;
-
-        if (enPassant != 0L) {
-            bits |= (long) Long.numberOfTrailingZeros(enPassant) << PREVIOUS_EN_PASSANT_SQUARE_INDEX_SHIFT;
-        }
-
-        if (enPassantOpportunitySquare != 0L) {
-            bits |= ((long) Long.numberOfTrailingZeros(enPassantOpportunitySquare)) << NEXT_EN_PASSANT_SQUARE_INDEX_SHIFT;
-        }
-
-        bits |= (long) piecePromote << PROMOTION_PIECE_SHIFT;
-
-        if (turn == Color.BLACK) {
-            if (white.queenSideCastle && targetSquareIndex == A1) {
-                bits |= OPPONENT_LOST_QUEEN_SIDE_CASTLE_MASK;
-            } else if (white.kingSideCastle && targetSquareIndex == H1) {
-                bits |= OPPONENT_LOST_KING_SIDE_CASTLE_MASK;
+                attackSquareIndex = targetSquareIndex;
             }
 
-            if (black.queenSideCastle && (sourceSquareIndex == A8 || sourceSquareIndex == E8)) {
-                bits |= SELF_LOST_QUEEN_SIDE_CASTLE_MASK;
+            final int pieceAttacked = turn == Color.WHITE ? black.getPieceConst(attackSquareIndex) : white.getPieceConst(attackSquareIndex);
+
+            bits |= (long) pieceMoved << PIECE_MOVED_SHIFT;
+            bits |= (long) pieceAttacked << PIECE_ATTACKED_SHIFT;
+
+            bits |= (long) sourceSquareIndex << SOURCE_SQUARE_INDEX_SHIFT;
+            bits |= (long) targetSquareIndex << TARGET_SQUARE_INDEX_SHIFT;
+
+            if (castleMove) {
+                bits |= CASTLE_MOVE_MASK;
             }
 
-            if (black.kingSideCastle && (sourceSquareIndex == H8 || sourceSquareIndex == E8)) {
-                bits |= SELF_LOST_KING_SIDE_CASTLE_MASK;
-            }
-        } else {
-            if (black.queenSideCastle && targetSquareIndex == A8) {
-                bits |= OPPONENT_LOST_QUEEN_SIDE_CASTLE_MASK;
-            } else if (black.kingSideCastle && targetSquareIndex == H8) {
-                bits |= OPPONENT_LOST_KING_SIDE_CASTLE_MASK;
+            if (pieceMoved == PAWN || pieceAttacked != NO_PIECE) {
+                bits |= HALFMOVE_RESET_MASK;
             }
 
-            if (white.queenSideCastle && (sourceSquareIndex == A1 || sourceSquareIndex == E1)) {
-                bits |= SELF_LOST_QUEEN_SIDE_CASTLE_MASK;
+            bits |= (long) halfmoveClock << PREVIOUS_HALFMOVE_SHIFT;
+
+            if (enPassant != 0L) {
+                bits |= (long) Long.numberOfTrailingZeros(enPassant) << PREVIOUS_EN_PASSANT_SQUARE_INDEX_SHIFT;
             }
 
-            if (white.kingSideCastle && (sourceSquareIndex == H1 || sourceSquareIndex == E1)) {
-                bits |= SELF_LOST_KING_SIDE_CASTLE_MASK;
+            if (enPassantOpportunitySquare != 0L) {
+                bits |= ((long) Long.numberOfTrailingZeros(enPassantOpportunitySquare)) << NEXT_EN_PASSANT_SQUARE_INDEX_SHIFT;
             }
+
+            bits |= (long) piecePromote << PROMOTION_PIECE_SHIFT;
+
+            if (turn == Color.BLACK) {
+                if (white.queenSideCastle && targetSquareIndex == A1) {
+                    bits |= OPPONENT_LOST_QUEEN_SIDE_CASTLE_MASK;
+                } else if (white.kingSideCastle && targetSquareIndex == H1) {
+                    bits |= OPPONENT_LOST_KING_SIDE_CASTLE_MASK;
+                }
+
+                if (black.queenSideCastle && (sourceSquareIndex == A8 || sourceSquareIndex == E8)) {
+                    bits |= SELF_LOST_QUEEN_SIDE_CASTLE_MASK;
+                }
+
+                if (black.kingSideCastle && (sourceSquareIndex == H8 || sourceSquareIndex == E8)) {
+                    bits |= SELF_LOST_KING_SIDE_CASTLE_MASK;
+                }
+            } else {
+                if (black.queenSideCastle && targetSquareIndex == A8) {
+                    bits |= OPPONENT_LOST_QUEEN_SIDE_CASTLE_MASK;
+                } else if (black.kingSideCastle && targetSquareIndex == H8) {
+                    bits |= OPPONENT_LOST_KING_SIDE_CASTLE_MASK;
+                }
+
+                if (white.queenSideCastle && (sourceSquareIndex == A1 || sourceSquareIndex == E1)) {
+                    bits |= SELF_LOST_QUEEN_SIDE_CASTLE_MASK;
+                }
+
+                if (white.kingSideCastle && (sourceSquareIndex == H1 || sourceSquareIndex == E1)) {
+                    bits |= SELF_LOST_KING_SIDE_CASTLE_MASK;
+                }
+            }
+
+            final int turnConst = turn == Color.WHITE ? WHITE : BLACK;
+
+            final int gameStage = (white.queens | black.queens) == 0L ? 1 : 0;
+
+            final int squareDiff = PIECE_SQUARE_VALUES[turnConst][pieceMoved][gameStage][targetSquareIndex]
+                    - PIECE_SQUARE_VALUES[turnConst][pieceMoved][gameStage][sourceSquareIndex];
+
+            final int mvvLva = mvvLva(pieceMoved, pieceAttacked);
+
+            result.add(new BBMove(bits, mvvLva, squareDiff));
         }
-
-        final int turnConst = turn == Color.WHITE ? WHITE : BLACK;
-
-        final int gameStage = (white.queens | black.queens) == 0L ? 1 : 0;
-
-        final int squareDiff = PIECE_SQUARE_VALUES[turnConst][pieceMoved][gameStage][targetSquareIndex]
-                - PIECE_SQUARE_VALUES[turnConst][pieceMoved][gameStage][sourceSquareIndex];
-
-        final int mvvLva = mvvLva(pieceMoved, pieceAttacked);
-
-        return new BBMove(bits, mvvLva, squareDiff);
     }
 
     // endregion
@@ -1555,7 +1553,6 @@ public class Bitboard {
 
     // endregion
 
-    @EqualsAndHashCode
     private static class PlayerBoard {
         private long kings;
         private long queens;
@@ -1708,25 +1705,5 @@ public class Bitboard {
 
     public String bitboardStrings() {
         return "white:\n" + white + "\nblack:" + black;
-    }
-
-    public static void main(String[] args) {
-        final Bitboard bitboard = new Bitboard(Fen.parse("rnbqkbnr/pppppppp/8/8/7P/8/PPPPPPP1/RNBQKBNR b KQkq h3 0 1"));
-
-        final BBMove move = bitboard.makeBbMove(Square.G8.getOccupiedBitMask(), Square.H6.getOccupiedBitMask(), KNIGHT, false, false, NO_PIECE, NO_SQUARE);
-
-        System.out.println(bitboard.toString());
-
-//        bitboard.getPseudoLegalMoves().stream().map(m -> m.asUciMove()).forEach(System.out::println);
-
-//        System.out.println(bitboard.black);
-
-        bitboard.make(move);
-
-        System.out.println(bitboard.toString());
-
-        bitboard.unmake(move);
-
-        System.out.println(bitboard.toString());
     }
 }

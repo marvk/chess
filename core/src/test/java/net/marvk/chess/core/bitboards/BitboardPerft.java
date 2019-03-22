@@ -152,7 +152,7 @@ class BitboardPerft {
                         .stream()
                         .parallel()
                         .map(MoveResult::getBoard)
-                        .map(Bitboard::getValidMoves)
+                        .map(Bitboard::generateValidMoves)
                         .flatMap(Collection::stream)
                         .collect(Collectors.toList());
 
@@ -167,7 +167,7 @@ class BitboardPerft {
         previous.validMoves.parallelStream().forEach(validMove -> {
             final Set<String> generatedMoves =
                     validMove.getBoard()
-                             .getValidMoves()
+                             .generateValidMoves()
                              .stream()
                              .map(MoveResult::getMove)
                              .map(Move::getUci)

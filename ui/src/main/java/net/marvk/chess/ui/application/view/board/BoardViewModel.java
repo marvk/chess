@@ -40,7 +40,7 @@ public class BoardViewModel implements ViewModel {
         final Map<Move, Double> lastEvaluation = viewModel.getLastEvaluation();
         final Move lastMove = viewModel.getLastMove();
 
-        final List<MoveResult> validMoves = newBoard.getValidMoves();
+        final List<MoveResult> validMoves = newBoard.generateValidMoves();
 
         for (final Square square : Square.values()) {
             final ColoredPiece piece = newBoard.getPiece(square);

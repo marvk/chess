@@ -29,7 +29,7 @@ public class Game {
 //        this.history = new ArrayList<>();
 
         this.lastMove = new MoveResult(board, Move.NULL_MOVE);
-        this.validMoves = board.getValidMoves();
+        this.validMoves = board.generateValidMoves();
 
 //        this.history.add(lastMove);
     }
@@ -57,7 +57,7 @@ public class Game {
 //            return Optional.empty();
 //        }
 //
-//        board.getValidMoves();
+//        board.generateValidMoves();
 //
 //        final Optional<GameResult> gameResult = board.findGameResult();
 //
@@ -66,7 +66,7 @@ public class Game {
 //
 //            gameOver = true;
 //        } else {
-//            validMoves = board.getValidMoves();
+//            validMoves = board.generateValidMoves();
 //        }
 //
 //        log.info(board.getHalfmoveClock());

@@ -11,7 +11,7 @@ class SimpleHeuristicTest {
         final Fen fen = Fen.parse("r1b5/1ppp2k1/p7/1r4p1/6P1/8/PP3P2/6K1 b - - 1 35");
 
         final Bitboard board = new Bitboard(fen);
-        board.getValidMoves();
+        board.generateValidMoves();
 
         final int value = Color.BLACK.getHeuristicFactor() * new SimpleHeuristic().evaluate(board, true);
 
