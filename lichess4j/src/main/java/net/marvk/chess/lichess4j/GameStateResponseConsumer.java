@@ -55,7 +55,7 @@ class GameStateResponseConsumer extends AsyncCharConsumer<Boolean> {
         log.trace("Received game state response:\n" + response);
 
         Arrays.stream(response.split("\n"))
-              .map(s -> GSON.fromJson(response, GameStateResponse.class))
+              .map(line -> GSON.fromJson(line, GameStateResponse.class))
               .forEach(this::acceptGameStateResponse);
     }
 

@@ -43,7 +43,7 @@ class EventResponseConsumer extends AsyncCharConsumer<Boolean> {
         log.trace("Received event response:\n" + response);
 
         Arrays.stream(response.split("\n"))
-              .map(s -> GSON.fromJson(s, EventResponse.class))
+              .map(line -> GSON.fromJson(line, EventResponse.class))
               .forEach(this::acceptEvent);
     }
 
