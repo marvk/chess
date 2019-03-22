@@ -710,26 +710,26 @@ public class Bitboard {
     private BBMove makeBbMove(
             final long sourceSquare, final long targetSquare, final int pieceMoved, final boolean castleMove, final boolean enPassantAttack, final int piecePromote, final long enPassantOpportunitySquare
     ) {
+        final int sourceSquareIndex = Long.numberOfTrailingZeros(sourceSquare);
+        final int targetSquareIndex = Long.numberOfTrailingZeros(targetSquare);
+
         long bits = 0L;
 
-        final long attackSquare;
+        final int attackSquareIndex;
 
         if (enPassantAttack) {
-            attackSquare = turn == Color.WHITE ? targetSquare >> 8L : targetSquare << 8L;
+            attackSquareIndex = turn == Color.WHITE ? targetSquareIndex -8 : targetSquareIndex + 8;
             bits |= EN_PASSANT_ATTACK_MASK;
         } else {
-            attackSquare = targetSquare;
+            attackSquareIndex = targetSquareIndex;
         }
 
-        final int pieceAttacked = turn == Color.WHITE ? black.getPieceConst(attackSquare) : white.getPieceConst(attackSquare);
+        final int pieceAttacked = turn == Color.WHITE ? black.getPieceConst(attackSquareIndex) : white.getPieceConst(attackSquareIndex);
 
         bits |= pieceMoved << PIECE_MOVED_SHIFT;
         bits |= pieceAttacked << PIECE_ATTACKED_SHIFT;
 
-        final int sourceSquareIndex = Long.numberOfTrailingZeros(sourceSquare);
         bits |= (long) sourceSquareIndex << SOURCE_SQUARE_INDEX_SHIFT;
-
-        final int targetSquareIndex = Long.numberOfTrailingZeros(targetSquare);
         bits |= (long) targetSquareIndex << TARGET_SQUARE_INDEX_SHIFT;
 
         if (castleMove) {
@@ -753,31 +753,31 @@ public class Bitboard {
         bits |= (long) piecePromote << PROMOTION_PIECE_SHIFT;
 
         if (turn == Color.BLACK) {
-            if (white.queenSideCastle && targetSquare == Square.A1.getOccupiedBitMask()) {
+            if (white.queenSideCastle && targetSquareIndex == A1) {
                 bits |= OPPONENT_LOST_QUEEN_SIDE_CASTLE_MASK;
-            } else if (white.kingSideCastle && targetSquare == Square.H1.getOccupiedBitMask()) {
+            } else if (white.kingSideCastle && targetSquareIndex == H1) {
                 bits |= OPPONENT_LOST_KING_SIDE_CASTLE_MASK;
             }
 
-            if (black.queenSideCastle && (sourceSquare == Square.A8.getOccupiedBitMask() || sourceSquare == Square.E8.getOccupiedBitMask())) {
+            if (black.queenSideCastle && (sourceSquareIndex == A8 || sourceSquareIndex == E8)) {
                 bits |= SELF_LOST_QUEEN_SIDE_CASTLE_MASK;
             }
 
-            if (black.kingSideCastle && (sourceSquare == Square.H8.getOccupiedBitMask() || sourceSquare == Square.E8.getOccupiedBitMask())) {
+            if (black.kingSideCastle && (sourceSquareIndex == H8 || sourceSquareIndex == E8)) {
                 bits |= SELF_LOST_KING_SIDE_CASTLE_MASK;
             }
         } else {
-            if (black.queenSideCastle && targetSquare == Square.A8.getOccupiedBitMask()) {
+            if (black.queenSideCastle && targetSquareIndex == A8) {
                 bits |= OPPONENT_LOST_QUEEN_SIDE_CASTLE_MASK;
-            } else if (black.kingSideCastle && targetSquare == Square.H8.getOccupiedBitMask()) {
+            } else if (black.kingSideCastle && targetSquareIndex == H8) {
                 bits |= OPPONENT_LOST_KING_SIDE_CASTLE_MASK;
             }
 
-            if (white.queenSideCastle && (sourceSquare == Square.A1.getOccupiedBitMask() || sourceSquare == Square.E1.getOccupiedBitMask())) {
+            if (white.queenSideCastle && (sourceSquareIndex == A1 || sourceSquareIndex == E1)) {
                 bits |= SELF_LOST_QUEEN_SIDE_CASTLE_MASK;
             }
 
-            if (white.kingSideCastle && (sourceSquare == Square.H1.getOccupiedBitMask() || sourceSquare == Square.E1.getOccupiedBitMask())) {
+            if (white.kingSideCastle && (sourceSquareIndex == H1 || sourceSquareIndex == E1)) {
                 bits |= SELF_LOST_KING_SIDE_CASTLE_MASK;
             }
         }
@@ -1650,6 +1650,10 @@ public class Bitboard {
                 return Piece.KING;
             }
             return null;
+        }
+
+        int getPieceConst(final int squareIndex) {
+            return getPieceConst(1L << squareIndex);
         }
 
         int getPieceConst(final long square) {
