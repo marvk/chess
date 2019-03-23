@@ -2,6 +2,7 @@ package net.marvk.chess.lichess4j;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonParseException;
 import lombok.extern.log4j.Log4j2;
 import net.marvk.chess.lichess4j.model.Challenge;
 import net.marvk.chess.lichess4j.model.EventResponse;
@@ -43,7 +44,7 @@ class EventResponseConsumer extends AsyncCharConsumer<Boolean> {
         log.trace("Received event response:\n" + response);
 
         Arrays.stream(response.split("\n"))
-              .map(line -> GSON.fromJson(line, EventResponse.class))
+              .map(EventResponseConsumer::safeJson)
               .forEach(this::acceptEvent);
     }
 
@@ -75,5 +76,14 @@ class EventResponseConsumer extends AsyncCharConsumer<Boolean> {
     @Override
     protected Boolean buildResult(final HttpContext context) {
         return Boolean.TRUE;
+    }
+
+    private static EventResponse safeJson(final String line) {
+        try {
+            return GSON.fromJson(line, EventResponse.class);
+        } catch (final JsonParseException e) {
+            log.error("Failed to parse line:\n " + line, e);
+            return null;
+        }
     }
 }
