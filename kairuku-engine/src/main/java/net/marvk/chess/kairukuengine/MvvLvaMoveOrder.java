@@ -2,7 +2,6 @@ package net.marvk.chess.kairukuengine;
 
 import net.marvk.chess.core.bitboards.Bitboard;
 
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 

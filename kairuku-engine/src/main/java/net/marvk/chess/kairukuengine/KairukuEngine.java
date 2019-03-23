@@ -22,10 +22,6 @@ public class KairukuEngine extends UciEngine {
 
     private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("#.#####", new DecimalFormatSymbols(Locale.ENGLISH));
 
-    static {
-
-    }
-
     private final MvvLvaPieceSquareDifferenceMoveOrder defaultMoveOrder = new MvvLvaPieceSquareDifferenceMoveOrder();
     private final MvvLvaMoveOrder quiescenceSearchMoveOrder = new MvvLvaMoveOrder();
 
