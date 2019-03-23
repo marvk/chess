@@ -198,19 +198,18 @@ public class KairukuEngine extends UciEngine {
             ply = 2;
         } else {
             ply = 2;
-            return ply;
         }
 
         if (board.getFullmoveClock() > 1 && metrics.getLastTableHitRate() < 0.75) {
             final long lastMillis = metrics.getLastDuration().toMillis();
 
-            if (timeRemaining <= 30_000 && timeRemaining > 1_000) {
+            if (timeRemaining <= 30_000 && timeRemaining > 3_000) {
                 if (lastMillis < 10L) {
-                    plyBonus += 1.5;
+                    plyBonus = 2;
                 } else if (lastMillis < 100L) {
-                    plyBonus += 0.5;
+                    plyBonus = 1;
                 } else {
-                    plyBonus = Math.max(0.0, plyBonus / 2.0);
+                    plyBonus = 0.0;
                 }
             } else {
                 plyBonus = 0.0;
