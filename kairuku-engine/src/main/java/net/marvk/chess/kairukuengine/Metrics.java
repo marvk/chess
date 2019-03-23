@@ -5,21 +5,34 @@ import net.marvk.chess.core.util.Util;
 import java.time.Duration;
 
 public class Metrics {
-    private int totalNodeCount;
+    private int lastNegamaxNodes;
+    private int lastQuiescenceNodes;
+    private Duration lastDuration;
+    private int lastTableHits;
+
+    private long lastQuiescenceTerminationSum;
+    private long lastQuiescenceTerminationCount;
+
+    private int totalNegamaxNodes;
+    private int totalQuiescenceNodes;
     private Duration totalDuration;
     private int totalTableHits;
 
-    private int lastNodeCount;
-    private Duration lastDuration;
-    private int lastTableHits;
+    private long totalQuiescenceTerminationSum;
+    private long totalQuiescenceTerminationCount;
 
     public Metrics() {
         resetAll();
     }
 
-    public void incrementNodeCount() {
-        lastNodeCount++;
-        totalNodeCount++;
+    public void incrementNegamaxNodes() {
+        lastNegamaxNodes++;
+        totalNegamaxNodes++;
+    }
+
+    public void incrementQuiescenceNodes() {
+        lastQuiescenceNodes++;
+        totalQuiescenceNodes++;
     }
 
     public void incrementDuration(final Duration duration) {
@@ -32,8 +45,24 @@ public class Metrics {
         totalTableHits++;
     }
 
-    public int getLastNodeCount() {
-        return lastNodeCount;
+    public void quiescenceTermination(final int depth) {
+        lastQuiescenceTerminationSum += depth;
+        lastQuiescenceTerminationCount++;
+
+        totalQuiescenceTerminationSum += depth;
+        totalQuiescenceTerminationCount++;
+    }
+
+    public int getLastNodes() {
+        return lastNegamaxNodes + lastQuiescenceNodes;
+    }
+
+    public int getLastNegamaxNodes() {
+        return lastNegamaxNodes;
+    }
+
+    public int getLastQuiescenceNodes() {
+        return lastQuiescenceNodes;
     }
 
     public Duration getLastDuration() {
@@ -45,15 +74,27 @@ public class Metrics {
     }
 
     public int getLastNps() {
-        return Util.nodesPerSecond(lastDuration, lastNodeCount);
+        return Util.nodesPerSecond(lastDuration, lastNegamaxNodes + lastQuiescenceNodes);
     }
 
     public double getLastTableHitRate() {
-        return (double) lastTableHits / lastNodeCount;
+        return (double) lastTableHits / lastNegamaxNodes;
     }
 
-    public int getTotalNodeCount() {
-        return totalNodeCount;
+    public double getLastAverageQuiescenceTerminationDepth() {
+        return ((double) lastQuiescenceTerminationSum) / lastQuiescenceTerminationCount;
+    }
+
+    public int getTotalNodes() {
+        return totalNegamaxNodes + totalQuiescenceNodes;
+    }
+
+    public int getTotalNegamaxNodes() {
+        return totalNegamaxNodes;
+    }
+
+    public int getTotalQuiescenceNodes() {
+        return totalQuiescenceNodes;
     }
 
     public Duration getTotalDuration() {
@@ -65,23 +106,33 @@ public class Metrics {
     }
 
     public int getTotalNps() {
-        return Util.nodesPerSecond(totalDuration, totalNodeCount);
+        return Util.nodesPerSecond(totalDuration, totalNegamaxNodes + totalQuiescenceNodes);
     }
 
     public int getTotalTableHitRate() {
-        return totalTableHits / totalNodeCount;
+        return totalTableHits / totalNegamaxNodes;
+    }
+
+    public double getTotalAverageQuiescenceTerminationDepth() {
+        return ((double) totalQuiescenceTerminationSum) / totalQuiescenceTerminationCount;
     }
 
     public void resetRound() {
-        lastNodeCount = 0;
+        lastNegamaxNodes = 0;
+        lastQuiescenceNodes = 0;
         lastDuration = Duration.ZERO;
         lastTableHits = 0;
+        lastQuiescenceTerminationSum = 0L;
+        lastQuiescenceTerminationCount = 0L;
     }
 
     public void resetAll() {
         resetRound();
-        totalNodeCount = 0;
+        totalNegamaxNodes = 0;
+        totalQuiescenceNodes = 0;
         totalDuration = Duration.ZERO;
         totalTableHits = 0;
+        totalQuiescenceTerminationSum = 0L;
+        totalQuiescenceTerminationCount = 0L;
     }
 }

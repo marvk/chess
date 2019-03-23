@@ -6,6 +6,8 @@ import net.marvk.chess.core.board.*;
 import net.marvk.chess.uci4j.*;
 import org.apache.commons.lang3.time.StopWatch;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -17,6 +19,12 @@ import java.util.stream.Stream;
 @Log4j2
 public class KairukuEngine extends UciEngine {
     private static final String PLY_OPTION = "ply";
+
+    private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("#.#####", new DecimalFormatSymbols(Locale.ENGLISH));
+
+    static {
+
+    }
 
     private final MvvLvaPieceSquareDifferenceMoveOrder defaultMoveOrder = new MvvLvaPieceSquareDifferenceMoveOrder();
     private final MvvLvaMoveOrder quiescenceSearchMoveOrder = new MvvLvaMoveOrder();
@@ -40,6 +48,7 @@ public class KairukuEngine extends UciEngine {
     private final Set<UciMove> searchMoves = new HashSet<>();
 
     private Bitboard.BBMove[] previousPv;
+    private final int quiescencePly = 10;
 
     public KairukuEngine(final UIChannel uiChannel) {
         super(uiChannel);
@@ -162,7 +171,7 @@ public class KairukuEngine extends UciEngine {
                             .score(new Score(play.getValue(), null, null))
                             .depth(ply)
                             .principalVariation(pvArray)
-                            .nodes(((long) metrics.getLastNodeCount()))
+                            .nodes(((long) metrics.getLastNodes()))
                             .time(((int) metrics.getLastDuration().toMillis()))
                             .generate();
 
@@ -187,17 +196,17 @@ public class KairukuEngine extends UciEngine {
         }
 
         if (timeRemaining > 60_000) {
-            ply = 6;
+            ply = 7;
         } else if (timeRemaining > 20_000) {
-            ply = 5;
+            ply = 6;
         } else if (timeRemaining > 7_500) {
-            ply = 4;
+            ply = 5;
         } else if (timeRemaining > 2_000) {
-            ply = 3;
+            ply = 4;
         } else if (timeRemaining > 1_000) {
-            ply = 2;
+            ply = 3;
         } else {
-            ply = 2;
+            ply = 3;
         }
 
         if (board.getFullmoveClock() > 1 && metrics.getLastTableHitRate() < 0.75) {
@@ -269,7 +278,7 @@ public class KairukuEngine extends UciEngine {
     }
 
     private ValuedMove negamax(final int depth, final int alphaOriginal, final int betaOriginal, final Color currentColor) {
-        metrics.incrementNodeCount();
+        metrics.incrementNegamaxNodes();
 
         final long zobristHash = board.zobristHash();
 
@@ -306,7 +315,7 @@ public class KairukuEngine extends UciEngine {
             final boolean legalMovesRemaining = Bitboard.hasAnyLegalMoves(board, pseudoLegalMoves);
 
             if (legalMovesRemaining && Bitboard.hasAnyAttackMoves(pseudoLegalMoves)) {
-                return quiescenceSearch(5, alpha, beta, currentColor);
+                return quiescenceSearch(quiescencePly, alpha, beta, currentColor);
             }
 
             final int value = currentColor.getHeuristicFactor() * heuristic.evaluate(board, legalMovesRemaining);
@@ -397,6 +406,7 @@ public class KairukuEngine extends UciEngine {
         final int standingPat = currentColor.getHeuristicFactor() * heuristic.evaluate(board, true);
 
         if (standingPat >= initialBeta) {
+            metrics.quiescenceTermination(quiescencePly - depth);
             return new ValuedMove(initialBeta, null, null);
         }
 
@@ -405,6 +415,8 @@ public class KairukuEngine extends UciEngine {
                 : initialAlpha;
 
         if (depth == 0) {
+            metrics.quiescenceTermination(quiescencePly - depth);
+
             return new ValuedMove(alpha, null, null);
         }
 
@@ -424,11 +436,12 @@ public class KairukuEngine extends UciEngine {
             final ValuedMove child = quiescenceSearch(depth - 1, -initialBeta, -alpha, currentColor.opposite());
             final int value = -child.getValue();
 
-            metrics.incrementNodeCount();
+            metrics.incrementQuiescenceNodes();
 
             board.unmake(current);
 
             if (value >= initialBeta) {
+                metrics.quiescenceTermination(quiescencePly - depth);
                 return new ValuedMove(initialBeta, current, child);
             }
 
@@ -440,6 +453,7 @@ public class KairukuEngine extends UciEngine {
             }
         }
 
+        metrics.quiescenceTermination(quiescencePly - depth);
         return new ValuedMove(alpha, bestMove, bestChild);
     }
 
@@ -455,16 +469,20 @@ public class KairukuEngine extends UciEngine {
         addToJoiner(lineJoiner, "best move", play.getMove().asUciMove());
         addToJoiner(lineJoiner, "duration", metrics.getLastDuration());
         lineJoiner.add("╠═══════════════════════════════════╣");
-        addToJoiner(lineJoiner, "nodes searched", metrics.getLastNodeCount());
+        addToJoiner(lineJoiner, "nodes (total)", metrics.getLastNodes());
+        addToJoiner(lineJoiner, "nodes (negamax)", metrics.getLastNegamaxNodes());
+        addToJoiner(lineJoiner, "nodes (quiescence)", metrics.getLastQuiescenceNodes());
+        lineJoiner.add("╠═══════════════════════════════════╣");
+        addToJoiner(lineJoiner, "Q node percentage", DECIMAL_FORMAT.format((double) metrics.getLastQuiescenceNodes() / metrics.getLastNodes()));
+        addToJoiner(lineJoiner, "average Q depth", DECIMAL_FORMAT.format(metrics.getLastAverageQuiescenceTerminationDepth()));
         lineJoiner.add("╠═══════════════════════════════════╣");
         addToJoiner(lineJoiner, "ttable hits", metrics.getLastTableHits());
-        addToJoiner(lineJoiner, "ttable hit rate", ((int) (metrics.getLastTableHitRate() * 1000000.0)) / 1000000.0);
-        addToJoiner(lineJoiner, "table load factor", transpositionTable.load());
+        addToJoiner(lineJoiner, "table load factor", DECIMAL_FORMAT.format(transpositionTable.load()));
         lineJoiner.add("╠═══════════════════════════════════╣");
         addToJoiner(lineJoiner, "nps last", metrics.getLastNps());
         addToJoiner(lineJoiner, "nps avg", metrics.getTotalNps());
         lineJoiner.add("╠═══════════════════════════════════╣");
-        addToJoiner(lineJoiner, "value (cp)", play.getValue());
+        addToJoiner(lineJoiner, "centipawn value", play.getValue());
 
         lineJoiner.add("╚═══════════════════════════════════╝");
         return "Evaluation result:\n" + lineJoiner.toString();
