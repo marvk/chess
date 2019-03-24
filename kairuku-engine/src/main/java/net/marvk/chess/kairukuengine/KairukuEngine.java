@@ -44,7 +44,7 @@ public class KairukuEngine extends UciEngine {
     private final Set<UciMove> searchMoves = new HashSet<>();
 
     private Bitboard.BBMove[] previousPv;
-    private final int quiescencePly = 10;
+    private final int quiescencePly = Integer.MAX_VALUE;
 
     public KairukuEngine(final UIChannel uiChannel) {
         super(uiChannel);
@@ -91,18 +91,6 @@ public class KairukuEngine extends UciEngine {
     @Override
     public void uciNewGame() {
         resetAll();
-    }
-
-    private void resetAll() {
-        resetForMove();
-        metrics.resetAll();
-        board = null;
-        plyBonus = 0.0;
-        transpositionTable.clear();
-        previousPv = null;
-
-        // TODO remove last two (?) entries if no new position has been given since last go
-        movesSinceHalfmoveReset.clear();
     }
 
     @Override
@@ -180,6 +168,25 @@ public class KairukuEngine extends UciEngine {
         });
     }
 
+    @Override
+    public void stop() {
+        calculationFuture.cancel(true);
+    }
+
+    @Override
+    public void ponderHit() {
+
+    }
+
+    @Override
+    public void quit() {
+        calculationFuture.cancel(true);
+
+        resetAll();
+    }
+
+    // endregion
+
     private int calculatePly(final Go go, final Integer timeRemaining) {
         if (go.getDepth() != null) {
             ply = go.getDepth();
@@ -192,17 +199,17 @@ public class KairukuEngine extends UciEngine {
         }
 
         if (timeRemaining > 60_000) {
-            ply = 7;
-        } else if (timeRemaining > 20_000) {
             ply = 6;
-        } else if (timeRemaining > 7_500) {
+        } else if (timeRemaining > 20_000) {
             ply = 5;
-        } else if (timeRemaining > 2_000) {
+        } else if (timeRemaining > 7_500) {
             ply = 4;
+        } else if (timeRemaining > 2_000) {
+            ply = 3;
         } else if (timeRemaining > 1_000) {
-            ply = 3;
+            ply = 2;
         } else {
-            ply = 3;
+            ply = 2;
         }
 
         if (board.getFullmoveClock() > 1 && metrics.getLastTableHitRate() < 0.75) {
@@ -233,24 +240,19 @@ public class KairukuEngine extends UciEngine {
         metrics.resetRound();
     }
 
-    @Override
-    public void stop() {
-        calculationFuture.cancel(true);
+    private void resetAll() {
+        resetForMove();
+        metrics.resetAll();
+        board = null;
+        plyBonus = 0.0;
+        transpositionTable.clear();
+        previousPv = null;
+
+        // TODO remove last two (?) entries if no new position has been given since last go
+        movesSinceHalfmoveReset.clear();
     }
 
-    @Override
-    public void ponderHit() {
-
-    }
-
-    @Override
-    public void quit() {
-        calculationFuture.cancel(true);
-
-        resetAll();
-    }
-
-    // endregion
+    // region Search
 
     private ValuedMove play() {
         movesSinceHalfmoveReset.add(board.zobristHash());
@@ -398,7 +400,7 @@ public class KairukuEngine extends UciEngine {
     private ValuedMove quiescenceSearch(final int depth, final int initialAlpha, final int initialBeta, final Color currentColor) {
         final List<Bitboard.BBMove> pseudoLegalAttackMoves = board.generatePseudoLegalAttackMoves();
 
-        // Pretent the game is not over for speed?!
+        // Pretend the game is not over for speed?!
         final int standingPat = currentColor.getHeuristicFactor() * heuristic.evaluate(board, true);
 
         if (standingPat >= initialBeta) {
@@ -453,6 +455,8 @@ public class KairukuEngine extends UciEngine {
         return new ValuedMove(alpha, bestMove, bestChild);
     }
 
+    // endregion search
+
     // region String generation
 
     private String infoString(final ValuedMove play) {
@@ -469,7 +473,8 @@ public class KairukuEngine extends UciEngine {
         addToJoiner(lineJoiner, "nodes (negamax)", metrics.getLastNegamaxNodes());
         addToJoiner(lineJoiner, "nodes (quiescence)", metrics.getLastQuiescenceNodes());
         lineJoiner.add("╠═══════════════════════════════════╣");
-        addToJoiner(lineJoiner, "Q node percentage", DECIMAL_FORMAT.format((double) metrics.getLastQuiescenceNodes() / metrics.getLastNodes()));
+        addToJoiner(lineJoiner, "Q node percentage", DECIMAL_FORMAT.format((double) metrics.getLastQuiescenceNodes() / metrics
+                .getLastNodes()));
         addToJoiner(lineJoiner, "average Q depth", DECIMAL_FORMAT.format(metrics.getLastAverageQuiescenceTerminationDepth()));
         lineJoiner.add("╠═══════════════════════════════════╣");
         addToJoiner(lineJoiner, "ttable hits", metrics.getLastTableHits());

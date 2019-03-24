@@ -1,11 +1,7 @@
 package net.marvk.chess.core.bitboards;
 
 import net.marvk.chess.core.board.Fen;
-import net.marvk.chess.core.board.MoveResult;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -100,7 +96,7 @@ class ZobristHashingTest {
     public void testCollisions(final Fen fen) {
         final Bitboard board = new Bitboard(fen);
 
-        transpositionTable.put(board.zobristHash(), board);
+        transpositionTable.put(board.zobristHash(), new Bitboard(board));
 
         deepen(board, 4);
 
@@ -109,32 +105,41 @@ class ZobristHashingTest {
     }
 
     public void deepen(final Bitboard board, final int depth) {
+        nodes++;
+
+        final long zobristHash = board.zobristHash();
+        final Bitboard value = new Bitboard(board);
+        final Bitboard hit = transpositionTable.get(zobristHash);
+
+        if (hit == null) {
+            transpositionTable.put(zobristHash, value);
+        } else {
+            tableHits++;
+
+            if (!value.equalsZobrist(hit)) {
+                System.out.println(value);
+                System.out.println(hit);
+                Assertions.fail();
+            }
+        }
+
         if (depth == 0) {
             return;
         }
 
-        final List<MoveResult> validMoves = board.generateValidMoves();
+        final List<Bitboard.BBMove> bbMoves = board.generatePseudoLegalMoves();
 
-        for (final MoveResult validMove : validMoves) {
-            nodes++;
+        for (final Bitboard.BBMove current : bbMoves) {
+            board.make(current);
 
-            final Bitboard current = validMove.getBoard();
-
-            final long hash = current.zobristHash();
-            final Bitboard hit = transpositionTable.get(hash);
-
-            if (hit == null) {
-                transpositionTable.put(hash, current);
-            } else {
-                tableHits++;
-
-                if (!hit.zobristEquals(current)) {
-                    collisions++;
-
-                }
+            if (board.isInvalidPosition()) {
+                board.unmake(current);
+                continue;
             }
 
-            deepen(current, depth - 1);
+            deepen(board, depth - 1);
+
+            board.unmake(current);
         }
     }
 }

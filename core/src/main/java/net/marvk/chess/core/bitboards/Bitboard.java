@@ -1,5 +1,6 @@
 package net.marvk.chess.core.bitboards;
 
+import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import net.marvk.chess.core.board.*;
 
@@ -246,7 +247,7 @@ public class Bitboard {
      *
      * @param previous the board to be copied
      */
-    private Bitboard(final Bitboard previous) {
+    public Bitboard(final Bitboard previous) {
         this.white = new PlayerBoard(previous.white);
         this.black = new PlayerBoard(previous.black);
 
@@ -931,10 +932,10 @@ public class Bitboard {
         return (pieceValue(target) << 8) - sourceValue;
     }
 
-    public long zobristHash() {
-        long occupancy = white.occupancy() | black.occupancy();
-
+    private long zobristHashForOccupancy(final long board, final ColoredPiece coloredPiece) {
         long hash = 0L;
+
+        long occupancy = board;
 
         while (occupancy != 0L) {
             final long current = Long.highestOneBit(occupancy);
@@ -942,10 +943,25 @@ public class Bitboard {
 
             final int squareIndex = Long.numberOfTrailingZeros(current);
 
-            final ColoredPiece piece = getPiece(current);
-
-            hash ^= ZobristHashing.hashPieceSquare(piece, squareIndex);
+            hash ^= ZobristHashing.hashPieceSquare(coloredPiece, squareIndex);
         }
+
+        return hash;
+    }
+
+    public long zobristHash() {
+        long hash = zobristHashForOccupancy(white.kings, ColoredPiece.WHITE_KING)
+                ^ zobristHashForOccupancy(white.queens, ColoredPiece.WHITE_QUEEN)
+                ^ zobristHashForOccupancy(white.rooks, ColoredPiece.WHITE_ROOK)
+                ^ zobristHashForOccupancy(white.bishops, ColoredPiece.WHITE_BISHOP)
+                ^ zobristHashForOccupancy(white.knights, ColoredPiece.WHITE_KNIGHT)
+                ^ zobristHashForOccupancy(white.pawns, ColoredPiece.WHITE_PAWN)
+                ^ zobristHashForOccupancy(black.kings, ColoredPiece.BLACK_KING)
+                ^ zobristHashForOccupancy(black.queens, ColoredPiece.BLACK_QUEEN)
+                ^ zobristHashForOccupancy(black.rooks, ColoredPiece.BLACK_ROOK)
+                ^ zobristHashForOccupancy(black.bishops, ColoredPiece.BLACK_BISHOP)
+                ^ zobristHashForOccupancy(black.knights, ColoredPiece.BLACK_KNIGHT)
+                ^ zobristHashForOccupancy(black.pawns, ColoredPiece.BLACK_PAWN);
 
         if (enPassant != 0L) {
             hash ^= ZobristHashing.hashEnPassant(Long.numberOfTrailingZeros(enPassant));
@@ -971,7 +987,7 @@ public class Bitboard {
         return hash;
     }
 
-    public boolean zobristEquals(final Bitboard bitboard) {
+    public boolean equalsZobrist(final Bitboard bitboard) {
         return white.equals(bitboard.white) && black.equals(bitboard.black) && enPassant == bitboard.enPassant;
     }
 
@@ -1557,6 +1573,7 @@ public class Bitboard {
 
     // endregion
 
+    @EqualsAndHashCode
     private static class PlayerBoard {
         private long kings;
         private long queens;
