@@ -1,9 +1,9 @@
 package net.marvk.chess.core.bitboards;
 
 import lombok.extern.log4j.Log4j2;
-import net.marvk.chess.core.board.Direction;
-import net.marvk.chess.core.board.Piece;
-import net.marvk.chess.core.board.Square;
+import net.marvk.chess.core.Direction;
+import net.marvk.chess.core.Piece;
+import net.marvk.chess.core.Square;
 
 import java.util.*;
 

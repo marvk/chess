@@ -1,8 +1,7 @@
 package net.marvk.chess.kairukuengine;
 
-import net.marvk.chess.core.util.Util;
-
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 public class Metrics {
     private int lastNegamaxNodes;
@@ -74,7 +73,7 @@ public class Metrics {
     }
 
     public int getLastNps() {
-        return Util.nodesPerSecond(lastDuration, lastNegamaxNodes + lastQuiescenceNodes);
+        return nodesPerSecond(lastDuration, lastNegamaxNodes + lastQuiescenceNodes);
     }
 
     public double getLastTableHitRate() {
@@ -106,7 +105,7 @@ public class Metrics {
     }
 
     public int getTotalNps() {
-        return Util.nodesPerSecond(totalDuration, totalNegamaxNodes + totalQuiescenceNodes);
+        return nodesPerSecond(totalDuration, totalNegamaxNodes + totalQuiescenceNodes);
     }
 
     public int getTotalTableHitRate() {
@@ -134,5 +133,9 @@ public class Metrics {
         totalTableHits = 0;
         totalQuiescenceTerminationSum = 0L;
         totalQuiescenceTerminationCount = 0L;
+    }
+
+    private static int nodesPerSecond(final Duration duration, final int nodes) {
+        return (int) Math.round(((double) nodes / duration.toNanos()) * TimeUnit.SECONDS.toNanos(1));
     }
 }

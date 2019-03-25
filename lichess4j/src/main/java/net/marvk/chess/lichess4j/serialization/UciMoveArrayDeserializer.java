@@ -4,7 +4,7 @@ import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
-import net.marvk.chess.core.board.UciMove;
+import net.marvk.chess.core.UciMove;
 
 import java.lang.reflect.Type;
 

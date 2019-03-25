@@ -1,5 +1,6 @@
 package net.marvk.chess.core.board;
 
+import net.marvk.chess.core.Fen;
 import org.junit.jupiter.api.Assertions;
 
 import static org.junit.jupiter.api.Assertions.*;

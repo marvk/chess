@@ -1,5 +1,7 @@
 package net.marvk.chess.core.board;
 
+import net.marvk.chess.core.Color;
+import net.marvk.chess.core.Piece;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

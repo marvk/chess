@@ -14,7 +14,6 @@
         <module>lichess4j</module>
         <module>queensgambot</module>
         <module>uci4j</module>
-        <module>ui</module>
         <module>kairuku-engine</module>
     </modules>
 

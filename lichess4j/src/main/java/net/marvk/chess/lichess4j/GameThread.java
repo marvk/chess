@@ -2,9 +2,9 @@ package net.marvk.chess.lichess4j;
 
 import lombok.extern.log4j.Log4j2;
 import net.marvk.chess.core.bitboards.Bitboard;
-import net.marvk.chess.core.board.Color;
-import net.marvk.chess.core.board.Fen;
-import net.marvk.chess.core.board.UciMove;
+import net.marvk.chess.core.Color;
+import net.marvk.chess.core.Fen;
+import net.marvk.chess.core.UciMove;
 import net.marvk.chess.lichess4j.model.ChatLine;
 import net.marvk.chess.lichess4j.model.GameState;
 import net.marvk.chess.lichess4j.model.GameStateFull;

@@ -2,7 +2,7 @@ package net.marvk.chess.uci4j;
 
 import lombok.Builder;
 import lombok.Data;
-import net.marvk.chess.core.board.UciMove;
+import net.marvk.chess.core.UciMove;
 
 /**
  * * info

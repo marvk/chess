@@ -1,6 +1,6 @@
 package net.marvk.chess.core.bitboards;
 
-import net.marvk.chess.core.board.Fen;
+import net.marvk.chess.core.Fen;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;

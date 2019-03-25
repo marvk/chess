@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 import lombok.extern.log4j.Log4j2;
-import net.marvk.chess.core.board.UciMove;
+import net.marvk.chess.core.UciMove;
 import net.marvk.chess.lichess4j.model.*;
 import net.marvk.chess.lichess4j.serialization.GameStateResponseDeserializer;
 import net.marvk.chess.lichess4j.serialization.LocalDateTimeDeserializer;

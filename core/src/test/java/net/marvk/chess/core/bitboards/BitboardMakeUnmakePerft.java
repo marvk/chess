@@ -2,7 +2,7 @@ package net.marvk.chess.core.bitboards;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import net.marvk.chess.core.board.Fen;
+import net.marvk.chess.core.Fen;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;

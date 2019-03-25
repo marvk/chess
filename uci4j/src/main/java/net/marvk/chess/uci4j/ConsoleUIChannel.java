@@ -1,6 +1,6 @@
 package net.marvk.chess.uci4j;
 
-import net.marvk.chess.core.board.UciMove;
+import net.marvk.chess.core.UciMove;
 
 import java.util.List;
 import java.util.Objects;

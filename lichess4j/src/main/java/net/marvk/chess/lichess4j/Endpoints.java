@@ -1,6 +1,6 @@
 package net.marvk.chess.lichess4j;
 
-import net.marvk.chess.core.board.UciMove;
+import net.marvk.chess.core.UciMove;
 import net.marvk.chess.lichess4j.model.Room;
 
 import java.io.UnsupportedEncodingException;

@@ -2,12 +2,11 @@ package net.marvk.chess.core.bitboards;
 
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
-import net.marvk.chess.core.board.*;
+import net.marvk.chess.core.*;
 
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static net.marvk.chess.core.bitboards.MoveConstants.*;
@@ -66,6 +65,16 @@ public class Bitboard {
             BLACK_PAWN_ATTACKS[square.getBitboardIndex()] = staticAttacks(List.of(Direction.SOUTH_WEST, Direction.SOUTH_EAST), square);
         }
     }
+
+    private static final Piece[] PIECES = {
+            null,
+            Piece.PAWN,
+            Piece.KNIGHT,
+            Piece.BISHOP,
+            Piece.ROOK,
+            Piece.QUEEN,
+            Piece.KING
+    };
 
     private static final int[] BLACK_KING_TABLE_LATE = {
             -50, -40, -30, -20, -20, -30, -40, -50,
@@ -400,35 +409,6 @@ public class Bitboard {
     //   | |\/| | |  | |\ \/ / |  __|   | | |_ |  __| | . ` |  __| |  _  /   / /\ \ | | | |  | |  _  /
     //   | |  | | |__| | \  /  | |____  | |__| | |____| |\  | |____| | \ \  / ____ \| | | |__| | | \ \
     //   |_|  |_|\____/   \/   |______|  \_____|______|_| \_|______|_|  \_\/_/    \_\_|  \____/|_|  \_\
-
-    @Deprecated
-    public List<MoveResult> generateValidMoves() {
-        return new MoveGenerator(false)
-                .getPseudoLegalMoves()
-                .stream()
-                .map(this::copyMake)
-                .collect(Collectors.toList());
-    }
-
-    private MoveResult copyMake(final BBMove move) {
-        final Bitboard copy = new Bitboard(this);
-
-        copy.make(move);
-
-        final Piece promotePiece = PIECES[((int) ((move.bits & PROMOTION_PIECE_MASK) >> PROMOTION_PIECE_SHIFT))];
-
-        final ColoredPiece promoteTo = promotePiece == null ? null : promotePiece.ofColor(turn.opposite());
-
-        return new MoveResult(copy, new Move(
-                SQUARES[Long.numberOfTrailingZeros((move.bits & SOURCE_SQUARE_INDEX_MASK) >> SOURCE_SQUARE_INDEX_SHIFT)],
-                SQUARES[Long.numberOfTrailingZeros((move.bits & TARGET_SQUARE_INDEX_MASK) >> TARGET_SQUARE_INDEX_SHIFT)],
-                null,
-                promoteTo,
-                false,
-                false,
-                false
-        ));
-    }
 
     public static boolean hasAnyLegalMoves(final Bitboard board, final Collection<BBMove> moves) {
         for (final BBMove move : moves) {

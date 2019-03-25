@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-
-<?import javafx.scene.layout.StackPane?>
-<?import javafx.scene.layout.VBox?>
-<StackPane xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:id="rootPane"
-           maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="200.0"
-           minWidth="200.0" prefHeight="1000.0" prefWidth="1000.0" VBox.vgrow="ALWAYS"
-           fx:controller="net.marvk.chess.ui.application.view.board.BoardView"/>

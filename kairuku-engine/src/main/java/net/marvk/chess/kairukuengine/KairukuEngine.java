@@ -1,8 +1,10 @@
 package net.marvk.chess.kairukuengine;
 
 import lombok.extern.log4j.Log4j2;
+import net.marvk.chess.core.Color;
+import net.marvk.chess.core.Fen;
+import net.marvk.chess.core.UciMove;
 import net.marvk.chess.core.bitboards.Bitboard;
-import net.marvk.chess.core.board.*;
 import net.marvk.chess.uci4j.*;
 import org.apache.commons.lang3.time.StopWatch;
 

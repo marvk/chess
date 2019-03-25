@@ -1,6 +1,6 @@
 package net.marvk.chess.core.bitboards;
 
-import net.marvk.chess.core.board.Piece;
+import net.marvk.chess.core.Piece;
 
 /*
  * MSB . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . LSB
@@ -49,16 +49,6 @@ public final class MoveConstants {
     public static final int ROOK     = 0b100;
     public static final int QUEEN    = 0b101;
     public static final int KING     = 0b110;
-
-    public static final Piece[] PIECES = {
-            null,
-            Piece.PAWN,
-            Piece.KNIGHT,
-            Piece.BISHOP,
-            Piece.ROOK,
-            Piece.QUEEN,
-            Piece.KING
-    };
 
     public static final long PIECE_MOVED_MASK                      = 0x7L;
     public static final long PIECE_ATTACKED_MASK                   = 0x38L;

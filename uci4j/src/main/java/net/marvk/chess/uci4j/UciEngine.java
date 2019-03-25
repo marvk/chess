@@ -1,6 +1,6 @@
 package net.marvk.chess.uci4j;
 
-import net.marvk.chess.core.board.UciMove;
+import net.marvk.chess.core.UciMove;
 
 public abstract class UciEngine {
     protected final UIChannel uiChannel;

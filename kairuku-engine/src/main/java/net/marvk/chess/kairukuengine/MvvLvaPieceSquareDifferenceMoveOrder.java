@@ -1,7 +1,7 @@
 package net.marvk.chess.kairukuengine;
 
 import net.marvk.chess.core.bitboards.Bitboard;
-import net.marvk.chess.core.board.UciMove;
+import net.marvk.chess.core.UciMove;
 
 import java.util.Comparator;
 import java.util.List;

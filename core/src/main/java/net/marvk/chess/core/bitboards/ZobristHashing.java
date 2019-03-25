@@ -1,7 +1,7 @@
 package net.marvk.chess.core.bitboards;
 
-import net.marvk.chess.core.board.ColoredPiece;
-import net.marvk.chess.core.board.Square;
+import net.marvk.chess.core.ColoredPiece;
+import net.marvk.chess.core.Square;
 
 import java.util.HashSet;
 import java.util.Random;

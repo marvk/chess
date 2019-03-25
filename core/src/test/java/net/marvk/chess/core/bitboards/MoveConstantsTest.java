@@ -1,6 +1,6 @@
 package net.marvk.chess.core.bitboards;
 
-import net.marvk.chess.core.board.Square;
+import net.marvk.chess.core.Square;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;

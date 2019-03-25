@@ -1,7 +1,7 @@
 package net.marvk.chess.uci4j;
 
 import lombok.extern.log4j.Log4j2;
-import net.marvk.chess.core.board.UciMove;
+import net.marvk.chess.core.UciMove;
 
 import java.io.InputStream;
 import java.util.Arrays;
