@@ -3,8 +3,8 @@ package net.marvk.chess.lichess4j;
 import net.marvk.chess.core.UciMove;
 import net.marvk.chess.lichess4j.model.Room;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 public final class Endpoints {
     private static final String URL = "https://lichess.org";
@@ -38,10 +38,6 @@ public final class Endpoints {
     }
 
     public static String writeInChat(final String gameId, final Room room, final String text) {
-        try {
-            return URL + "/api/bot/game/" + gameId + "/chat?room=" + room.getRepresentation() + "&text=" + URLEncoder.encode(text, "UTF-8");
-        } catch (final UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        return URL + "/api/bot/game/" + gameId + "/chat?room=" + room.getRepresentation() + "&text=" + URLEncoder.encode(text, StandardCharsets.UTF_8);
     }
 }

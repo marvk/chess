@@ -144,11 +144,11 @@ public class ConsoleEngineChannel implements AutoCloseable {
 
         private final String[] split;
 
-        public CommandParser(final String line) {
+        CommandParser(final String line) {
             this.split = line.split("\\s+");
         }
 
-        public String getCommand() {
+        String getCommand() {
             if (split.length == 0) {
                 return null;
             }
@@ -156,11 +156,11 @@ public class ConsoleEngineChannel implements AutoCloseable {
             return split[0];
         }
 
-        public boolean containsParameter(final String string) {
-            return Arrays.asList(split).contains(string);
+        boolean containsParameter(final String s) {
+            return Arrays.asList(split).contains(s);
         }
 
-        public String getParameter(final String name) {
+        String getParameter(final String name) {
 
             for (int i = 1; i < split.length - 1; i++) {
                 if (split[i].equals(name)) {
@@ -171,7 +171,7 @@ public class ConsoleEngineChannel implements AutoCloseable {
             return null;
         }
 
-        public String getParameter(final String name, final String until) {
+        String getParameter(final String name, final String until) {
 
             for (int i = 1; i < split.length - 1; i++) {
                 if (split[i].equals(name)) {

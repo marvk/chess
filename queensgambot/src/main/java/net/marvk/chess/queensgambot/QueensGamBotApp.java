@@ -12,6 +12,10 @@ import java.util.concurrent.ExecutionException;
 
 @Log4j2
 public final class QueensGamBotApp {
+    private QueensGamBotApp() {
+        throw new AssertionError("No instances of utility class " + QueensGamBotApp.class);
+    }
+
     public static void main(final String[] args) throws IOException {
         try (final LichessClient client =
                      LichessClientBuilder.create("queensgambot", KairukuEngine::new)

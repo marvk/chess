@@ -11,7 +11,7 @@ import java.nio.file.Path;
 import java.util.*;
 
 @Log4j2
-public class LichessClientBuilder {
+public final class LichessClientBuilder {
     private final String accountName;
     private final EngineFactory engineFactory;
 

@@ -11,6 +11,7 @@ public class SimpleHeuristic implements Heuristic {
 
     //Assume no game lasts a million full moves
     private static final int MAX_FULL_MOVES = 1 << 20;
+    private static final int MAX_HALF_MOVES = 50;
 
     public static boolean isCheckmateValue(final int value) {
         return value > WIN - MAX_FULL_MOVES || value < LOSS + MAX_FULL_MOVES;
@@ -33,7 +34,7 @@ public class SimpleHeuristic implements Heuristic {
             }
         }
 
-        if (board.getHalfmoveClock() >= 50) {
+        if (board.getHalfmoveClock() >= MAX_HALF_MOVES) {
             return DRAW;
         }
 

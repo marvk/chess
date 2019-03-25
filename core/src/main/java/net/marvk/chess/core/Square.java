@@ -21,9 +21,9 @@ public enum Square {
     private final int bitboardIndex;
     private final long occupiedBitMask;
 
-    private final boolean northSouthEdgeSquare;
-    private final boolean eastWestEdgeSquare;
-    private final boolean edgeSquare;
+    private final boolean northSouthEdge;
+    private final boolean eastWestEdge;
+    private final boolean edge;
 
     private static final Square[][] SQUARES;
 
@@ -53,10 +53,10 @@ public enum Square {
 
         this.translateMap = new EnumMap<>(Direction.class);
 
-        this.northSouthEdgeSquare = rank == Rank.RANK_1 || rank == Rank.RANK_8;
-        this.eastWestEdgeSquare = file == File.FILE_A || file == File.FILE_H;
+        this.northSouthEdge = rank == Rank.RANK_1 || rank == Rank.RANK_8;
+        this.eastWestEdge = file == File.FILE_A || file == File.FILE_H;
 
-        this.edgeSquare = northSouthEdgeSquare || eastWestEdgeSquare;
+        this.edge = northSouthEdge || eastWestEdge;
     }
 
     public static Square getSquareFromFen(final String fen) {
@@ -117,29 +117,29 @@ public enum Square {
         switch (direction) {
             case NORTH:
             case SOUTH:
-                return northSouthEdgeSquare;
+                return northSouthEdge;
             case EAST:
             case WEST:
-                return eastWestEdgeSquare;
+                return eastWestEdge;
             case NORTH_EAST:
             case NORTH_WEST:
             case SOUTH_EAST:
             case SOUTH_WEST:
-                return edgeSquare;
+                return edge;
             default:
                 return false;
         }
     }
 
-    public boolean isEdgeSquare() {
-        return edgeSquare;
+    public boolean isEdge() {
+        return edge;
     }
 
     public boolean isNorthSouthEdge() {
-        return edgeSquare;
+        return northSouthEdge;
     }
 
     public boolean isEastWestEdge() {
-        return edgeSquare;
+        return eastWestEdge;
     }
 }

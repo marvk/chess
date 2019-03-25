@@ -62,7 +62,7 @@ public class TranspositionTable {
     private static class LinkedHashMapWithCapacity extends LinkedHashMap<Long, Entry> {
         private final int capacity;
 
-        public LinkedHashMapWithCapacity(final int capacity) {
+        LinkedHashMapWithCapacity(final int capacity) {
             super();
             this.capacity = capacity;
         }

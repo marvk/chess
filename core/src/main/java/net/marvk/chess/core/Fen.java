@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Fen {
+public final class Fen {
     private static final Pattern FEN_PATTERN = Pattern.compile("^" +
             "(?<piecePlacement>(?!.{0,6}[1-8][1-8])[PNBRQKpnbrqk1-8]{1,8}(?:/(?!.{0,6}[1-8][1-8])[PNBRQKpnbrqk1-8]{1,8}){7}) " +
             "(?<activeColor>[bw]) " +

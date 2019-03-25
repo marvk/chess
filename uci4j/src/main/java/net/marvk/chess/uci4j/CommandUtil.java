@@ -44,8 +44,8 @@ final class CommandUtil {
         return "option name " + name + " type " + type + " default " + defaultValue;
     }
 
-    static boolean isStringNotEmpty(final String string) {
-        return !string.trim().isEmpty();
+    static boolean isStringNotEmpty(final String s) {
+        return !s.trim().isEmpty();
     }
 
     static <T> boolean requireElseThrow(final T t, final Predicate<T> predicate) {

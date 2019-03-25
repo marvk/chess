@@ -82,7 +82,7 @@ class ZobristHashingTest {
         print(totalNodes, totalTableHits, totalCollisions);
     }
 
-    private void print(final int nodes, final int tableHits, final int collisions) {
+    private static void print(final int nodes, final int tableHits, final int collisions) {
         final double collisionRate = ((double) collisions) / tableHits;
         System.out.println("nodes\t\t\t" + nodes);
         System.out.println("table hits\t\t" + tableHits);

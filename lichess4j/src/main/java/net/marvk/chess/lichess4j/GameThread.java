@@ -1,10 +1,10 @@
 package net.marvk.chess.lichess4j;
 
 import lombok.extern.log4j.Log4j2;
-import net.marvk.chess.core.bitboards.Bitboard;
 import net.marvk.chess.core.Color;
 import net.marvk.chess.core.Fen;
 import net.marvk.chess.core.UciMove;
+import net.marvk.chess.core.bitboards.Bitboard;
 import net.marvk.chess.lichess4j.model.ChatLine;
 import net.marvk.chess.lichess4j.model.GameState;
 import net.marvk.chess.lichess4j.model.GameStateFull;
@@ -15,6 +15,7 @@ import net.marvk.chess.uci4j.Go;
 import net.marvk.chess.uci4j.UIChannel;
 import net.marvk.chess.uci4j.UciEngine;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -41,12 +42,12 @@ class GameThread implements Runnable, UIChannel {
     private Color myColor;
     private String initialFen;
 
-    public GameThread(final String botId,
-                      final String apiToken,
-                      final String gameId,
-                      final CloseableHttpClient httpClient,
-                      final ExecutorService executorService,
-                      final EngineFactory engine) {
+    GameThread(final String botId,
+               final String apiToken,
+               final String gameId,
+               final CloseableHttpClient httpClient,
+               final ExecutorService executorService,
+               final EngineFactory engine) {
         this.gameId = gameId;
         this.apiToken = apiToken;
         this.httpClient = httpClient;
@@ -55,7 +56,7 @@ class GameThread implements Runnable, UIChannel {
         this.engine = engine.create(this);
     }
 
-    public void acceptFullGameState(final GameStateFull gameStateFull) {
+    private void acceptFullGameState(final GameStateFull gameStateFull) {
         if (botId.equals(gameStateFull.getWhite().getId())) {
             this.myColor = Color.WHITE;
         } else if (botId.equals(gameStateFull.getBlack().getId())) {
@@ -82,7 +83,7 @@ class GameThread implements Runnable, UIChannel {
         this.acceptGameState(gameStateFull.getGameState());
     }
 
-    public void acceptGameState(final GameState gameState) {
+    private void acceptGameState(final GameState gameState) {
         final Bitboard board;
         final boolean defaultFen = initialFen == null || "startpos".equals(initialFen) || initialFen.trim().isEmpty();
         if (defaultFen) {
@@ -113,7 +114,7 @@ class GameThread implements Runnable, UIChannel {
         });
     }
 
-    public void acceptChatLine(final ChatLine chatLine) {
+    private void acceptChatLine(final ChatLine chatLine) {
 
     }
 
@@ -168,7 +169,7 @@ class GameThread implements Runnable, UIChannel {
             try (CloseableHttpResponse httpResponse = httpClient.execute(request)) {
                 final HttpEntity entity = httpResponse.getEntity();
 
-                if (httpResponse.getStatusLine().getStatusCode() == 200) {
+                if (httpResponse.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
                     log.info("Played move " + move + " in game " + gameId);
                 } else {
                     log.warn("Failed to play move " + move + " in game " + gameId + ": " + EntityUtils.toString(entity));

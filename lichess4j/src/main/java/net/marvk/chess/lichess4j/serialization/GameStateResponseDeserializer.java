@@ -18,15 +18,15 @@ public class GameStateResponseDeserializer implements JsonDeserializer<GameState
         if (responseType == GameStateResponse.Type.GAME_FULL) {
             final GameStateFull gameStateFull = context.deserialize(object, GameStateFull.class);
 
-            return new GameStateResponse(responseType, gameStateFull, null, null);
+            return new GameStateResponse(GameStateResponse.Type.GAME_FULL, gameStateFull, null, null);
         } else if (responseType == GameStateResponse.Type.GAME_STATE) {
             final GameState gameStateFull = context.deserialize(object, GameState.class);
 
-            return new GameStateResponse(responseType, null, gameStateFull, null);
+            return new GameStateResponse(GameStateResponse.Type.GAME_STATE, null, gameStateFull, null);
         } else if (responseType == GameStateResponse.Type.CHAT_LINE) {
             final ChatLine chatLine = context.deserialize(object, ChatLine.class);
 
-            return new GameStateResponse(responseType, null, null, chatLine);
+            return new GameStateResponse(GameStateResponse.Type.CHAT_LINE, null, null, chatLine);
         } else {
             return null;
         }

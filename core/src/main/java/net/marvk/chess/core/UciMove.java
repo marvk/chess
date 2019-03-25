@@ -47,7 +47,7 @@ public class UciMove {
                                  .filter(p -> p.asUciMove().equals(uciMove))
                                  .findFirst();
 
-            if (!maybeMove.isPresent()) {
+            if (maybeMove.isEmpty()) {
                 throw new IllegalStateException("Seemingly the opponent tried play an illegal move, this is probably a bug in the move generator. Move history was " + Arrays
                         .toString(uciMoves));
             }

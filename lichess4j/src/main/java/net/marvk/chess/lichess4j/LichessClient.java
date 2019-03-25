@@ -7,6 +7,7 @@ import net.marvk.chess.lichess4j.model.Perf;
 import net.marvk.chess.lichess4j.util.HttpUtil;
 import net.marvk.chess.uci4j.EngineFactory;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -101,7 +102,7 @@ public class LichessClient implements AutoCloseable {
             try (final CloseableHttpResponse httpResponse = httpClient.execute(request)) {
                 final HttpEntity entity = httpResponse.getEntity();
 
-                if (httpResponse.getStatusLine().getStatusCode() == 200) {
+                if (httpResponse.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
                     log.info("Handled challenge " + gameId);
                 } else {
                     log.warn("Failed to handle challenge " + gameId + ": " + EntityUtils.toString(entity));

@@ -415,7 +415,7 @@ public class KairukuEngine extends UciEngine {
                 : initialAlpha;
 
         if (depth == 0) {
-            metrics.quiescenceTermination(quiescencePly - depth);
+            metrics.quiescenceTermination(quiescencePly);
 
             return new ValuedMove(alpha, null, null);
         }

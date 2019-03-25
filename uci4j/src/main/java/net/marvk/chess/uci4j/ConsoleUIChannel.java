@@ -14,8 +14,8 @@ public class ConsoleUIChannel implements UIChannel {
         this.console = console;
     }
 
-    private void send(final String string) {
-        console.accept(string);
+    private void send(final String s) {
+        console.accept(s);
     }
 
     @Override

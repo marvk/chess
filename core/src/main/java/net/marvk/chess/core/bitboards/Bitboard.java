@@ -217,7 +217,7 @@ public class Bitboard {
 
     private static long getRankSquares(final Rank rank) {
         return Arrays.stream(SQUARES)
-                     .filter(s -> s.getRank() == rank)
+                     .filter(square -> square.getRank() == rank)
                      .mapToLong(Square::getOccupiedBitMask)
                      .reduce(0L, (l1, l2) -> l1 | l2);
     }
@@ -688,7 +688,6 @@ public class Bitboard {
         private void makeBbMove(
                 final long sourceSquare, final long targetSquare, final int pieceMoved, final boolean castleMove, final boolean enPassantAttack, final int piecePromote, final long enPassantOpportunitySquare
         ) {
-            final int sourceSquareIndex = Long.numberOfTrailingZeros(sourceSquare);
             final int targetSquareIndex = Long.numberOfTrailingZeros(targetSquare);
 
             long bits = 0L;
@@ -710,6 +709,8 @@ public class Bitboard {
 
             bits |= (long) pieceMoved << PIECE_MOVED_SHIFT;
             bits |= (long) pieceAttacked << PIECE_ATTACKED_SHIFT;
+
+            final int sourceSquareIndex = Long.numberOfTrailingZeros(sourceSquare);
 
             bits |= (long) sourceSquareIndex << SOURCE_SQUARE_INDEX_SHIFT;
             bits |= (long) targetSquareIndex << TARGET_SQUARE_INDEX_SHIFT;
@@ -912,7 +913,7 @@ public class Bitboard {
         return (pieceValue(target) << 8) - sourceValue;
     }
 
-    private long zobristHashForOccupancy(final long board, final ColoredPiece coloredPiece) {
+    private static long zobristHashForOccupancy(final long board, final ColoredPiece coloredPiece) {
         long hash = 0L;
 
         long occupancy = board;
@@ -1069,11 +1070,7 @@ public class Bitboard {
 
         final long kingAttacks = KING_ATTACKS[index];
 
-        if ((kingAttacks & opponent.kings) != 0L) {
-            return true;
-        }
-
-        return false;
+        return (kingAttacks & opponent.kings) != 0L;
     }
 
     // endregion
@@ -1305,10 +1302,10 @@ public class Bitboard {
 
         final long enPassantSquareIndex = (bits & NEXT_EN_PASSANT_SQUARE_INDEX_MASK) >> NEXT_EN_PASSANT_SQUARE_INDEX_SHIFT;
 
-        if (enPassantSquareIndex != 0L) {
-            enPassant = 1L << enPassantSquareIndex;
-        } else {
+        if (enPassantSquareIndex == 0L) {
             enPassant = NO_SQUARE;
+        } else {
+            enPassant = 1L << enPassantSquareIndex;
         }
 
         if ((bits & HALFMOVE_RESET_MASK) == 0L) {
@@ -1329,10 +1326,10 @@ public class Bitboard {
 
         final long enPassantSquareIndex = (bits & PREVIOUS_EN_PASSANT_SQUARE_INDEX_MASK) >> PREVIOUS_EN_PASSANT_SQUARE_INDEX_SHIFT;
 
-        if (enPassantSquareIndex != 0L) {
-            enPassant = 1L << enPassantSquareIndex;
-        } else {
+        if (enPassantSquareIndex == 0L) {
             enPassant = 0L;
+        } else {
+            enPassant = 1L << enPassantSquareIndex;
         }
 
         final PlayerBoard self;
@@ -1516,7 +1513,7 @@ public class Bitboard {
 
     @ToString
     public static class BBMove {
-        private long bits;
+        private final long bits;
 
         private final int mvvLva;
         private final int moveOrderValue;
@@ -1687,8 +1684,8 @@ public class Bitboard {
         if (enPassant != bitboard.enPassant) return false;
         if (fullmoveClock != bitboard.fullmoveClock) return false;
         if (halfmoveClock != bitboard.halfmoveClock) return false;
-        if (black != null ? !black.equals(bitboard.black) : bitboard.black != null) return false;
-        if (white != null ? !white.equals(bitboard.white) : bitboard.white != null) return false;
+        if (!Objects.equals(black, bitboard.black)) return false;
+        if (!Objects.equals(white, bitboard.white)) return false;
         return turn == bitboard.turn;
 
     }
@@ -1706,9 +1703,5 @@ public class Bitboard {
 
     public String bitboardStrings() {
         return "white:\n" + white + "\nblack:" + black;
-    }
-
-    public static void main(String[] args) {
-        System.out.println(new Bitboard(Fen.parse("r1b2rk1/pp3pp1/5n2/2pp4/8/q3P3/1bQNNPPP/2R1K2R w K - 2 18")).generatePseudoLegalAttackMoves());
     }
 }
