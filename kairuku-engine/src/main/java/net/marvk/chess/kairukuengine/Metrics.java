@@ -20,31 +20,31 @@ public class Metrics {
     private long totalQuiescenceTerminationSum;
     private long totalQuiescenceTerminationCount;
 
-    public Metrics() {
+    Metrics() {
         resetAll();
     }
 
-    public void incrementNegamaxNodes() {
+    void incrementNegamaxNodes() {
         lastNegamaxNodes++;
         totalNegamaxNodes++;
     }
 
-    public void incrementQuiescenceNodes() {
+    void incrementQuiescenceNodes() {
         lastQuiescenceNodes++;
         totalQuiescenceNodes++;
     }
 
-    public void incrementDuration(final Duration duration) {
+    void incrementDuration(final Duration duration) {
         lastDuration = lastDuration.plus(duration);
         totalDuration = totalDuration.plus(duration);
     }
 
-    public void incrementTableHits() {
+    void incrementTableHits() {
         lastTableHits++;
         totalTableHits++;
     }
 
-    public void quiescenceTermination(final int depth) {
+    void quiescenceTermination(final int depth) {
         lastQuiescenceTerminationSum += depth;
         lastQuiescenceTerminationCount++;
 
@@ -116,7 +116,7 @@ public class Metrics {
         return ((double) totalQuiescenceTerminationSum) / totalQuiescenceTerminationCount;
     }
 
-    public void resetRound() {
+    void resetRound() {
         lastNegamaxNodes = 0;
         lastQuiescenceNodes = 0;
         lastDuration = Duration.ZERO;
@@ -125,7 +125,7 @@ public class Metrics {
         lastQuiescenceTerminationCount = 0L;
     }
 
-    public void resetAll() {
+    void resetAll() {
         resetRound();
         totalNegamaxNodes = 0;
         totalQuiescenceNodes = 0;

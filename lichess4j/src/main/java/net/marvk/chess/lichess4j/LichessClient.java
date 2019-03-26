@@ -43,14 +43,16 @@ public class LichessClient implements AutoCloseable {
     private final ExecutorService executor = Executors.newCachedThreadPool();
     private final Set<Perf> allowedPerfs;
     private final EngineFactory engineFactory;
+    private final ChatMessageEventHandler eventHandler;
     private final String accountName;
     private final String apiToken;
 
-    LichessClient(final String accountName, final String apiToken, final Set<Perf> allowedPerfs, final EngineFactory engineFactory) throws IOReactorException {
+    LichessClient(final String accountName, final String apiToken, final Set<Perf> allowedPerfs, final EngineFactory engineFactory, final ChatMessageEventHandler eventHandler) throws IOReactorException {
         this.accountName = accountName;
         this.apiToken = apiToken;
         this.allowedPerfs = allowedPerfs;
         this.engineFactory = engineFactory;
+        this.eventHandler = eventHandler;
         final IOReactorConfig ioReactorConfig = IOReactorConfig.custom().setIoThreadCount(10).build();
         final ConnectingIOReactor ioReactor = new DefaultConnectingIOReactor(ioReactorConfig);
         final NHttpClientConnectionManager connectionManager = new PoolingNHttpClientConnectionManager(ioReactor);
@@ -120,7 +122,7 @@ public class LichessClient implements AutoCloseable {
     }
 
     private void startGameHttpStream(final GameStart gameStart) {
-        executor.execute(new GameThread(accountName, apiToken, gameStart.getId(), httpClient, executor, engineFactory));
+        executor.execute(new GameThread(accountName, apiToken, gameStart.getId(), httpClient, executor, engineFactory, eventHandler));
     }
 
     @Override

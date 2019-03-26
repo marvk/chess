@@ -19,6 +19,8 @@ public final class LichessClientBuilder {
 
     private final List<Perf> allowedPerfs;
 
+    private final List<ChatMessageEventHandler> eventHandlers;
+
     public static LichessClientBuilder create(final String accountName, final EngineFactory engineFactory) {
         return new LichessClientBuilder(accountName, engineFactory);
     }
@@ -28,6 +30,7 @@ public final class LichessClientBuilder {
         this.engineFactory = engineFactory;
 
         this.allowedPerfs = new ArrayList<>();
+        this.eventHandlers = new ArrayList<>();
     }
 
     public LichessClientBuilder apiToken(final String apiToken) {
@@ -48,6 +51,7 @@ public final class LichessClientBuilder {
 
     public LichessClientBuilder allowPerf(final Perf perf) {
         allowedPerfs.add(perf);
+
         return this;
     }
 
@@ -61,6 +65,26 @@ public final class LichessClientBuilder {
         return this;
     }
 
+    public LichessClientBuilder eventHandler(final ChatMessageEventHandler eventHandler) {
+        eventHandlers.add(eventHandler);
+
+        return this;
+    }
+
+    public LichessClientBuilder eventHandlerWithPrefix(final ChatMessageEventHandler eventHandler, final String prefix) {
+        eventHandlers.add(new PrefixChatMessageEventHandler(prefix, eventHandler));
+
+        return this;
+    }
+
+    public LichessClientBuilder eventHandlerWithPrefixes(final ChatMessageEventHandler eventHandler, final String... prefixes) {
+        Arrays.stream(prefixes)
+              .map(prefix -> new PrefixChatMessageEventHandler(prefix, eventHandler))
+              .forEach(eventHandlers::add);
+
+        return this;
+    }
+
     public LichessClient build() throws IOReactorException {
         if (apiToken == null) {
             throw new IllegalStateException("Failed to specify API token");
@@ -70,6 +94,12 @@ public final class LichessClientBuilder {
             throw new IllegalStateException("Failed to specify at least one allowed Perf");
         }
 
-        return new LichessClient(accountName, apiToken, EnumSet.copyOf(allowedPerfs), engineFactory);
+        return new LichessClient(
+                accountName,
+                apiToken,
+                EnumSet.copyOf(allowedPerfs),
+                engineFactory,
+                CompositeChatMessageEventHandler.of(eventHandlers)
+        );
     }
 }

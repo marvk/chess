@@ -55,6 +55,10 @@ public class KairukuEngine extends UciEngine {
         this.executor = Executors.newSingleThreadExecutor();
     }
 
+    public Metrics getMetrics() {
+        return metrics;
+    }
+
     // region UCI Methods
 
     @Override

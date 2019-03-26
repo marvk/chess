@@ -8,7 +8,6 @@ import net.marvk.chess.core.bitboards.Bitboard;
 import net.marvk.chess.lichess4j.model.ChatLine;
 import net.marvk.chess.lichess4j.model.GameState;
 import net.marvk.chess.lichess4j.model.GameStateFull;
-import net.marvk.chess.lichess4j.model.Room;
 import net.marvk.chess.lichess4j.util.HttpUtil;
 import net.marvk.chess.uci4j.EngineFactory;
 import net.marvk.chess.uci4j.Go;
@@ -38,25 +37,37 @@ class GameThread implements Runnable, UIChannel {
     private final ExecutorService executorService;
     private final String botId;
     private final UciEngine engine;
+    private final ChatMessageEventHandler chatMessageEventHandler;
 
     private Color myColor;
     private String initialFen;
+
+    private GameStateFull initialGameState;
+    private GameState lastGameState;
 
     GameThread(final String botId,
                final String apiToken,
                final String gameId,
                final CloseableHttpClient httpClient,
                final ExecutorService executorService,
-               final EngineFactory engine) {
+               final EngineFactory engine,
+               final ChatMessageEventHandler chatMessageEventHandler) {
         this.gameId = gameId;
         this.apiToken = apiToken;
         this.httpClient = httpClient;
         this.executorService = executorService;
         this.botId = botId;
         this.engine = engine.create(this);
+        this.chatMessageEventHandler = chatMessageEventHandler;
     }
 
     private void acceptFullGameState(final GameStateFull gameStateFull) {
+        if (initialGameState != null) {
+            log.warn("Received initial game state twice");
+        } else {
+            initialGameState = gameStateFull;
+        }
+
         if (botId.equals(gameStateFull.getWhite().getId())) {
             this.myColor = Color.WHITE;
         } else if (botId.equals(gameStateFull.getBlack().getId())) {
@@ -65,25 +76,12 @@ class GameThread implements Runnable, UIChannel {
 
         initialFen = gameStateFull.getInitialFen();
 
-//        final Clock clock = gameStateFull.getClock();
-//        final int initialClock = clock != null ? clock.getInitial() : Integer.MAX_VALUE;
-//
-//        final int ply;
-//
-//        if (initialClock < TimeUnit.SECONDS.toMillis(30)) {
-//            ply = 3;
-//        } else if (initialClock < TimeUnit.SECONDS.toMillis(90)) {
-//            ply = 4;
-//        } else {
-//            ply = 5;
-//        }
-//
-//        writeInChat("Hey there, I will play this game with " + ply + " ply lookahead! For more information on my source code and who created me, see my profile. Good luck!");
-
         this.acceptGameState(gameStateFull.getGameState());
     }
 
     private void acceptGameState(final GameState gameState) {
+        lastGameState = gameState;
+
         final Bitboard board;
         final boolean defaultFen = initialFen == null || "startpos".equals(initialFen) || initialFen.trim().isEmpty();
         if (defaultFen) {
@@ -115,12 +113,13 @@ class GameThread implements Runnable, UIChannel {
     }
 
     private void acceptChatLine(final ChatLine chatLine) {
-
+        chatMessageEventHandler.accept(chatLine, new LichessChatContext(this::writeInChat, engine, initialGameState, lastGameState));
     }
 
-    private void writeInChat(final String text) {
+    private void writeInChat(final LichessChatResponse response) {
         executorService.execute(() -> {
-            final HttpUriRequest request = HttpUtil.createAuthorizedPostRequest(Endpoints.writeInChat(gameId, Room.PLAYER, text), apiToken);
+            final HttpUriRequest request = HttpUtil.createAuthorizedPostRequest(Endpoints.writeInChat(gameId, response.getRoom(), response
+                    .getMessage()), apiToken);
 
             try (final CloseableHttpResponse ignored = httpClient.execute(request)) {
 
