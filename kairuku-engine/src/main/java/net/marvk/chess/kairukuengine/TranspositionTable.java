@@ -6,13 +6,13 @@ import lombok.Data;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class TranspositionTable {
-    private final LinkedHashMap<Long, Entry> table;
+public class TranspositionTable<T> {
+    private final LinkedHashMap<Long, T> table;
     private final int capacity;
 
     public TranspositionTable(final int capacity) {
         this.capacity = capacity;
-        this.table = new LinkedHashMapWithCapacity(this.capacity);
+        this.table = new LinkedHashMapWithCapacity<>(this.capacity);
     }
 
     public TranspositionTable() {
@@ -20,11 +20,11 @@ public class TranspositionTable {
         this.table = new LinkedHashMap<>();
     }
 
-    public Entry get(final long hash) {
+    public T get(final long hash) {
         return table.get(hash);
     }
 
-    public Entry put(final long key, final Entry value) {
+    public T put(final long key, final T value) {
         return table.put(key, value);
     }
 
@@ -59,7 +59,7 @@ public class TranspositionTable {
         return table.size();
     }
 
-    private static class LinkedHashMapWithCapacity extends LinkedHashMap<Long, Entry> {
+    private static class LinkedHashMapWithCapacity<T> extends LinkedHashMap<Long, T> {
         private final int capacity;
 
         LinkedHashMapWithCapacity(final int capacity) {
@@ -68,7 +68,7 @@ public class TranspositionTable {
         }
 
         @Override
-        protected boolean removeEldestEntry(final Map.Entry<Long, Entry> eldest) {
+        protected boolean removeEldestEntry(final Map.Entry<Long, T> eldest) {
             return size() > capacity;
         }
     }

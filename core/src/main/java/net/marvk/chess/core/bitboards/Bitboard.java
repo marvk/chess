@@ -865,7 +865,7 @@ public class Bitboard {
     }
 
     public int pieceSquareValue(final Color color) {
-        final boolean lateGame = (white.queens | black.queens) == 0L;
+        final boolean lateGame = isLateGame();
 
         final int[] whiteKingTable = lateGame ? WHITE_KING_TABLE_LATE : WHITE_KING_TABLE_MID;
         final int[] blackKingTable = lateGame ? BLACK_KING_TABLE_LATE : BLACK_KING_TABLE_MID;
@@ -887,6 +887,22 @@ public class Bitboard {
         final int sum = whiteSum + blackSum;
 
         return color == Color.WHITE ? -sum : sum;
+    }
+
+    private boolean isLateGame() {
+        final boolean whiteHasQueen = white.queens != 0L; // a
+        final boolean blackHasQueen = black.queens != 0L; // b
+
+        final boolean whiteHasOneOrFewerMinorPieces = Long.bitCount(white.knights | white.bishops) <= 1;
+        final boolean blackHasOneOrFewerMinorPieces = Long.bitCount(black.knights | black.bishops) <= 1;
+
+        final boolean whiteHasQueenAndOneOrFewerMinorPieces = whiteHasQueen && whiteHasOneOrFewerMinorPieces; // c
+        final boolean blackHasQueenAndOneOrFewerMinorPieces = blackHasQueen && blackHasOneOrFewerMinorPieces; // d
+
+        return (!whiteHasQueen && !blackHasQueen)
+                || (whiteHasQueenAndOneOrFewerMinorPieces && !blackHasQueen)
+                || (blackHasQueenAndOneOrFewerMinorPieces && !whiteHasQueen)
+                || (whiteHasOneOrFewerMinorPieces && blackHasOneOrFewerMinorPieces);
     }
 
     private static int sum(final long board, final int[] valueTable) {

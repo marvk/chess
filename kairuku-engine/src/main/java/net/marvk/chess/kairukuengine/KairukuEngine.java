@@ -40,7 +40,7 @@ public class KairukuEngine extends UciEngine {
     private Color selfColor;
 
     private final Metrics metrics = new Metrics();
-    private final TranspositionTable transpositionTable = new TranspositionTable(10_000_000);
+    private final TranspositionTable<TranspositionTable.Entry> transpositionTable = new TranspositionTable<>(10_000_000);
     private final Set<Long> movesSinceHalfmoveReset = new HashSet<>();
 
     private final Set<UciMove> searchMoves = new HashSet<>();
