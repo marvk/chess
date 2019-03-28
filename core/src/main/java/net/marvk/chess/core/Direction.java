@@ -10,7 +10,7 @@ public enum Direction {
     NORTH(1, 0),
     NORTH_NORTH_EAST(2, 1),
     NORTH_EAST(1, 1),
-    NORTH_EAST_EAST(1, 2),
+    EAST_NORTH_EAST(1, 2),
     EAST(0, 1),
     EAST_SOUTH_EAST(-1, 2),
     SOUTH_EAST(-1, 1),
