@@ -8,6 +8,9 @@ import org.apache.http.nio.reactor.IOReactorException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
 @Log4j2
@@ -85,7 +88,7 @@ public final class LichessClientBuilder {
         return this;
     }
 
-    public LichessClient build() throws IOReactorException {
+    public LichessClient build() throws IOReactorException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
         if (apiToken == null) {
             throw new IllegalStateException("Failed to specify API token");
         }

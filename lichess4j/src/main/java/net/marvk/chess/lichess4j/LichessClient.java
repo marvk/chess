@@ -11,6 +11,7 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
@@ -22,9 +23,14 @@ import org.apache.http.nio.conn.NHttpClientConnectionManager;
 import org.apache.http.nio.protocol.HttpAsyncRequestProducer;
 import org.apache.http.nio.reactor.ConnectingIOReactor;
 import org.apache.http.nio.reactor.IOReactorException;
+import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.util.EntityUtils;
 
+import javax.net.ssl.SSLContext;
 import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -47,7 +53,7 @@ public class LichessClient implements AutoCloseable {
     private final String accountName;
     private final String apiToken;
 
-    LichessClient(final String accountName, final String apiToken, final Set<Perf> allowedPerfs, final EngineFactory engineFactory, final ChatMessageEventHandler eventHandler) throws IOReactorException {
+    LichessClient(final String accountName, final String apiToken, final Set<Perf> allowedPerfs, final EngineFactory engineFactory, final ChatMessageEventHandler eventHandler) throws IOReactorException, KeyStoreException, NoSuchAlgorithmException, KeyManagementException {
         this.accountName = accountName;
         this.apiToken = apiToken;
         this.allowedPerfs = allowedPerfs;
@@ -57,7 +63,12 @@ public class LichessClient implements AutoCloseable {
         final ConnectingIOReactor ioReactor = new DefaultConnectingIOReactor(ioReactorConfig);
         final NHttpClientConnectionManager connectionManager = new PoolingNHttpClientConnectionManager(ioReactor);
 
-        this.httpClient = HttpClientBuilder.create().build();
+        final SSLContext build = new SSLContextBuilder().loadTrustMaterial(null, (c, at) -> true).build();
+
+        this.httpClient = HttpClientBuilder.create()
+                                           .setSSLContext(build)
+                                           .setSSLHostnameVerifier(new NoopHostnameVerifier())
+                                           .build();
 
         this.asyncClient = HttpAsyncClients.custom()
                                            .setConnectionManager(connectionManager)

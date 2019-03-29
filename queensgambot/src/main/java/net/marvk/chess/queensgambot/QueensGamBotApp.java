@@ -11,6 +11,9 @@ import net.marvk.chess.lichess4j.model.Perf;
 
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.util.StringJoiner;
 import java.util.concurrent.ExecutionException;
 
@@ -25,11 +28,11 @@ public final class QueensGamBotApp {
                      LichessClientBuilder.create("queensgambot", KairukuEngine::new)
                                          .allowPerf(Perf.BULLET)
                                          .apiTokenFromPath(Paths.get("lichess-api-token"))
-                                         .eventHandlerWithPrefixes(QueensGamBotApp::infoString, "!li", "!lm", "!lastinfo", "lastmetrix")
+                                         .eventHandlerWithPrefixes(QueensGamBotApp::infoString, "!li", "!lm", "!lastinfo", "lastmetrics")
                                          .build()
         ) {
             client.start();
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (InterruptedException | ExecutionException | NoSuchAlgorithmException | KeyStoreException | KeyManagementException e) {
             log.error("", e);
         }
     }
