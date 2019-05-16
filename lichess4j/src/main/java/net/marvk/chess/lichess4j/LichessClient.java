@@ -48,15 +48,17 @@ public class LichessClient implements AutoCloseable {
 
     private final ExecutorService executor = Executors.newCachedThreadPool();
     private final Set<Perf> allowedPerfs;
+    private final boolean allowAllPerfsOnCasual;
     private final EngineFactory engineFactory;
     private final ChatMessageEventHandler eventHandler;
     private final String accountName;
     private final String apiToken;
 
-    LichessClient(final String accountName, final String apiToken, final Set<Perf> allowedPerfs, final EngineFactory engineFactory, final ChatMessageEventHandler eventHandler) throws IOReactorException, KeyStoreException, NoSuchAlgorithmException, KeyManagementException {
+    LichessClient(final String accountName, final String apiToken, final Set<Perf> allowedPerfs, final boolean allowAllPerfsOnCasual, final EngineFactory engineFactory, final ChatMessageEventHandler eventHandler) throws IOReactorException, KeyStoreException, NoSuchAlgorithmException, KeyManagementException {
         this.accountName = accountName;
         this.apiToken = apiToken;
         this.allowedPerfs = allowedPerfs;
+        this.allowAllPerfsOnCasual = allowAllPerfsOnCasual;
         this.engineFactory = engineFactory;
         this.eventHandler = eventHandler;
         final IOReactorConfig ioReactorConfig = IOReactorConfig.custom().setIoThreadCount(10).build();
@@ -99,11 +101,13 @@ public class LichessClient implements AutoCloseable {
 
         final String endpoint;
 
-        if (allowedPerfs.contains(perf)) {
-            log.info("Accepting challenge " + gameId + " with perf " + perf);
+        final String rated = challenge.getRated() ? "rated" : "casual";
+
+        if ((allowAllPerfsOnCasual && challenge.getRated()) || allowedPerfs.contains(perf)) {
+            log.info("Accepting " + rated + " challenge " + gameId + " with perf " + perf);
             endpoint = Endpoints.acceptChallenge(gameId);
         } else {
-            log.info("Declining challenge " + challenge.getId() + " due to perf mismatch, allowed perfs are " + allowedPerfs + " but got " + perf);
+            log.info("Declining " + rated + " challenge " + challenge.getId() + " due to perf mismatch, allowed perfs are " + allowedPerfs + " but got " + perf);
             endpoint = Endpoints.declineChallenge(gameId);
         }
 

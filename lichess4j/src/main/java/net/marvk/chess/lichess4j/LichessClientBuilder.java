@@ -23,6 +23,7 @@ public final class LichessClientBuilder {
     private final List<Perf> allowedPerfs;
 
     private final List<ChatMessageEventHandler> eventHandlers;
+    private boolean allowAllPerfsOnCasual;
 
     public static LichessClientBuilder create(final String accountName, final EngineFactory engineFactory) {
         return new LichessClientBuilder(accountName, engineFactory);
@@ -34,10 +35,18 @@ public final class LichessClientBuilder {
 
         this.allowedPerfs = new ArrayList<>();
         this.eventHandlers = new ArrayList<>();
+
+        this.allowAllPerfsOnCasual = false;
     }
 
     public LichessClientBuilder apiToken(final String apiToken) {
         this.apiToken = apiToken;
+
+        return this;
+    }
+
+    public LichessClientBuilder allowAllPerfsOnCasual(final boolean allowAllPerfsOnCasual) {
+        this.allowAllPerfsOnCasual = allowAllPerfsOnCasual;
 
         return this;
     }
@@ -101,6 +110,7 @@ public final class LichessClientBuilder {
                 accountName,
                 apiToken,
                 EnumSet.copyOf(allowedPerfs),
+                allowAllPerfsOnCasual,
                 engineFactory,
                 CompositeChatMessageEventHandler.of(eventHandlers)
         );

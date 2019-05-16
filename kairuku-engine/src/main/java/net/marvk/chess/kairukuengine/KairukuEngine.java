@@ -205,15 +205,15 @@ public class KairukuEngine extends UciEngine {
         }
 
         if (timeRemaining > 60_000) {
-            ply = 6;
+            ply = 7;
         } else if (timeRemaining > 20_000) {
-            ply = 5;
+            ply = 6;
         } else if (timeRemaining > 7_500) {
-            ply = 4;
+            ply = 5;
         } else if (timeRemaining > 2_000) {
-            ply = 3;
+            ply = 4;
         } else if (timeRemaining > 1_000) {
-            ply = 2;
+            ply = 3;
         } else {
             ply = 2;
         }
