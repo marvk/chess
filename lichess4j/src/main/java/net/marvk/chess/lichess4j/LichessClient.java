@@ -103,7 +103,7 @@ public class LichessClient implements AutoCloseable {
 
         final String rated = challenge.getRated() ? "rated" : "casual";
 
-        if ((allowAllPerfsOnCasual && challenge.getRated()) || allowedPerfs.contains(perf)) {
+        if ((allowAllPerfsOnCasual && !challenge.getRated()) || allowedPerfs.contains(perf)) {
             log.info("Accepting " + rated + " challenge " + gameId + " with perf " + perf);
             endpoint = Endpoints.acceptChallenge(gameId);
         } else {
