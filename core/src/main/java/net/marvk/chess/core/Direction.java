@@ -1,28 +1,29 @@
 package net.marvk.chess.core;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public enum Direction {
     NORTH(1, 0),
-    NORTH_NORTH_EAST(2, 1),
-    NORTH_EAST(1, 1),
-    EAST_NORTH_EAST(1, 2),
     EAST(0, 1),
-    EAST_SOUTH_EAST(-1, 2),
-    SOUTH_EAST(-1, 1),
-    SOUTH_SOUTH_EAST(-2, 1),
     SOUTH(-1, 0),
-    SOUTH_SOUTH_WEST(-2, -1),
-    SOUTH_WEST(-1, -1),
-    WEST_SOUTH_WEST(-1, -2),
     WEST(0, -1),
-    WEST_NORTH_WEST(1, -2),
-    NORTH_WEST(1, -1),
-    NORTH_NORTH_WEST(2, -1);
+
+    NORTH_EAST(NORTH, EAST),
+    SOUTH_EAST(SOUTH, EAST),
+    SOUTH_WEST(SOUTH, WEST),
+    NORTH_WEST(NORTH, WEST),
+
+    NORTH_NORTH_EAST(NORTH, NORTH_EAST),
+    EAST_NORTH_EAST(EAST, NORTH_EAST),
+    EAST_SOUTH_EAST(EAST, SOUTH_EAST),
+    SOUTH_SOUTH_EAST(SOUTH, SOUTH_EAST),
+    SOUTH_SOUTH_WEST(SOUTH, SOUTH_WEST),
+    WEST_SOUTH_WEST(WEST, SOUTH_WEST),
+    WEST_NORTH_WEST(WEST, NORTH_WEST),
+    NORTH_NORTH_WEST(NORTH, NORTH_WEST);
 
     private final int rankDifference;
     private final int fileDifference;
@@ -34,7 +35,11 @@ public enum Direction {
     public static final List<Direction> KNIGHT_DIRECTIONS = groupByType(Type.KNIGHT);
     public static final List<Direction> CARDINAL_DIRECTIONS =
             Stream.concat(ORTHOGONAL_DIRECTIONS.stream(), DIAGONAL_DIRECTIONS.stream())
-                  .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+                  .collect(Collectors.toUnmodifiableList());
+
+    Direction(final Direction d1, final Direction d2) {
+        this(d1.rankDifference + d2.rankDifference, d1.fileDifference + d2.fileDifference);
+    }
 
     Direction(final int rankDifference, final int fileDifference) {
         this.rankDifference = rankDifference;
@@ -67,7 +72,7 @@ public enum Direction {
     private static List<Direction> groupByType(final Type type) {
         return Arrays.stream(values())
                      .filter(e -> e.type == type)
-                     .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+                     .collect(Collectors.toUnmodifiableList());
     }
 
     public enum Type {
