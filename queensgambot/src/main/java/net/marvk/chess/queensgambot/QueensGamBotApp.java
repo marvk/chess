@@ -8,6 +8,7 @@ import net.marvk.chess.lichess4j.LichessClient;
 import net.marvk.chess.lichess4j.LichessClientBuilder;
 import net.marvk.chess.lichess4j.model.ChatLine;
 import net.marvk.chess.lichess4j.model.Perf;
+import org.apache.commons.cli.*;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -21,30 +22,22 @@ import java.util.concurrent.ExecutionException;
 
 @Log4j2
 public final class QueensGamBotApp {
-    private static final Path API_KEY_PATH = Paths.get("lichess-api-token");
+    private static final Path API_TOKEN_PATH = Paths.get("lichess-api-token");
+    private static final String API_TOKEN_ENV_KEY = "LICHESS_API_TOKEN";
+    private static final Option API_TOKEN_OPTION = Option.builder("t")
+                                                         .hasArg()
+                                                         .required(false)
+                                                         .longOpt("lichessApiToken")
+                                                         .argName("Lichess API Token")
+                                                         .desc("The API token for lichess.org")
+                                                         .build();
 
     private QueensGamBotApp() {
         throw new AssertionError("No instances of utility class " + QueensGamBotApp.class);
     }
 
-    public static void main(final String[] args) throws IOException {
-        log.info(System.getenv());
-
-        final String lichessApiToken;
-
-        if (Files.exists(API_KEY_PATH)) {
-            lichessApiToken = String.join("\n", Files.readAllLines(API_KEY_PATH)).trim();
-        } else {
-            log.warn("Failed to read api key from file, trying to read from env key LICHESS_API_TOKEN");
-
-            final String envToken = System.getenv("LICHESS_API_TOKEN");
-
-            if (envToken == null) {
-                throw new IllegalStateException("No API key");
-            }
-
-            lichessApiToken = envToken;
-        }
+    public static void main(final String[] args) throws IOException, ParseException {
+        final String lichessApiToken = getApiToken(args);
 
         try (final LichessClient client =
                      LichessClientBuilder.create("queensgambot", KairukuEngine::new)
@@ -55,8 +48,41 @@ public final class QueensGamBotApp {
                                          .build()
         ) {
             client.start();
-        } catch (InterruptedException | ExecutionException | NoSuchAlgorithmException | KeyStoreException | KeyManagementException e) {
+        } catch (final InterruptedException | ExecutionException | NoSuchAlgorithmException | KeyStoreException | KeyManagementException e) {
             log.error("", e);
+        }
+    }
+
+    private static CommandLine getCommandLineArgs(final String[] args) throws ParseException {
+        final CommandLineParser defaultParser = new DefaultParser();
+
+        final Options options = new Options();
+        options.addOption(API_TOKEN_OPTION);
+
+        return defaultParser.parse(options, args);
+    }
+
+    private static String getApiToken(final String[] args) throws IOException, ParseException {
+        final CommandLine commandLine = getCommandLineArgs(args);
+        if (commandLine.hasOption(API_TOKEN_OPTION.getOpt())) {
+            return commandLine.getOptionValue(API_TOKEN_OPTION.getOpt());
+        } else if (Files.exists(API_TOKEN_PATH)) {
+            return String.join("\n", Files.readAllLines(API_TOKEN_PATH)).trim();
+        } else {
+            log.warn("Failed to read api token from file " + API_TOKEN_PATH + ", trying to read from environment variable " + API_TOKEN_ENV_KEY);
+
+            final String envToken = System.getenv(API_TOKEN_ENV_KEY);
+
+            if (envToken == null) {
+                final String message = "No API token specified. Please specify an API token either by setting the -k command line argument, by providing a file named "
+                        + API_TOKEN_PATH.getFileName()
+                        + " on the classpath or by setting the environment variable "
+                        + API_TOKEN_ENV_KEY;
+
+                throw new IllegalStateException(message);
+            }
+
+            return envToken;
         }
     }
 
