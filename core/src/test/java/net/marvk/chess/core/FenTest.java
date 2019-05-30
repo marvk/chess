@@ -1,4 +1,4 @@
-package net.marvk.chess.core.board;
+package net.marvk.chess.core;
 
 import net.marvk.chess.core.Fen;
 import org.junit.jupiter.api.Assertions;

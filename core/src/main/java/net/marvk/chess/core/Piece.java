@@ -3,6 +3,10 @@ package net.marvk.chess.core;
 import java.util.Objects;
 
 public enum Piece {
+    /*
+        This class uses overridden methods instead of fields because ColoredPiece cyclically depends on it.
+        If it were to use fields, ColoredPieces piece field would be instantiated with null values.
+     */
     KING {
         @Override
         public ColoredPiece ofColor(final Color color) {
