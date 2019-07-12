@@ -2,10 +2,11 @@ package net.marvk.chess.lichess4j.model;
 
 import com.google.gson.annotations.SerializedName;
 import lombok.Data;
+import lombok.NonNull;
 
 @Data
 public class GameStateResponse {
-    private final Type type;
+    private final @NonNull Type type;
     private final GameStateFull gameStateFull;
     private final GameState gameState;
     private final ChatLine chatLine;

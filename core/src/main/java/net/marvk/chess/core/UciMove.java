@@ -4,7 +4,6 @@ import lombok.Data;
 import net.marvk.chess.core.bitboards.Bitboard;
 
 import java.util.Arrays;
-import java.util.Optional;
 import java.util.regex.Pattern;
 
 @Data
@@ -31,8 +30,8 @@ public class UciMove {
         return new UciMove(source, target, promotion);
     }
 
-    public static UciMove[] parseLine(final String asString) {
-        return Arrays.stream(asString.split(" "))
+    public static UciMove[] parseLine(final String line) {
+        return Arrays.stream(line.split(" "))
                      .map(String::trim)
                      .filter(s -> !s.isEmpty())
                      .map(UciMove::parse)
@@ -41,18 +40,15 @@ public class UciMove {
 
     private static Bitboard getBoard(final UciMove[] uciMoves, final Bitboard startingBoard) {
         for (final UciMove uciMove : uciMoves) {
-            final Optional<Bitboard.BBMove> maybeMove =
+            final Bitboard.BBMove move =
                     startingBoard.generatePseudoLegalMoves()
                                  .stream()
                                  .filter(p -> p.asUciMove().equals(uciMove))
-                                 .findFirst();
+                                 .findFirst()
+                                 .orElseThrow(() -> new IllegalStateException("Seemingly the opponent tried play an illegal move, this is probably a bug in the move generator. Move history was " + Arrays
+                                         .toString(uciMoves)));
 
-            if (maybeMove.isEmpty()) {
-                throw new IllegalStateException("Seemingly the opponent tried play an illegal move, this is probably a bug in the move generator. Move history was " + Arrays
-                        .toString(uciMoves));
-            }
-
-            startingBoard.make(maybeMove.get());
+            startingBoard.make(move);
         }
 
         return startingBoard;

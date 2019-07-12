@@ -32,6 +32,7 @@ import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -54,23 +55,24 @@ public class LichessClient implements AutoCloseable {
     private final String accountName;
     private final String apiToken;
 
-    LichessClient(final String accountName, final String apiToken, final Set<Perf> allowedPerfs, final boolean allowAllPerfsOnCasual, final EngineFactory engineFactory, final ChatMessageEventHandler eventHandler) throws IOReactorException, KeyStoreException, NoSuchAlgorithmException, KeyManagementException {
+    LichessClient(final String accountName, final String apiToken, final Collection<Perf> allowedPerfs, final boolean allowAllPerfsOnCasual, final EngineFactory engineFactory, final ChatMessageEventHandler eventHandler) throws LichessClientInstantiationException {
         this.accountName = accountName;
         this.apiToken = apiToken;
-        this.allowedPerfs = allowedPerfs;
+        this.allowedPerfs = Set.copyOf(allowedPerfs);
         this.allowAllPerfsOnCasual = allowAllPerfsOnCasual;
         this.engineFactory = engineFactory;
         this.eventHandler = eventHandler;
-        final IOReactorConfig ioReactorConfig = IOReactorConfig.custom().setIoThreadCount(10).build();
-        final ConnectingIOReactor ioReactor = new DefaultConnectingIOReactor(ioReactorConfig);
-        final NHttpClientConnectionManager connectionManager = new PoolingNHttpClientConnectionManager(ioReactor);
 
-        final SSLContext build = new SSLContextBuilder().loadTrustMaterial(null, (c, at) -> true).build();
+        final SSLContext build = createSslContext();
 
         this.httpClient = HttpClientBuilder.create()
                                            .setSSLContext(build)
                                            .setSSLHostnameVerifier(new NoopHostnameVerifier())
                                            .build();
+
+        final IOReactorConfig ioReactorConfig = IOReactorConfig.custom().setIoThreadCount(10).build();
+        final ConnectingIOReactor ioReactor = createIoReactor(ioReactorConfig);
+        final NHttpClientConnectionManager connectionManager = new PoolingNHttpClientConnectionManager(ioReactor);
 
         this.asyncClient = HttpAsyncClients.custom()
                                            .setConnectionManager(connectionManager)
@@ -78,12 +80,32 @@ public class LichessClient implements AutoCloseable {
                                            .build();
     }
 
-    public void start() throws ExecutionException, InterruptedException {
+    private static SSLContext createSslContext() throws LichessClientInstantiationException {
+        try {
+            return new SSLContextBuilder().loadTrustMaterial(null, (c, at) -> true).build();
+        } catch (final NoSuchAlgorithmException | KeyManagementException | KeyStoreException e) {
+            throw new LichessClientInstantiationException(e);
+        }
+    }
+
+    private static ConnectingIOReactor createIoReactor(final IOReactorConfig ioReactorConfig) throws LichessClientInstantiationException {
+        try {
+            return new DefaultConnectingIOReactor(ioReactorConfig);
+        } catch (final IOReactorException e) {
+            throw new LichessClientInstantiationException(e);
+        }
+    }
+
+    public void start() throws LichessClientOperationException {
         asyncClient.start();
 
         final HttpAsyncRequestProducer request = HttpUtil.createAuthenticatedRequestProducer(Endpoints.eventStream(), apiToken);
 
-        startEventHttpStream(request);
+        try {
+            startEventHttpStream(request);
+        } catch (final InterruptedException | ExecutionException e) {
+            throw new LichessClientOperationException(e);
+        }
     }
 
     private void startEventHttpStream(final HttpAsyncRequestProducer request) throws InterruptedException, ExecutionException {

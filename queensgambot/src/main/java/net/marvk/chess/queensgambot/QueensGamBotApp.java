@@ -3,9 +3,7 @@ package net.marvk.chess.queensgambot;
 import lombok.extern.log4j.Log4j2;
 import net.marvk.chess.kairukuengine.KairukuEngine;
 import net.marvk.chess.kairukuengine.Metrics;
-import net.marvk.chess.lichess4j.LichessChatContext;
-import net.marvk.chess.lichess4j.LichessClient;
-import net.marvk.chess.lichess4j.LichessClientBuilder;
+import net.marvk.chess.lichess4j.*;
 import net.marvk.chess.lichess4j.model.ChatLine;
 import net.marvk.chess.lichess4j.model.Perf;
 import org.apache.commons.cli.*;
@@ -14,11 +12,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
 import java.util.StringJoiner;
-import java.util.concurrent.ExecutionException;
 
 @Log4j2
 public final class QueensGamBotApp {
@@ -48,7 +42,7 @@ public final class QueensGamBotApp {
                                          .build()
         ) {
             client.start();
-        } catch (final InterruptedException | ExecutionException | NoSuchAlgorithmException | KeyStoreException | KeyManagementException e) {
+        } catch (final LichessClientInstantiationException | LichessClientOperationException e) {
             log.error("", e);
         }
     }

@@ -116,7 +116,7 @@ public abstract class UciEngine {
 
     /**
      * <p>UCI Description:</p>
-     * <p>     * start calculating on the current position set up with the "position" command.
+     * <p>start calculating on the current position set up with the "position" command.
      * There are a number of commands that can follow this command, all will be sent in the same string.
      * If one command is not sent its value should be interpreted as it would not influence the search.</p>
      *

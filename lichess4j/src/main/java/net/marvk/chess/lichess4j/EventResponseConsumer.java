@@ -36,7 +36,7 @@ class EventResponseConsumer extends AsyncCharConsumer<Boolean> {
     protected void onCharReceived(final CharBuffer buf, final IOControl ioControl) {
         final String response = HttpUtil.charBufferToString(buf).trim();
 
-        if (response.matches("\\s*")) {
+        if (response.isBlank()) {
             log.trace("No new events");
             return;
         }

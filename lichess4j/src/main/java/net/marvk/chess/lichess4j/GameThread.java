@@ -122,7 +122,6 @@ class GameThread implements Runnable, UIChannel {
                     .getMessage()), apiToken);
 
             try (final CloseableHttpResponse ignored = httpClient.execute(request)) {
-
             } catch (final IOException e) {
                 log.error("", e);
             }
