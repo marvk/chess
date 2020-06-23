@@ -523,7 +523,7 @@ public class Bitboard {
         }
 
         private void makeCastleMove(final Square kingSource, final Square kingTarget) {
-            makeBbMove(kingSource.getOccupiedBitMask(), kingTarget.getOccupiedBitMask(), KING, true, false, NO_PIECE, 0L);
+            makeBbMove(kingSource.getOccupiedBitMask(), kingTarget.getOccupiedBitMask(), KING, true, false, NO_PIECE, NO_SQUARE);
         }
 
         private void pawnMoves(

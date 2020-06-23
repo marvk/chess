@@ -66,10 +66,10 @@ public class UciMove {
     public String toString() {
         final String squares = source.getFen() + target.getFen();
 
-        if (promote != null) {
-            return squares + Character.toLowerCase(promote.ofColor(Color.BLACK).getSan());
-        } else {
+        if (promote == null) {
             return squares;
+        } else {
+            return squares + Character.toLowerCase(promote.ofColor(Color.BLACK).getSan());
         }
     }
 }

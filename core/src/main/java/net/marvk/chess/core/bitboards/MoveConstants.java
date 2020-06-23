@@ -65,22 +65,22 @@ public final class MoveConstants {
     public static final long PROMOTION_PIECE_MASK = 0xe000000000000L;
     public static final long NOT_USED_MASK = 0xfff0000000000000L;
 
-    public static final int PIECE_MOVED_SHIFT = Long.numberOfTrailingZeros(PIECE_MOVED_MASK);
-    public static final int PIECE_ATTACKED_SHIFT = Long.numberOfTrailingZeros(PIECE_ATTACKED_MASK);
-    public static final int SELF_LOST_KING_SIDE_CASTLE_SHIFT = Long.numberOfTrailingZeros(SELF_LOST_KING_SIDE_CASTLE_MASK);
-    public static final int SELF_LOST_QUEEN_SIDE_CASTLE_SHIFT = Long.numberOfTrailingZeros(SELF_LOST_QUEEN_SIDE_CASTLE_MASK);
-    public static final int OPPONENT_LOST_KING_SIDE_CASTLE_SHIFT = Long.numberOfTrailingZeros(OPPONENT_LOST_KING_SIDE_CASTLE_MASK);
-    public static final int OPPONENT_LOST_QUEEN_SIDE_CASTLE_SHIFT = Long.numberOfTrailingZeros(OPPONENT_LOST_QUEEN_SIDE_CASTLE_MASK);
-    public static final int CASTLE_MOVE_SHIFT = Long.numberOfTrailingZeros(CASTLE_MOVE_MASK);
-    public static final int EN_PASSANT_ATTACK_SHIFT = Long.numberOfTrailingZeros(EN_PASSANT_ATTACK_MASK);
-    public static final int SOURCE_SQUARE_INDEX_SHIFT = Long.numberOfTrailingZeros(SOURCE_SQUARE_INDEX_MASK);
-    public static final int TARGET_SQUARE_INDEX_SHIFT = Long.numberOfTrailingZeros(TARGET_SQUARE_INDEX_MASK);
-    public static final int HALFMOVE_RESET_SHIFT = Long.numberOfTrailingZeros(HALFMOVE_RESET_MASK);
-    public static final int PREVIOUS_HALFMOVE_SHIFT = Long.numberOfTrailingZeros(PREVIOUS_HALFMOVE_MASK);
-    public static final int PREVIOUS_EN_PASSANT_SQUARE_INDEX_SHIFT = Long.numberOfTrailingZeros(PREVIOUS_EN_PASSANT_SQUARE_INDEX_MASK);
-    public static final int NEXT_EN_PASSANT_SQUARE_INDEX_SHIFT = Long.numberOfTrailingZeros(NEXT_EN_PASSANT_SQUARE_INDEX_MASK);
-    public static final int PROMOTION_PIECE_SHIFT = Long.numberOfTrailingZeros(PROMOTION_PIECE_MASK);
-    public static final int NOT_USED_SHIFT = Long.numberOfTrailingZeros(NOT_USED_MASK);
+    public static final int PIECE_MOVED_SHIFT = maskToShift(PIECE_MOVED_MASK);
+    public static final int PIECE_ATTACKED_SHIFT = maskToShift(PIECE_ATTACKED_MASK);
+    public static final int SELF_LOST_KING_SIDE_CASTLE_SHIFT = maskToShift(SELF_LOST_KING_SIDE_CASTLE_MASK);
+    public static final int SELF_LOST_QUEEN_SIDE_CASTLE_SHIFT = maskToShift(SELF_LOST_QUEEN_SIDE_CASTLE_MASK);
+    public static final int OPPONENT_LOST_KING_SIDE_CASTLE_SHIFT = maskToShift(OPPONENT_LOST_KING_SIDE_CASTLE_MASK);
+    public static final int OPPONENT_LOST_QUEEN_SIDE_CASTLE_SHIFT = maskToShift(OPPONENT_LOST_QUEEN_SIDE_CASTLE_MASK);
+    public static final int CASTLE_MOVE_SHIFT = maskToShift(CASTLE_MOVE_MASK);
+    public static final int EN_PASSANT_ATTACK_SHIFT = maskToShift(EN_PASSANT_ATTACK_MASK);
+    public static final int SOURCE_SQUARE_INDEX_SHIFT = maskToShift(SOURCE_SQUARE_INDEX_MASK);
+    public static final int TARGET_SQUARE_INDEX_SHIFT = maskToShift(TARGET_SQUARE_INDEX_MASK);
+    public static final int HALFMOVE_RESET_SHIFT = maskToShift(HALFMOVE_RESET_MASK);
+    public static final int PREVIOUS_HALFMOVE_SHIFT = maskToShift(PREVIOUS_HALFMOVE_MASK);
+    public static final int PREVIOUS_EN_PASSANT_SQUARE_INDEX_SHIFT = maskToShift(PREVIOUS_EN_PASSANT_SQUARE_INDEX_MASK);
+    public static final int NEXT_EN_PASSANT_SQUARE_INDEX_SHIFT = maskToShift(NEXT_EN_PASSANT_SQUARE_INDEX_MASK);
+    public static final int PROMOTION_PIECE_SHIFT = maskToShift(PROMOTION_PIECE_MASK);
+    public static final int NOT_USED_SHIFT = maskToShift(NOT_USED_MASK);
 
     public static final int A1 = 0;
     public static final int B1 = 1;
@@ -146,6 +146,10 @@ public final class MoveConstants {
     public static final int F8 = 61;
     public static final int G8 = 62;
     public static final int H8 = 63;
+
+    private static int maskToShift(final long pieceMovedMask) {
+        return Long.numberOfTrailingZeros(pieceMovedMask);
+    }
 
     private MoveConstants() {
         throw new AssertionError("No instances of utility class " + MoveConstants.class);

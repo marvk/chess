@@ -1,84 +1,36 @@
 package net.marvk.chess.core;
 
 import java.util.Objects;
+import java.util.function.Function;
 
 public enum Piece {
-    /*
-        This class uses overridden methods instead of fields because ColoredPiece cyclically depends on it.
-        If it were to use fields, ColoredPieces piece field would be instantiated with null values.
+    /**
+     This class uses Function instead of ColoredPiece because ColoredPiece cyclically depends on it.
+     ColoredPiece values are null at initialization time.
      */
-    KING {
-        @Override
-        public ColoredPiece ofColor(final Color color) {
-            Objects.requireNonNull(color);
 
-            if (color == Color.WHITE) {
-                return ColoredPiece.WHITE_KING;
-            }
+    KING(color -> coloredPiece(color, ColoredPiece.WHITE_KING, ColoredPiece.BLACK_KING)),
+    QUEEN(color -> coloredPiece(color, ColoredPiece.WHITE_QUEEN, ColoredPiece.BLACK_QUEEN)),
+    ROOK(color -> coloredPiece(color, ColoredPiece.WHITE_ROOK, ColoredPiece.BLACK_ROOK)),
+    BISHOP(color -> coloredPiece(color, ColoredPiece.WHITE_BISHOP, ColoredPiece.BLACK_BISHOP)),
+    KNIGHT(color -> coloredPiece(color, ColoredPiece.WHITE_KNIGHT, ColoredPiece.BLACK_KNIGHT)),
+    PAWN(color -> coloredPiece(color, ColoredPiece.WHITE_PAWN, ColoredPiece.BLACK_PAWN));
 
-            return ColoredPiece.BLACK_KING;
+    private final Function<Color, ColoredPiece> ofColor;
+
+    Piece(final Function<Color, ColoredPiece> ofColor) {
+        this.ofColor = ofColor;
+    }
+
+    public ColoredPiece ofColor(final Color color) {
+        return ofColor.apply(color);
+    }
+
+    private static ColoredPiece coloredPiece(final Color color, final ColoredPiece whitePiece, final ColoredPiece blackPiece) {
+        if (Objects.requireNonNull(color) == Color.WHITE) {
+            return whitePiece;
         }
-    },
-    QUEEN {
-        @Override
-        public ColoredPiece ofColor(final Color color) {
-            Objects.requireNonNull(color);
 
-            if (color == Color.WHITE) {
-                return ColoredPiece.WHITE_QUEEN;
-            }
-
-            return ColoredPiece.BLACK_QUEEN;
-        }
-    },
-    ROOK {
-        @Override
-        public ColoredPiece ofColor(final Color color) {
-            Objects.requireNonNull(color);
-
-            if (color == Color.WHITE) {
-                return ColoredPiece.WHITE_ROOK;
-            }
-
-            return ColoredPiece.BLACK_ROOK;
-        }
-    },
-    BISHOP {
-        @Override
-        public ColoredPiece ofColor(final Color color) {
-            Objects.requireNonNull(color);
-
-            if (color == Color.WHITE) {
-                return ColoredPiece.WHITE_BISHOP;
-            }
-
-            return ColoredPiece.BLACK_BISHOP;
-        }
-    },
-    KNIGHT {
-        @Override
-        public ColoredPiece ofColor(final Color color) {
-            Objects.requireNonNull(color);
-
-            if (color == Color.WHITE) {
-                return ColoredPiece.WHITE_KNIGHT;
-            }
-
-            return ColoredPiece.BLACK_KNIGHT;
-        }
-    },
-    PAWN {
-        @Override
-        public ColoredPiece ofColor(final Color color) {
-            Objects.requireNonNull(color);
-
-            if (color == Color.WHITE) {
-                return ColoredPiece.WHITE_PAWN;
-            }
-
-            return ColoredPiece.BLACK_PAWN;
-        }
-    };
-
-    public abstract ColoredPiece ofColor(final Color color);
+        return blackPiece;
+    }
 }
