@@ -15,6 +15,7 @@
         <module>queensgambot</module>
         <module>uci4j</module>
         <module>kairuku-engine</module>
+        <module>arena</module>
     </modules>
 
     <properties>
