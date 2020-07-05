@@ -11,8 +11,8 @@ import net.marvk.chess.lichess4j.model.GameStateFull;
 import net.marvk.chess.lichess4j.util.HttpUtil;
 import net.marvk.chess.uci4j.EngineFactory;
 import net.marvk.chess.uci4j.Go;
-import net.marvk.chess.uci4j.UIChannel;
 import net.marvk.chess.uci4j.UciEngine;
+import net.marvk.chess.uci4j.UiChannel;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
@@ -30,7 +30,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 @Log4j2
-class GameThread implements Runnable, UIChannel {
+class GameThread implements Runnable, UiChannel {
     private final String gameId;
     private final String apiToken;
     private final CloseableHttpClient httpClient;

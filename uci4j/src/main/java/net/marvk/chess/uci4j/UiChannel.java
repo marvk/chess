@@ -4,12 +4,12 @@ import net.marvk.chess.core.UciMove;
 
 import java.util.List;
 
-public interface UIChannel {
+public interface UiChannel {
 
     /**
      * <p>UCI Description:</p>
      * <p>this must be sent after receiving the "uci" command to identify the engine.</p>
-     * <p>Alternatively, send {@link UIChannel#idAuthor(String)}</p>
+     * <p>Alternatively, send {@link UiChannel#idAuthor(String)}</p>
      *
      * @param name the name
      */
@@ -18,7 +18,7 @@ public interface UIChannel {
     }
 
     /**
-     * {@link UIChannel#idName(String)}
+     * {@link UiChannel#idName(String)}
      *
      * @param author the name
      */
@@ -48,7 +48,7 @@ public interface UIChannel {
     }
 
     /**
-     * {@link UIChannel#bestMove(UciMove, UciMove)}
+     * {@link UiChannel#bestMove(UciMove, UciMove)}
      *
      * @param move best move the engine found
      */
@@ -150,28 +150,28 @@ public interface UIChannel {
     }
 
     /**
-     * {@link UIChannel#optionCheck(String, boolean)}
+     * {@link UiChannel#optionCheck(String, boolean)}
      */
     default void optionSpin(final String name, final int defaultValue, final int min, final int max) {
 
     }
 
     /**
-     * {@link UIChannel#optionCheck(String, boolean)}
+     * {@link UiChannel#optionCheck(String, boolean)}
      */
     default void optionCombo(final String name, final String defaultValue, final List<String> possibleValues) {
 
     }
 
     /**
-     * {@link UIChannel#optionCheck(String, boolean)}
+     * {@link UiChannel#optionCheck(String, boolean)}
      */
     default void optionString(final String name, final String defaultValue) {
 
     }
 
     /**
-     * {@link UIChannel#optionCheck(String, boolean)}
+     * {@link UiChannel#optionCheck(String, boolean)}
      */
     default void optionButton(final String name) {
 

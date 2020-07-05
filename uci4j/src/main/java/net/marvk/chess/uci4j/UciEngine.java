@@ -2,13 +2,7 @@ package net.marvk.chess.uci4j;
 
 import net.marvk.chess.core.UciMove;
 
-public abstract class UciEngine {
-    protected final UIChannel uiChannel;
-
-    public UciEngine(final UIChannel uiChannel) {
-        this.uiChannel = uiChannel;
-    }
-
+public interface UciEngine {
     /**
      * <p>UCI Description:</p>
      * <p>tell engine to use the uci (universal chess interface),
@@ -19,7 +13,7 @@ public abstract class UciEngine {
      * After that the engine should send "uciok" to acknowledge the uci mode.
      * If no uciok is sent within a certain time period, the engine task will be killed by the GUI.</p>
      */
-    public abstract void uci();
+    void uci();
 
     /**
      * <p>UCI Description:</p>
@@ -31,7 +25,7 @@ public abstract class UciEngine {
      *
      * @param debug debug enabled
      */
-    public abstract void setDebug(final boolean debug);
+    void setDebug(boolean debug);
 
     /**
      * <p>UCI Description:</p>
@@ -45,7 +39,7 @@ public abstract class UciEngine {
      * This command must always be answered with "readyok" and can be sent also when the engine is calculating
      * in which case the engine should also immediately answer with "readyok" without stopping the search.</p>
      */
-    public abstract void isReady();
+    void isReady();
 
     /**
      * <p>UCI Description:</p>
@@ -59,14 +53,14 @@ public abstract class UciEngine {
      * @param name  the name
      * @param value the value
      */
-    public abstract void setOption(final String name, final String value);
+    void setOption(String name, String value);
 
     /**
      * <p>UCI Description:</p>
      * <p>this is the command to tell the engine that registration
      * will be done later. See also: {@link UciEngine#register(String, String)}</p>
      */
-    public abstract void registerLater();
+    void registerLater();
 
     /**
      * <p>UCI Description:</p>
@@ -76,7 +70,7 @@ public abstract class UciEngine {
      * @param name the engine should be registered with the name
      * @param code the engine should be registered with the code
      */
-    public abstract void register(final String name, final String code);
+    void register(String name, String code);
 
     /**
      * <p>UCI Description:</p>
@@ -89,7 +83,7 @@ public abstract class UciEngine {
      * As the engine's reaction to "ucinewgame" can take some time the GUI should always send "isready"
      * after "ucinewgame" to wait for the engine to finish its operation.</p>
      */
-    public abstract void uciNewGame();
+    void uciNewGame();
 
     /**
      * <p>UCI Description:</p>
@@ -100,7 +94,7 @@ public abstract class UciEngine {
      *
      * @param moves the moves
      */
-    public abstract void positionFromDefault(final UciMove[] moves);
+    void positionFromDefault(UciMove[] moves);
 
     /**
      * <p>UCI Description:</p>
@@ -112,7 +106,7 @@ public abstract class UciEngine {
      * @param fenString the fen string
      * @param moves     the moves
      */
-    public abstract void position(final String fenString, final UciMove[] moves);
+    void position(String fenString, UciMove[] moves);
 
     /**
      * <p>UCI Description:</p>
@@ -124,9 +118,9 @@ public abstract class UciEngine {
      *
      * @param go the values for the go command
      */
-    public abstract void go(final Go go);
+    void go(Go go);
 
-    public void go() {
+    default void go() {
         go(Go.EMPTY);
     }
 
@@ -135,18 +129,18 @@ public abstract class UciEngine {
      * <p>stop calculating as soon as possible,
      * don't forget the "bestmove" and possibly the "ponder" token when finishing the search</p>
      */
-    public abstract void stop();
+    void stop();
 
     /**
      * <p>UCI Description:</p>
      * <p>the user has played the expected move. This will be sent if the engine was told to ponder on the same move
      * the user has played. The engine should continue searching but switch from pondering to normal search.</p>
      */
-    public abstract void ponderHit();
+    void ponderHit();
 
     /**
      * <p>UCI Description:</p>
      * <p>quit the program as soon as possible</p>
      */
-    public abstract void quit();
+    void quit();
 }

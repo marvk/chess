@@ -7,10 +7,10 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class ConsoleUIChannel implements UIChannel {
+public class ConsoleUiChannel implements UiChannel {
     private final Consumer<String> console;
 
-    public ConsoleUIChannel(final Consumer<String> console) {
+    public ConsoleUiChannel(final Consumer<String> console) {
         this.console = console;
     }
 

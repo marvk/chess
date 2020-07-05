@@ -58,8 +58,10 @@ public class ConsoleEngineChannel implements AutoCloseable {
                     break;
                 case "ponderhit":
                     engine.ponderHit();
+                    break;
                 case "quit":
                     engine.quit();
+                    break;
             }
         }
     }

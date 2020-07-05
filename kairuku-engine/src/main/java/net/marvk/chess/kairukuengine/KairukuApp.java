@@ -2,7 +2,7 @@ package net.marvk.chess.kairukuengine;
 
 import lombok.extern.log4j.Log4j2;
 import net.marvk.chess.uci4j.ConsoleEngineChannel;
-import net.marvk.chess.uci4j.ConsoleUIChannel;
+import net.marvk.chess.uci4j.ConsoleUiChannel;
 import net.marvk.chess.uci4j.UciEngine;
 
 @Log4j2
@@ -12,7 +12,7 @@ public final class KairukuApp {
     }
 
     public static void main(final String[] args) {
-        final UciEngine engine = new KairukuEngine(new ConsoleUIChannel(s -> {
+        final UciEngine engine = new KairukuEngine(new ConsoleUiChannel(s -> {
             log.info(s);
             System.out.println(s);
         }));

@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Log4j2
-public class KairukuEngine extends UciEngine {
+public class KairukuEngine extends SimpleUciEngine {
     private static final String PLY_OPTION = "ply";
 
     private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("#.#####", new DecimalFormatSymbols(Locale.ENGLISH));
@@ -48,7 +48,7 @@ public class KairukuEngine extends UciEngine {
     private Bitboard.BBMove[] previousPv;
     private final int quiescencePly = Integer.MAX_VALUE;
 
-    public KairukuEngine(final UIChannel uiChannel) {
+    public KairukuEngine(final UiChannel uiChannel) {
         super(uiChannel);
 
         this.ply = 7;
@@ -147,7 +147,8 @@ public class KairukuEngine extends UciEngine {
                                .toArray(Bitboard.BBMove[]::new);
 
             final UciMove[] pvArray =
-                    pv.stream().map(ValuedMove::getMove)
+                    pv.stream()
+                      .map(ValuedMove::getMove)
                       .filter(Objects::nonNull)
                       .map(Bitboard.BBMove::asUciMove)
                       .toArray(UciMove[]::new);
@@ -414,9 +415,7 @@ public class KairukuEngine extends UciEngine {
             return new ValuedMove(initialBeta, null, null);
         }
 
-        int alpha = initialAlpha < standingPat
-                ? standingPat
-                : initialAlpha;
+        int alpha = Math.max(initialAlpha, standingPat);
 
         if (depth == 0) {
             metrics.quiescenceTermination(quiescencePly);
