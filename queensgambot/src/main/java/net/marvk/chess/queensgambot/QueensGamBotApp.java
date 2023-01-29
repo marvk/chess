@@ -33,8 +33,9 @@ public final class QueensGamBotApp {
     public static void main(final String[] args) throws IOException, ParseException {
         final String lichessApiToken = getApiToken(args);
 
+        final String lowercaseAccountName = "QueensGamBot".toLowerCase();
         try (final LichessClient client =
-                     LichessClientBuilder.create("queensgambot", KairukuEngine::new)
+                     LichessClientBuilder.create(lowercaseAccountName, KairukuEngine::new)
                                          .allowAllPerfs(Perf.BULLET, Perf.BLITZ)
                                          .allowAllPerfsOnCasual(true)
                                          .apiToken(lichessApiToken)
