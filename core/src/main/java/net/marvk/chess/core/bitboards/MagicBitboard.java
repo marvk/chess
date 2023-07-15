@@ -120,4 +120,12 @@ public final class MagicBitboard {
                       .map(l -> "0x" + l + "L")
                       .collect(Collectors.joining(", ")) + "};";
     }
+
+    public static void main(String[] args) {
+        System.out.println(MagicBitboard.BISHOP.attacks.length);
+
+        for (final long[] attack : MagicBitboard.BISHOP.attacks) {
+            System.out.println(attack.length);
+        }
+    }
 }

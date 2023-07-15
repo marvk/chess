@@ -1,10 +1,13 @@
 package net.marvk.chess.core.bitboards;
 
 import lombok.extern.log4j.Log4j2;
+import lombok.val;
 import net.marvk.chess.core.Direction;
 import net.marvk.chess.core.Piece;
 import net.marvk.chess.core.Square;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Log4j2
@@ -109,6 +112,7 @@ public final class Configuration {
 
     private long findMagic() {
         log.error("Generating " + piece + " magic for " + square);
+        int i = 0;
         while (true) {
             final long candidate = magicCandidate();
 
@@ -191,5 +195,17 @@ public final class Configuration {
 
     public static Configuration bishopConfiguration(final Square square, final long precalculatedMagic) {
         return new Configuration(Piece.BISHOP, square, precalculatedMagic);
+    }
+
+    public static void main(String[] args) {
+        val x = 281479271756800L;
+
+        for (int i = 0; i < 10; i++) {
+            final LocalDateTime now = LocalDateTime.now();
+            final Configuration configuration = new Configuration(Piece.ROOK, Square.A2, null);
+            final LocalDateTime now1 = LocalDateTime.now();
+
+            System.out.println(Duration.between(now, now1));
+        }
     }
 }

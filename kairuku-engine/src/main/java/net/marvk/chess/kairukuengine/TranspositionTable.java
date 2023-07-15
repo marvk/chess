@@ -34,7 +34,7 @@ public class TranspositionTable<T> {
 
     @AllArgsConstructor
     @Data
-    public static class Entry {
+    public static class  Entry {
         private final ValuedMove valuedMove;
         private int depth;
         private int value;

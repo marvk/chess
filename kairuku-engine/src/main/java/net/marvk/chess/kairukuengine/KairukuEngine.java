@@ -103,6 +103,7 @@ public class KairukuEngine extends SimpleUciEngine {
 
     @Override
     public void positionFromDefault(final UciMove[] moves) {
+        System.out.println("hello");
         board = UciMove.getBoard(moves);
     }
 
@@ -113,7 +114,9 @@ public class KairukuEngine extends SimpleUciEngine {
 
     @Override
     public void go(final Go go) {
+        System.out.println(go);
         if (board == null) {
+            System.out.println("nope");
             log.warn("not going, no position loaded");
             return;
         }
@@ -135,6 +138,7 @@ public class KairukuEngine extends SimpleUciEngine {
 
             final ValuedMove play;
             try {
+                System.out.println("les go");
                 play = play();
             } catch (final Throwable t) {
                 log.error("unexpected error, board state:\n" + board, t);
@@ -279,6 +283,7 @@ public class KairukuEngine extends SimpleUciEngine {
         metrics.incrementDuration(duration);
 
         log.info(infoString(result));
+        System.out.println(infoString(result));
 
         final Bitboard.BBMove theMove = result.getMove();
         board.make(theMove);
@@ -288,8 +293,14 @@ public class KairukuEngine extends SimpleUciEngine {
         return result;
     }
 
+    int qStarted = 0;
+
     private ValuedMove negamax(final int depth, final int alphaOriginal, final int betaOriginal, final Color currentColor) {
         metrics.incrementNegamaxNodes();
+        if (metrics.getLastNegamaxNodes() % 1000000 == 0) {
+            System.out.println((double) qStarted / metrics.getLastNegamaxNodes());
+            System.out.println(metrics.getLastTableHitRate());
+        }
 
         final long zobristHash = board.zobristHash();
 
@@ -301,6 +312,8 @@ public class KairukuEngine extends SimpleUciEngine {
 
         int alpha = alphaOriginal;
         int beta = betaOriginal;
+        System.out.printf("%s%s: initial alpha  %s\n", "    ".repeat(ply - depth), depth, alphaOriginal);
+        System.out.printf("%s%s: initial beta   %s\n", "    ".repeat(ply - depth), depth, betaOriginal);
 
         if (ttEntry != null) {
             if (ttEntry.getDepth() >= depth) {
@@ -315,6 +328,7 @@ public class KairukuEngine extends SimpleUciEngine {
                 }
 
                 if (ttEntry.getNodeType() == TranspositionTable.NodeType.EXACT || alpha >= beta) {
+                    System.out.printf("%s%s: TT Hit\n", "    ".repeat(ply - depth), depth);
                     return ttEntry.getValuedMove();
                 }
             }
@@ -322,15 +336,23 @@ public class KairukuEngine extends SimpleUciEngine {
 
         final List<Bitboard.BBMove> pseudoLegalMoves = board.generatePseudoLegalMoves();
 
+        pseudoLegalMoves.sort(Comparator.comparing(Bitboard.BBMove::toString));
+
+        System.out.printf("%s%s: %s\n", "    ".repeat(ply - depth), depth, pseudoLegalMoves);
+
         if (depth == 0) {
             final boolean legalMovesRemaining = Bitboard.hasAnyLegalMoves(board, pseudoLegalMoves);
 
             if (legalMovesRemaining && Bitboard.hasAnyAttackMoves(pseudoLegalMoves)) {
+                qStarted++;
+                System.out.printf("%s%s: Q ENTRY\n", "    ".repeat(ply - depth), depth);
+                System.out.printf("%s%s: initial alpha  %s\n", "    ".repeat(ply - depth), depth, alphaOriginal);
+                System.out.printf("%s%s: initial beta   %s\n", "    ".repeat(ply - depth), depth, betaOriginal);
                 return quiescenceSearch(quiescencePly, alpha, beta, currentColor);
             }
 
             final int value = currentColor.getHeuristicFactor() * heuristic.evaluate(board, legalMovesRemaining);
-
+            System.out.printf("%s%s: OUT OF DEPTH VALUE %s\n", "    ".repeat(ply - depth), depth, value);
             return new ValuedMove(value, null, null);
         }
 
@@ -346,6 +368,7 @@ public class KairukuEngine extends SimpleUciEngine {
         } else {
             defaultMoveOrder.sort(pseudoLegalMoves);
         }
+        System.out.printf("%s%s: %s (sorted)\n", "    ".repeat(ply - depth), depth, pseudoLegalMoves);
 
         int value = SimpleHeuristic.LOSS;
         ValuedMove bestChild = null;
@@ -357,6 +380,8 @@ public class KairukuEngine extends SimpleUciEngine {
             if (depth == ply && !searchMoves.isEmpty() && !searchMoves.contains(current.asUciMove())) {
                 continue;
             }
+
+            System.out.printf("%s%s: %s\n", "    ".repeat(ply - depth), depth, current);
 
             board.make(current);
 
@@ -381,13 +406,18 @@ public class KairukuEngine extends SimpleUciEngine {
 
             board.unmake(current);
 
+            System.out.printf("%s%s: alpha %s / beta %s\n", "    ".repeat(ply - depth), depth, alpha, beta);
+
             if (alpha >= beta) {
+                System.out.printf("%s%s: PRUNE\n", "    ".repeat(ply - depth), depth);
                 break;
             }
         }
 
         if (!legalMovesEncountered) {
-            return new ValuedMove(currentColor.getHeuristicFactor() * heuristic.evaluate(board, false), null, null);
+            final int curValue = currentColor.getHeuristicFactor() * heuristic.evaluate(board, false);
+            System.out.printf("%s%s: OUT OF LEGAL MOVES VALUE %s\n", "    ".repeat(ply - depth), depth, curValue);
+            return new ValuedMove(curValue, null, null);
         }
 
         final ValuedMove result = new ValuedMove(value, bestMove, bestChild);
@@ -407,14 +437,24 @@ public class KairukuEngine extends SimpleUciEngine {
             transpositionTable.put(zobristHash, new TranspositionTable.Entry(result, depth, value, type));
         }
 
+        System.out.printf("%s%s: TERMINATION VALUE %s\n", "    ".repeat(ply - depth), depth, value);
         return result;
     }
 
     private ValuedMove quiescenceSearch(final int depth, final int initialAlpha, final int initialBeta, final Color currentColor) {
+        System.out.printf("                    %s%s: %s\n", "    ".repeat(quiescencePly - depth), quiescencePly - depth, board.fen());
         final List<Bitboard.BBMove> pseudoLegalAttackMoves = board.generatePseudoLegalAttackMoves();
+
+        pseudoLegalAttackMoves.sort(Comparator.comparing(Bitboard.BBMove::toString));
+        System.out.printf("                    %s%s: %s\n", "    ".repeat(quiescencePly - depth), quiescencePly - depth, pseudoLegalAttackMoves);
 
         // Pretend the game is not over for speed?!
         final int standingPat = currentColor.getHeuristicFactor() * heuristic.evaluate(board, true);
+
+
+        System.out.printf("                    %s%s: standing pat   %s\n", "    ".repeat(quiescencePly - depth), quiescencePly - depth, standingPat);
+        System.out.printf("                    %s%s: initial alpha  %s\n", "    ".repeat(quiescencePly - depth), quiescencePly - depth, initialAlpha);
+        System.out.printf("                    %s%s: initial beta   %s\n", "    ".repeat(quiescencePly - depth), quiescencePly - depth, initialBeta);
 
         if (standingPat >= initialBeta) {
             metrics.quiescenceTermination(quiescencePly - depth);
@@ -423,13 +463,14 @@ public class KairukuEngine extends SimpleUciEngine {
 
         int alpha = Math.max(initialAlpha, standingPat);
 
-        if (depth == 0) {
-            metrics.quiescenceTermination(quiescencePly);
-
-            return new ValuedMove(alpha, null, null);
-        }
+//        if (depth == 0) {
+//            metrics.quiescenceTermination(quiescencePly);
+//
+//            return new ValuedMove(alpha, null, null);
+//        }
 
         quiescenceSearchMoveOrder.sort(pseudoLegalAttackMoves);
+        System.out.printf("                    %s%s: %s (sorted)\n", "    ".repeat(quiescencePly - depth), quiescencePly - depth, pseudoLegalAttackMoves);
 
         Bitboard.BBMove bestMove = null;
         ValuedMove bestChild = null;
@@ -442,6 +483,7 @@ public class KairukuEngine extends SimpleUciEngine {
                 continue;
             }
 
+            System.out.printf("                    %s%s: %s\n", "    ".repeat(quiescencePly - depth), quiescencePly - depth, current);
             final ValuedMove child = quiescenceSearch(depth - 1, -initialBeta, -alpha, currentColor.opposite());
             final int value = -child.getValue();
 

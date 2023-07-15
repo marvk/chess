@@ -523,7 +523,7 @@ public class Bitboard {
         }
 
         private void makeCastleMove(final Square kingSource, final Square kingTarget) {
-            makeBbMove(kingSource.getOccupiedBitMask(), kingTarget.getOccupiedBitMask(), KING, true, false, NO_PIECE, NO_SQUARE);
+            makeBbMove(kingSource.getOccupiedBitMask(), kingTarget.getOccupiedBitMask(), KING, true, false, NO_PIECE, NO_EN_PASSANT_SQUARE);
         }
 
         private void pawnMoves(
@@ -553,7 +553,7 @@ public class Bitboard {
                     if ((singleMoveTarget & promoteRank) == 0L) {
                         //no promotion moves
 
-                        makeBbMove(source, singleMoveTarget, PAWN, false, false, NO_PIECE, NO_SQUARE);
+                        makeBbMove(source, singleMoveTarget, PAWN, false, false, NO_PIECE, NO_EN_PASSANT_SQUARE);
 
                         final long doubleMoveTarget;
                         final long doubleMoveSourceRank;
@@ -609,7 +609,10 @@ public class Bitboard {
                 final long source = Long.highestOneBit(remainingPawns);
                 remainingPawns &= ~source;
 
-                final long attacks = pawnAttacks[Long.numberOfTrailingZeros(source)] & (opponentOccupancy | enPassant) & ~selfOccupancy;
+                final long attacks =
+                        pawnAttacks[Long.numberOfTrailingZeros(source)]
+                                & (opponentOccupancy | enPassant)
+                                & ~selfOccupancy;
 
                 generatePawnAttacks(source, attacks);
             }
@@ -663,7 +666,7 @@ public class Bitboard {
                 final long attack = Long.highestOneBit(remainingAttacks);
                 remainingAttacks &= ~attack;
 
-                makeBbMove(source, attack, piece, false, false, NO_PIECE, NO_SQUARE);
+                makeBbMove(source, attack, piece, false, false, NO_PIECE, NO_EN_PASSANT_SQUARE);
             }
         }
 
@@ -680,7 +683,7 @@ public class Bitboard {
                 if ((turn == Color.WHITE && (attack & RANK_EIGHT_SQUARES) != 0L) || (turn == Color.BLACK && (attack & RANK_ONE_SQUARES) != 0L)) {
                     pawnPromotions(source, attack);
                 } else {
-                    makeBbMove(source, attack, PAWN, false, attack == enPassant, NO_PIECE, NO_SQUARE);
+                    makeBbMove(source, attack, PAWN, false, attack == enPassant, NO_PIECE, NO_EN_PASSANT_SQUARE);
                 }
             }
         }
@@ -769,8 +772,8 @@ public class Bitboard {
 
             final int gameStage = (white.queens | black.queens) == 0L ? 1 : 0;
 
-            final int squareDiff = PIECE_SQUARE_VALUES[turnConst][pieceMoved][gameStage][targetSquareIndex]
-                    - PIECE_SQUARE_VALUES[turnConst][pieceMoved][gameStage][sourceSquareIndex];
+            final int squareDiff = 0; //PIECE_SQUARE_VALUES[turnConst][pieceMoved][gameStage][targetSquareIndex]
+            // - PIECE_SQUARE_VALUES[turnConst][pieceMoved][gameStage][sourceSquareIndex];
 
             final int mvvLva = mvvLva(pieceMoved, pieceAttacked);
 
@@ -866,6 +869,8 @@ public class Bitboard {
 
     public int pieceSquareValue(final Color color) {
         final boolean lateGame = isLateGame();
+
+//        System.out.println(lateGame);
 
         final int[] whiteKingTable = lateGame ? WHITE_KING_TABLE_LATE : WHITE_KING_TABLE_MID;
         final int[] blackKingTable = lateGame ? BLACK_KING_TABLE_LATE : BLACK_KING_TABLE_MID;
@@ -1319,7 +1324,7 @@ public class Bitboard {
         final long enPassantSquareIndex = (bits & NEXT_EN_PASSANT_SQUARE_INDEX_MASK) >> NEXT_EN_PASSANT_SQUARE_INDEX_SHIFT;
 
         if (enPassantSquareIndex == 0L) {
-            enPassant = NO_SQUARE;
+            enPassant = NO_EN_PASSANT_SQUARE;
         } else {
             enPassant = 1L << enPassantSquareIndex;
         }
@@ -1527,7 +1532,6 @@ public class Bitboard {
         }
     }
 
-    @ToString
     public static class BBMove {
         private final long bits;
 
@@ -1561,6 +1565,11 @@ public class Bitboard {
 
         public boolean isAttack() {
             return (bits & PIECE_ATTACKED_MASK) != 0L;
+        }
+
+        @Override
+        public String toString() {
+            return this.asUciMove().toString();
         }
     }
 

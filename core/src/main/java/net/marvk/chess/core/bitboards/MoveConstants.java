@@ -38,7 +38,7 @@ public final class MoveConstants {
     public static final int WHITE = 0;
     public static final int BLACK = 1;
 
-    public static final long NO_SQUARE = 0L;
+    public static final long NO_EN_PASSANT_SQUARE = 0L;
 
     public static final int NO_PIECE = 0;
     public static final int PAWN = 0b001;

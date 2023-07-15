@@ -1,5 +1,6 @@
 package net.marvk.chess.kairukuengine;
 
+import net.marvk.chess.core.Fen;
 import net.marvk.chess.core.bitboards.Bitboard;
 import net.marvk.chess.core.Color;
 
@@ -43,6 +44,15 @@ public class SimpleHeuristic implements Heuristic {
 
         final int pieceSquareValue = board.pieceSquareValue(Color.WHITE);
 
+//        System.out.println(mySum);
+//        System.out.println(theirSum);
+//        System.out.println(pieceSquareValue);
+
         return mySum - theirSum + pieceSquareValue;
+    }
+
+    public static void main(String[] args) {
+        System.out.println(new SimpleHeuristic().evaluate(new Bitboard(Fen.parse("rn2k2r/ppp2ppp/8/3pPP2/3P1q2/P1KB4/P1P4P/3R2N1 b kq - 0 14")), true));
+        System.out.println(new SimpleHeuristic().evaluate(new Bitboard(Fen.parse("rn2k2r/ppp2ppp/8/3pPP2/3P1q2/P1KB4/P1P4P/3R2N1 w kq - 0 14")), true));
     }
 }
