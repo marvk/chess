@@ -63,8 +63,10 @@ public class KairukuEngine extends SimpleUciEngine {
 
     @Override
     public void uci() {
-        uiChannel.idName("kairuku");
+        uiChannel.idName("Kairuku");
+        uiChannel.idAuthor("Marvin Kuhnke (see https://github.com/marvk/chess)");
         uiChannel.optionSpin(PLY_OPTION, ply, 1, 7);
+        uiChannel.uciOk();
     }
 
     @Override
@@ -122,7 +124,7 @@ public class KairukuEngine extends SimpleUciEngine {
 
         final int actualPly = calculatePly(go, time);
 
-        log.info("time remaining is " + time + "ms, setting ply to " + ply + " (" + actualPly + " + " + ((int) plyBonus) + ")");
+        log.info("time remaining is " + time + " ms, setting ply to " + ply + " (" + actualPly + " + " + ((int) plyBonus) + ")");
 
         calculationFuture = executor.submit(() -> {
             resetForMove();
@@ -153,14 +155,12 @@ public class KairukuEngine extends SimpleUciEngine {
                       .map(Bitboard.BBMove::asUciMove)
                       .toArray(UciMove[]::new);
 
-            uiChannel.bestMove(play.getMove().asUciMove());
-
             try {
                 final Info info =
                         Info.builder()
                             .nps(((long) metrics.getLastNps()))
                             .score(new Score(play.getValue(), null, null))
-                            .depth(ply)
+                            .depth(actualPly)
                             .principalVariation(pvArray)
                             .nodes(((long) metrics.getLastNodes()))
                             .time(((int) metrics.getLastDuration().toMillis()))
@@ -170,6 +170,8 @@ public class KairukuEngine extends SimpleUciEngine {
             } catch (final Throwable t) {
                 log.error("unexpected error", t);
             }
+
+            uiChannel.bestMove(play.getMove().asUciMove());
 
             return null;
         });

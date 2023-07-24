@@ -86,17 +86,13 @@ public class ConsoleEngineChannel implements AutoCloseable {
     }
 
     private void position(final CommandParser commandParser) {
-        final String fen = commandParser.getParameter("fen", "moves");
-        final UciMove[] moves = movesFromStringSafe(commandParser.getParameter("moves"));
-
-        if (fen == null) {
-            return;
-        }
-
-        if ("startpos".equals(fen)) {
+        final UciMove[] moves = movesFromStringSafe(commandParser.getParameter("moves", (String) null));
+        if (commandParser.containsParameter("fen")) {
+            engine.position(commandParser.getParameter("fen", "moves"), moves);
+        } else if (commandParser.containsParameter("startpos")) {
             engine.positionFromDefault(moves);
         } else {
-            engine.position(fen, moves);
+            System.err.println("Invalid command");
         }
     }
 
