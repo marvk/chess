@@ -189,9 +189,13 @@ public class KairukuEngine extends SimpleUciEngine {
 
     @Override
     public void quit() {
-        calculationFuture.cancel(true);
+        if (calculationFuture != null) {
+            calculationFuture.cancel(true);
+        }
 
         resetAll();
+
+        System.exit(0);
     }
 
     // endregion
